@@ -4,8 +4,7 @@ const PartnerPreferences = require("./partnerPreference");
 const RequestedUser = require("./requestedUser");
 const Message = require("./message");
 const SubscriptionPlan = require("./subscriptionPlan");
-const Religion = require("./religion");
-const Caste = require("./caste");
+const {Religion, Sect, Jammat, Caste}  = require('./caste')
 const Support = require("./support");
 const Faq = require("./faq");
 const TermsPrivacyAbout = require("./termsPrivacyAbout");
@@ -20,7 +19,6 @@ module.exports = {
   RequestedUser,
   Message,
   SubscriptionPlan,
-  Religion,
   Caste,
   Support,
   Faq,
@@ -28,4 +26,5 @@ module.exports = {
   Like,
   Notification,
   Transaction,
+  Religion, Sect, Jammat, Caste
 };

@@ -7,13 +7,21 @@ const { partnerPreferences, getPreference, matchedUsers, singleMatchedUser, chec
 const { sendOrUpdateRequest, sentRequestTo, unsendRequest, gotRequestFrom, checkStatusForChatting } = require("../controllers/user/requestedUserController");
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
-const { getReligions, getCastes } = require("../controllers/user/religionAndCasteController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
 const { createTransaction, transactionWebhook } = require("../controllers/user/purchaseSubscriptionController");
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
 const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
+
+const {
+  getReligions,
+  getSects,
+  getJammats,
+  getCastes,
+  getFullHierarchy
+} = require("../controllers/user/casteController.js");
+
 
 const userRoute = require("express").Router();
 
@@ -25,13 +33,20 @@ userRoute.post("/verify_otp_login", verifyOtpLogin);
 userRoute.post("/forget_password", forgotPassword);
 userRoute.post("/reset_password", resetPassword);
 
-// Update Profile
-userRoute.post("/religions", authenticateUser, getReligions);
-userRoute.post("/castes", authenticateUser, getCastes);
+// Get all religions  ---
+userRoute.get("/religions", getReligions);
+// Get sects for a religion
+userRoute.get("/religions/:religionId/sects", getSects);
+// Get jammats for a sect
+userRoute.get("/sects/:sectId/jammats", getJammats);
+// Get castes based on hierarchy
+userRoute.post("/castes", getCastes);
+// Get full hierarchy for a religion (for frontend dropdowns)
+userRoute.get("/religions/:religionId/hierarchy", getFullHierarchy);
 
-userRoute.post("/country", authenticateUser, getCountries);
-userRoute.post("/states", authenticateUser, getStates);
-userRoute.post("/cities", authenticateUser, getCities);
+userRoute.post("/country", getCountries);
+userRoute.post("/states", getStates);
+userRoute.post("/cities", getCities);
 
 userRoute.get("/profile", authenticateUser,  getProfile);   
 userRoute.put("/profile", authenticateUser, updateProfile);
