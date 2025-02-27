@@ -12,14 +12,11 @@ const { getFileUploader } = require("../middlewares/fileUpload");
 
 const {
     // Religion
-    createReligion, getReligions,
-
+    createReligion, getReligions, updateReligion, deleteReligion,
     // Sect
-    createSect, getSects,
-
+    createSect, getSects, updateSect, deleteSect,
     // Jammat
-    createJammat, getJammats,
-
+    createJammat, getJammats, updateJammat, deleteJammat,
     // Caste
     createCaste, getCastes, updateCaste, deleteCaste
 } = require("../controllers/admin/casteController");
@@ -50,14 +47,20 @@ adminRoute.delete("/delete_subscription_plan/:id", authenticateAdmin, deleteSubs
 // Religion routes
 adminRoute.post("/religions", authenticateAdmin, createReligion);
 adminRoute.get("/religions", authenticateAdmin, getReligions);
+adminRoute.put("/religions/:id", authenticateAdmin, updateReligion); 
+adminRoute.delete("/religions/:id", authenticateAdmin, deleteReligion); 
 
 // Sect routes
 adminRoute.post("/sects", authenticateAdmin, createSect);
 adminRoute.get("/religions/:religionId/sects", authenticateAdmin, getSects);
+adminRoute.put("/sects/:id", authenticateAdmin, updateSect);
+adminRoute.delete("/sects/:id", authenticateAdmin, deleteSect);
 
 // Jammat routes
 adminRoute.post("/jammats", authenticateAdmin, createJammat);
 adminRoute.get("/sects/:sectId/jammats", authenticateAdmin, getJammats);
+adminRoute.put("/jammats/:id", authenticateAdmin, updateJammat);
+adminRoute.delete("/jammats/:id", authenticateAdmin, deleteJammat);
 
 // Caste routes
 adminRoute.post("/castes", authenticateAdmin, createCaste);
@@ -66,18 +69,6 @@ adminRoute.get("/religions/:religionId/sects/:sectId/castes", authenticateAdmin,
 adminRoute.get("/religions/:religionId/sects/:sectId/jammats/:jammatId/castes", authenticateAdmin, getCastes);
 adminRoute.put("/castes/:id", authenticateAdmin, updateCaste);
 adminRoute.delete("/castes/:id", authenticateAdmin, deleteCaste);
-
-// // ------------- Religion ------------------------
-// adminRoute.post("/add_religion", authenticateAdmin, createReligion);
-// adminRoute.get("/get_all_religion", authenticateAdmin, getReligions);
-// adminRoute.patch("/update_single_religion/:id", authenticateAdmin, updateReligion);
-// adminRoute.delete("/delete_single_religion/:id", authenticateAdmin, deleteReligion);
-
-// // ------------- Caste ----------------------------
-// adminRoute.post("/add_caste", authenticateAdmin, createCaste);
-// adminRoute.get("/get_all_caste/:id", authenticateAdmin, getCastes);
-// adminRoute.patch("/update_single_caste/:id", authenticateAdmin, updateCaste);
-// adminRoute.delete("/delete_single_caste/:id", authenticateAdmin, deleteCaste);
 
 // ------------- Support(Query) ---------------------
 adminRoute.get("/get_all_queries", authenticateAdmin, getAllSupportQueries);

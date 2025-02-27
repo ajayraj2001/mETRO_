@@ -77,8 +77,21 @@ const getCities = async (req, res, next) => {
 };
 
 const getProfile = async (req, res, next) => {
-  const user = await User.findById(req.user._id).select("-password");
   try {
+    const user = await User.findById(req.user._id)
+      .select("-password")
+      .populate("religion", "name")
+      .populate("sect", "name")
+      .populate("jammat", "name")
+      .populate("caste", "name");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "User Profile",
@@ -98,12 +111,12 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
-      let { fullName, type, email, phone, heightInFeet, heightInInches, annual_income, dob, height, longitude, latitude, ...otherFields } = req.body;
+      let { fullName, type, email, phone, heightInFeet, heightInInches, annual_income, dob, height, longitude, latitude,
+        religion, sect, jammat, caste, ...otherFields } = req.body;
       heightInFeet = +heightInFeet;
       heightInInches = +heightInInches;
 
       const user = await User.findById(userId).select("-password");
-      console.log("user", user);
 
       if (!user) {
         return res.status(404).json({
@@ -112,10 +125,7 @@ const updateProfile = async (req, res, next) => {
         });
       }
       if (type) {
-        console.log("type");
         user.type = type;
-        console.log("aftrer_user", user);
-        console.log("aftrer_user_type", user.type);
       }
       if (fullName) user.fullName = fullName;
       // Check if email or phone is already in use by another user
@@ -275,7 +285,7 @@ const deleteProfileImage = async (req, res, next) => {
 const deleteProfile = async (req, res, next) => {
   const userId = req.user._id;
 
-  await User.findByIdAndUpdate(userId, { active : false });
+  await User.findByIdAndUpdate(userId, { active: false });
 
   return res.status(200).json({
     success: true,

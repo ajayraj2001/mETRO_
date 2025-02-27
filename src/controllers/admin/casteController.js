@@ -2,7 +2,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 const { Religion, Sect, Jammat, Caste } = require("../../models");
 
-// Religion Controllers
+// Religion Controllers --------------
 const createReligion = asyncHandler(async (req, res, next) => {
   const { name, hasSects } = req.body;
 
@@ -40,7 +40,53 @@ const getReligions = asyncHandler(async (req, res) => {
   });
 });
 
-// Sect Controllers
+// Religion Update & Delete
+const updateReligion = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { name, hasSects } = req.body;
+
+  const religion = await Religion.findById(id);
+  if (!religion) return next(new ApiError("Religion not found", 404));
+
+  if (name) {
+    const existingReligion = await Religion.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+      _id: { $ne: id }
+    });
+    if (existingReligion) return next(new ApiError("Religion name already exists", 400));
+    religion.name = name;
+  }
+
+  if (hasSects !== undefined) religion.hasSects = hasSects;
+  await religion.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Religion updated successfully",
+    data: religion
+  });
+});
+
+const deleteReligion = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const religion = await Religion.findById(id);
+  if (!religion) return next(new ApiError("Religion not found", 404));
+
+  // Check for dependent sects
+  const hasSects = await Sect.exists({ religion: id });
+  if (hasSects) return next(new ApiError("Cannot delete religion with existing sects", 400));
+
+  await Religion.deleteOne({ _id: id });
+  
+  return res.status(200).json({
+    success: true,
+    message: "Religion deleted successfully"
+  });
+});
+
+
+// Sect Controllers -------------
 const createSect = asyncHandler(async (req, res, next) => {
   const { religion, name, hasJammats } = req.body;
 
@@ -89,7 +135,57 @@ const getSects = asyncHandler(async (req, res) => {
   });
 });
 
-// Jammat Controllers
+// Sect Update & Delete
+const updateSect = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { name, hasJammats } = req.body;
+
+  const sect = await Sect.findById(id).populate('religion');
+  if (!sect) return next(new ApiError("Sect not found", 404));
+
+  if (name) {
+    const existingSect = await Sect.findOne({
+      religion: sect.religion,
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+      _id: { $ne: id }
+    });
+    if (existingSect) return next(new ApiError("Sect name already exists in this religion", 400));
+    sect.name = name;
+  }
+
+  if (hasJammats !== undefined) sect.hasJammats = hasJammats;
+  await sect.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Sect updated successfully",
+    data: sect
+  });
+});
+
+const deleteSect = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const sect = await Sect.findById(id);
+  if (!sect) return next(new ApiError("Sect not found", 404));
+
+  // Check for dependent jammats or castes
+  const hasJammats = await Jammat.exists({ sect: id });
+  const hasCastes = await Caste.exists({ sect: id });
+  
+  if (hasJammats || hasCastes) {
+    return next(new ApiError("Cannot delete sect with existing jammats or castes", 400));
+  }
+
+  await Sect.deleteOne({ _id: id });
+
+  return res.status(200).json({
+    success: true,
+    message: "Sect deleted successfully"
+  });
+});
+
+// Jammat Controllers-----------
 const createJammat = asyncHandler(async (req, res, next) => {
   const { sect, name } = req.body;
 
@@ -137,7 +233,53 @@ const getJammats = asyncHandler(async (req, res) => {
   });
 });
 
-// Caste Controllers
+
+// Jammat Update & Delete
+const updateJammat = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const jammat = await Jammat.findById(id);
+  if (!jammat) return next(new ApiError("Jammat not found", 404));
+
+  if (name) {
+    const existingJammat = await Jammat.findOne({
+      sect: jammat.sect,
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+      _id: { $ne: id }
+    });
+    if (existingJammat) return next(new ApiError("Jammat name already exists in this sect", 400));
+    jammat.name = name;
+  }
+
+  await jammat.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Jammat updated successfully",
+    data: jammat
+  });
+});
+
+const deleteJammat = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const jammat = await Jammat.findById(id);
+  if (!jammat) return next(new ApiError("Jammat not found", 404));
+
+  // Check for dependent castes
+  const hasCastes = await Caste.exists({ jammat: id });
+  if (hasCastes) return next(new ApiError("Cannot delete jammat with existing castes", 400));
+
+  await Jammat.deleteOne({ _id: id });
+
+  return res.status(200).json({
+    success: true,
+    message: "Jammat deleted successfully"
+  });
+});
+
+// Caste Controllers -----------------
 const createCaste = asyncHandler(async (req, res, next) => {
   const castes = req.body;
   const casteArray = Array.isArray(castes) ? castes : [castes];
@@ -290,14 +432,20 @@ module.exports = {
   // Religion
   createReligion,
   getReligions,
+  updateReligion,
+  deleteReligion,
 
   // Sect
   createSect,
   getSects,
+  updateSect, 
+  deleteSect, 
 
   // Jammat
   createJammat,
   getJammats,
+  updateJammat, 
+  deleteJammat, 
 
   // Caste
   createCaste,
