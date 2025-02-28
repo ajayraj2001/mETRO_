@@ -11,6 +11,7 @@ const TermsPrivacyAbout = require("./termsPrivacyAbout");
 const Like = require("./like");
 const Notification = require("./notification");
 const Transaction = require("./transaction");
+const { CourseCategory, Course} = require("./course");
 
 module.exports = {
   Admin,
@@ -26,5 +27,6 @@ module.exports = {
   Like,
   Notification,
   Transaction,
-  Religion, Sect, Jammat, Caste
+  Religion, Sect, Jammat, Caste,
+  CourseCategory, Course
 };

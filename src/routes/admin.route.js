@@ -21,6 +21,18 @@ const {
     createCaste, getCastes, updateCaste, deleteCaste
 } = require("../controllers/admin/casteController");
 
+const {
+    createCourseCategory,
+    getCourseCategories,
+    updateCourseCategory,
+    deleteCourseCategory,
+    createCourse,
+    getCourses,
+    getCoursesByCategory,
+    updateCourse,
+    deleteCourse
+} = require("../controllers/admin/courseController");
+
 const adminRoute = require("express").Router();
 
 // -------------- admin auth ---------------
@@ -47,8 +59,8 @@ adminRoute.delete("/delete_subscription_plan/:id", authenticateAdmin, deleteSubs
 // Religion routes
 adminRoute.post("/religions", authenticateAdmin, createReligion);
 adminRoute.get("/religions", authenticateAdmin, getReligions);
-adminRoute.put("/religions/:id", authenticateAdmin, updateReligion); 
-adminRoute.delete("/religions/:id", authenticateAdmin, deleteReligion); 
+adminRoute.put("/religions/:id", authenticateAdmin, updateReligion);
+adminRoute.delete("/religions/:id", authenticateAdmin, deleteReligion);
 
 // Sect routes
 adminRoute.post("/sects", authenticateAdmin, createSect);
@@ -86,6 +98,21 @@ adminRoute.post("/add_faq", authenticateAdmin, createFaq);
 adminRoute.get("/get_all_faqs", authenticateAdmin, getFaqs);
 adminRoute.patch("/update_single_faq/:id", authenticateAdmin, updateFaq);
 adminRoute.delete("/delete_single_faq/:id", authenticateAdmin, deleteFaq);
+
+
+// Course Category Routes
+adminRoute.post("/categories", authenticateAdmin, createCourseCategory);
+adminRoute.get("/categories",authenticateAdmin, getCourseCategories);
+adminRoute.put("/categories/:id", authenticateAdmin, updateCourseCategory);
+adminRoute.delete("/categories/:id", authenticateAdmin, deleteCourseCategory);
+
+// Course Routes
+adminRoute.post("/courses", authenticateAdmin, createCourse);
+adminRoute.get("/courses", authenticateAdmin, getCourses);
+adminRoute.get("/courses/category/:categoryId", authenticateAdmin, getCoursesByCategory);
+adminRoute.put("/courses/:id", authenticateAdmin, updateCourse);
+adminRoute.delete("/courses/:id",authenticateAdmin, deleteCourse);
+
 
 // //------getActiveUses--------
 // adminRoute.get("/getAllUsers", authenticateAdmin, getUsers)

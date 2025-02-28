@@ -13,6 +13,7 @@ const getFaqs = require("../controllers/user/getAllFaqsController.js");
 const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
+const { getCourseStructure } = require("../controllers/user/courseController.js");
 
 const {
   getReligions,
@@ -102,5 +103,8 @@ userRoute.get("/get_terms_privacy_about", getDetailsById); // authenticateUser
 // Notification
 userRoute.get("/get_notification", authenticateUser, getNotification);
 userRoute.delete("/delete_notification", authenticateUser, deleteNotification);
+
+//Courses
+userRoute.delete("/get_courses_list", authenticateUser, getCourseStructure)
 
 module.exports = userRoute;
