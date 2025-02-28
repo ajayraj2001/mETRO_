@@ -23,6 +23,7 @@ const {
   getFullHierarchy
 } = require("../controllers/user/casteController.js");
 
+const {getLanguages} = require("../controllers/user/languageController.js")
 
 const userRoute = require("express").Router();
 
@@ -105,6 +106,9 @@ userRoute.get("/get_notification", authenticateUser, getNotification);
 userRoute.delete("/delete_notification", authenticateUser, deleteNotification);
 
 //Courses
-userRoute.delete("/get_courses_list", authenticateUser, getCourseStructure)
+userRoute.get("/get_courses", getCourseStructure)
+
+//languages
+userRoute.get("/get_languages", getLanguages)
 
 module.exports = userRoute;

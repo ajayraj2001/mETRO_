@@ -1,5 +1,5 @@
 // controllers/courseController.js
-const { CourseCategory, Course } = require("../models");
+const { CourseCategory, Course } = require("../../models");
 const asyncHandler = require("../../utils/asyncHandler");
 
 const getCourseStructure = asyncHandler(async (req, res, next) => {

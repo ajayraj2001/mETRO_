@@ -33,6 +33,14 @@ const {
     deleteCourse
 } = require("../controllers/admin/courseController");
 
+const {
+    createLanguage,
+    getLanguages,
+    updateLanguage,
+    deleteLanguage,
+  } = require("../controllers/admin/languageController");
+  
+
 const adminRoute = require("express").Router();
 
 // -------------- admin auth ---------------
@@ -99,7 +107,6 @@ adminRoute.get("/get_all_faqs", authenticateAdmin, getFaqs);
 adminRoute.patch("/update_single_faq/:id", authenticateAdmin, updateFaq);
 adminRoute.delete("/delete_single_faq/:id", authenticateAdmin, deleteFaq);
 
-
 // Course Category Routes
 adminRoute.post("/categories", authenticateAdmin, createCourseCategory);
 adminRoute.get("/categories",authenticateAdmin, getCourseCategories);
@@ -112,6 +119,12 @@ adminRoute.get("/courses", authenticateAdmin, getCourses);
 adminRoute.get("/courses/category/:categoryId", authenticateAdmin, getCoursesByCategory);
 adminRoute.put("/courses/:id", authenticateAdmin, updateCourse);
 adminRoute.delete("/courses/:id",authenticateAdmin, deleteCourse);
+
+// Create a new language
+adminRoute.post("/language", authenticateAdmin, createLanguage);
+adminRoute.get("/language", authenticateAdmin, getLanguages);
+adminRoute.put("/language/:id", authenticateAdmin, updateLanguage);
+adminRoute.delete("/language/:id", authenticateAdmin, deleteLanguage);
 
 
 // //------getActiveUses--------

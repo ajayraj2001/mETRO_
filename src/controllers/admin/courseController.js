@@ -51,14 +51,44 @@ const deleteCourseCategory = asyncHandler(async (req, res, next) => {
 
 // Create Course
 const createCourse = asyncHandler(async (req, res, next) => {
-    const { category, name } = req.body;
-    if (!category || !name) return next(new ApiError("Category and name are required", 400));
+    const { category, courses } = req.body; // Extract category and courses array
 
-    const existingCourse = await Course.findOne({ name: new RegExp("^" + name + "$", "i") });
-    if (existingCourse) return next(new ApiError("Course already exists", 400));
+    // Validate category and courses array
+    if (!category) {
+        return next(new ApiError("Category is required", 400));
+    }
+    if (!courses || !Array.isArray(courses) || courses.length === 0) {
+        return next(new ApiError("Courses array is required and must not be empty", 400));
+    }
 
-    const course = await Course.create({ category, name });
-    return res.status(201).json({ success: true, message: "Course created successfully", data: course });
+    // Validate each course name in the array
+    for (const course of courses) {
+        const { name } = course;
+        if (!name) {
+            return next(new ApiError("Name is required for each course", 400));
+        }
+
+        // Check if a course with the same name already exists (case-insensitive)
+        const existingCourse = await Course.findOne({ name: new RegExp("^" + name + "$", "i") });
+        if (existingCourse) {
+            return next(new ApiError(`Course with name '${name}' already exists`, 400));
+        }
+    }
+
+    // Prepare courses for insertion
+    const coursesToInsert = courses.map((course) => ({
+        category,
+        name: course.name,
+    }));
+
+    // Insert all courses in the array
+    const createdCourses = await Course.insertMany(coursesToInsert);
+
+    return res.status(201).json({
+        success: true,
+        message: "Courses created successfully",
+        data: createdCourses,
+    });
 });
 
 // Get all Courses
@@ -98,7 +128,7 @@ const getCoursesByCategory = asyncHandler(async (req, res, next) => {
     const courses = await Course.find({ category: categoryId }).populate("category");
     if (!courses.length) return next(new ApiError("No courses found for this category", 404));
     return res.status(200).json({ success: true, message: "Courses fetched successfully", data: courses });
-  });
+});
 
 module.exports = {
     createCourseCategory,

@@ -12,6 +12,7 @@ const Like = require("./like");
 const Notification = require("./notification");
 const Transaction = require("./transaction");
 const { CourseCategory, Course} = require("./course");
+const Language = require("./language");
 
 module.exports = {
   Admin,
@@ -28,5 +29,6 @@ module.exports = {
   Notification,
   Transaction,
   Religion, Sect, Jammat, Caste,
-  CourseCategory, Course
+  CourseCategory, Course,
+  Language
 };
