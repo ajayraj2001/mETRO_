@@ -30,5 +30,5 @@ module.exports = {
   Transaction,
   Religion, Sect, Jammat, Caste,
   CourseCategory, Course,
-  Language
+  Language,
 };

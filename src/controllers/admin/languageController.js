@@ -1,6 +1,6 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
-const Language = require("../../models"); // Adjust the path as necessary
+const {Language} = require("../../models"); // Adjust the path as necessary
 
 // Create Language
 const createLanguage = asyncHandler(async (req, res, next) => {

@@ -106,9 +106,9 @@ userRoute.get("/get_notification", authenticateUser, getNotification);
 userRoute.delete("/delete_notification", authenticateUser, deleteNotification);
 
 //Courses
-userRoute.get("/get_courses", getCourseStructure)
+userRoute.get("/course", getCourseStructure)
 
 //languages
-userRoute.get("/get_languages", getLanguages)
+userRoute.get("/language", getLanguages)
 
 module.exports = userRoute;

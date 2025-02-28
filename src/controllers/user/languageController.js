@@ -1,6 +1,6 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
-const Language = require("../../models"); // Adjust the path as necessary
+const {Language} = require("../../models"); // Adjust the path as necessary
 
 // Get all languages sorted alphabetically
 const getLanguages = asyncHandler(async (req, res, next) => {

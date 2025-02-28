@@ -68,8 +68,12 @@ const createCourse = asyncHandler(async (req, res, next) => {
             return next(new ApiError("Name is required for each course", 400));
         }
 
-        // Check if a course with the same name already exists (case-insensitive)
-        const existingCourse = await Course.findOne({ name: new RegExp("^" + name + "$", "i") });
+        const escapedName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+        const existingCourse = await Course.findOne({
+          name: { $regex: "^" + escapedName + "$", $options: "i" }
+        });
+ 
         if (existingCourse) {
             return next(new ApiError(`Course with name '${name}' already exists`, 400));
         }
