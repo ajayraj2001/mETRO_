@@ -151,7 +151,7 @@ const verifyOtpSignUp = async (req, res, next) => {
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      return next(new ApiError("OTP expired", 400));
+      return next(new ApiError("OTP expired by signup", 400));
 
     if (user.otp !== otp && otp !== STATIC_OTP)
       return next(new ApiError("Invalid OTP", 400));
@@ -237,7 +237,7 @@ const verifyOtpLogin = async (req, res, next) => {
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      return next(new ApiError("OTP expired", 400));
+      return next(new ApiError("OTP expired by login", 400));
 
     if (user.otp !== otp && otp !== STATIC_OTP)
       return next(new ApiError("Invalid OTP", 400));
