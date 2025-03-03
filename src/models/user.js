@@ -28,14 +28,25 @@ const userSchema = new mongoose.Schema(
     country: { type: String, default: '' },
     state: { type: String, default: '' },
     city: { type: String, default: '' },
-    highest_education: { type: String, default: '' },
+    annual_income: { type: String, default: '' }, // Could be a range or exact value
     college_name: { type: String, default: '' },
     company_name: { type: String, default: '' },
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
-    occupation: { type: String, default: '' },
-    annual_income: { type: Number, default: 0 }, // Could be a range or exact value
-    mother_tongue: { type: String, default: '' },
-
+    highest_education: {
+         type: mongoose.Schema.Types.ObjectId,
+      ref: 'Course',
+      default: null 
+    },
+    occupation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Occupation',
+      default: null
+    },
+    mother_tongue: { 
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Language',
+      default: null
+     },
     // Updated religious hierarchy references
     religion: {
       type: mongoose.Schema.Types.ObjectId,
@@ -57,7 +68,6 @@ const userSchema = new mongoose.Schema(
       ref: 'Caste',
       default: null
     },
-
     thoughts_on_horoscope: { type: String, default: '' }, // e.g., 'Yes', 'No'
     manglik: { type: String, default: '' },
     description: { type: String, default: '' },

@@ -80,6 +80,9 @@ const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
+      .populate("mother_tongue", "name")
+      .populate("highest_education", "name")
+      .populate("occupation", "name")
       .populate("religion", "name")
       .populate("sect", "name")
       .populate("jammat", "name")
@@ -171,6 +174,26 @@ const updateProfile = async (req, res, next) => {
           type: "Point",
           coordinates: [parseFloat(longitude), parseFloat(latitude)],
         };
+      }
+
+      // Religion field
+      if (religion !== undefined) {
+        user.religion = religion;
+      }
+
+      // Sect field
+      if (sect !== undefined) {
+        user.sect = sect;
+      }
+
+      // Jammat field
+      if (jammat !== undefined) {
+        user.jammat = jammat;
+      }
+
+      // Caste field
+      if (caste !== undefined) {
+        user.caste = caste;
       }
 
       // Update other fields if provided
