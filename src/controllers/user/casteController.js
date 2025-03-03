@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 const { Religion, Sect, Jammat, Caste } = require("../../models");
@@ -13,9 +14,23 @@ const getReligions = asyncHandler(async (req, res, next) => {
     query.name = { $regex: searchTerm, $options: "i" };
   }
   
-  const religions = await Religion.find(query).sort({ name: 1 });
+  const religions = await Religion.aggregate([
+    { $match: query },
+    {
+      $addFields: {
+        sortOrder: {
+          $cond: {
+            if: { $in: ["$name", ["Others", "Other"]] },
+            then: 1, // Push "Others" and "Other" to the end
+            else: 0, // Normal sorting for other values
+          },
+        },
+      },
+    },
+    { $sort: { sortOrder: 1, name: 1 } }, // Sort normally but push "Others" and "Other" to the end
+  ]);
 
-  if (!religions || religions.length === 0) 
+  if (!religions.length) 
     return next(new ApiError("No religions found.", 404));
 
   return res.status(200).json({
@@ -31,25 +46,45 @@ const getReligions = asyncHandler(async (req, res, next) => {
 const getSects = asyncHandler(async (req, res, next) => {
   const { religionId } = req.params;
   const { searchTerm } = req.query;
-  
-  // Verify the religion exists and has sects
+
   const religion = await Religion.findById(religionId);
-  if (!religion) 
-    return next(new ApiError("Religion not found.", 404));
+  if (!religion) return next(new ApiError("Religion not found.", 404));
+  if (!religion.hasSects) return next(new ApiError("This religion does not have sects.", 400));
+
+  const religionObjectId = new mongoose.Types.ObjectId(religionId);
+
+  const query = { religion: religionObjectId };
   
-  if (!religion.hasSects)
-    return next(new ApiError("This religion does not have sects.", 400));
-  
-  const query = { religion: religionId };
   if (searchTerm) {
     query.name = { $regex: searchTerm, $options: "i" };
   }
+
+  const sects = await Sect.aggregate([
+    { $match: query },
+    {
+      $addFields: {
+        sortOrder: {
+          $cond: {
+            if: { $in: ["$name", ["Others", "Other"]] },
+            then: 1,
+            else: 0,
+          },
+        },
+      },
+    },
+    { $sort: { sortOrder: 1, name: 1 } },
+    {
+      $project: {
+        _id: 1,
+        religion: 1,
+        name: 1,
+        hasJammats: 1,
+      },
+    },
+  ]);
   
-  const sects = await Sect.find(query).sort({ name: 1 });
-  
-  if (!sects || sects.length === 0)
-    return next(new ApiError("No sects found for this religion.", 404));
-  
+  if (!sects.length) return next(new ApiError("No sects found for this religion.", 404));
+
   return res.status(200).json({
     success: true,
     message: "Sects fetched successfully",
@@ -57,31 +92,52 @@ const getSects = asyncHandler(async (req, res, next) => {
   });
 });
 
+
 /**
  * Get jammats for a specific sect in alphabetical order
  */
 const getJammats = asyncHandler(async (req, res, next) => {
   const { sectId } = req.params;
   const { searchTerm } = req.query;
-  
-  // Verify the sect exists and has jammats
+
   const sect = await Sect.findById(sectId);
-  if (!sect) 
-    return next(new ApiError("Sect not found.", 404));
+  if (!sect) return next(new ApiError("Sect not found.", 404));
+  if (!sect.hasJammats) return next(new ApiError("This sect does not have jammats.", 400));
+
+
+  const sectObjectId = new mongoose.Types.ObjectId(sectId);
+
+  const query = { sect: sectObjectId };
   
-  if (!sect.hasJammats)
-    return next(new ApiError("This sect does not have jammats.", 400));
-  
-  const query = { sect: sectId };
   if (searchTerm) {
     query.name = { $regex: searchTerm, $options: "i" };
   }
-  
-  const jammats = await Jammat.find(query).sort({ name: 1 });
-  
-  if (!jammats || jammats.length === 0)
-    return next(new ApiError("No jammats found for this sect.", 404));
-  
+
+  const jammats = await Jammat.aggregate([
+    { $match: query },
+    {
+      $addFields: {
+        sortOrder: {
+          $cond: {
+            if: { $in: ["$name", ["Others", "Other"]] },
+            then: 1,
+            else: 0,
+          },
+        },
+      },
+    },
+    { $sort: { sortOrder: 1, name: 1 } },
+    {
+      $project: {
+        _id: 1,
+        sect: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  if (!jammats.length) return next(new ApiError("No jammats found for this sect.", 404));
+
   return res.status(200).json({
     success: true,
     message: "Jammats fetched successfully",
@@ -89,81 +145,92 @@ const getJammats = asyncHandler(async (req, res, next) => {
   });
 });
 
+
 /**
  * Get castes based on religious hierarchy (religion, optional sect, optional jammat)
  */
 const getCastes = asyncHandler(async (req, res, next) => {
   const { religionId, sectId, jammatId } = req.body;
   const { searchTerm } = req.query;
-  
-  if (!religionId)
-    return next(new ApiError("Religion ID is required.", 400));
-  
-  // Validate religion exists
-  const religion = await Religion.findById(religionId);
-  if (!religion)
-    return next(new ApiError("Religion not found.", 404));
-  
-  // Build query based on provided hierarchy
-  const query = { religion: religionId };
-  
-  // If religion has sects, validate sect hierarchy
+
+  if (!religionId) return next(new ApiError("Religion ID is required.", 400));
+
+  // Convert IDs to ObjectId if they are valid
+  const religionObjectId = mongoose.Types.ObjectId.isValid(religionId) ? new mongoose.Types.ObjectId(religionId) : null;
+  const sectObjectId = mongoose.Types.ObjectId.isValid(sectId) ? new mongoose.Types.ObjectId(sectId) : null;
+  const jammatObjectId = mongoose.Types.ObjectId.isValid(jammatId) ? new mongoose.Types.ObjectId(jammatId) : null;
+
+  if (!religionObjectId) return next(new ApiError("Invalid Religion ID.", 400));
+
+  const religion = await Religion.findById(religionObjectId);
+  if (!religion) return next(new ApiError("Religion not found.", 404));
+
+  const query = { religion: religionObjectId };
+
   if (religion.hasSects) {
-    // If sect is provided, add to query
     if (sectId) {
-      const sect = await Sect.findById(sectId);
-      if (!sect)
-        return next(new ApiError("Sect not found.", 404));
-      
-      if (sect.religion.toString() !== religionId.toString())
+      if (!sectObjectId) return next(new ApiError("Invalid Sect ID.", 400));
+      const sect = await Sect.findById(sectObjectId);
+      if (!sect) return next(new ApiError("Sect not found.", 404));
+      if (!sect.religion.equals(religionObjectId)) 
         return next(new ApiError("Sect does not belong to this religion.", 400));
-      
-      query.sect = sectId;
-      
-      // If sect has jammats, validate jammat hierarchy
+
+      query.sect = sectObjectId;
+
       if (sect.hasJammats) {
-        // If jammat is provided, add to query
         if (jammatId) {
-          const jammat = await Jammat.findById(jammatId);
-          if (!jammat)
-            return next(new ApiError("Jammat not found.", 404));
-          
-          if (jammat.sect.toString() !== sectId.toString())
+          if (!jammatObjectId) return next(new ApiError("Invalid Jammat ID.", 400));
+          const jammat = await Jammat.findById(jammatObjectId);
+          if (!jammat) return next(new ApiError("Jammat not found.", 404));
+          if (!jammat.sect.equals(sectObjectId)) 
             return next(new ApiError("Jammat does not belong to this sect.", 400));
-          
-          query.jammat = jammatId;
+
+          query.jammat = jammatObjectId;
         }
       } else {
-        // This sect doesn't have jammats, so jammat should not be provided
-        if (jammatId)
-          return next(new ApiError("This sect does not support jammats.", 400));
-        
+        if (jammatId) return next(new ApiError("This sect does not support jammats.", 400));
         query.jammat = null;
       }
     } else {
-      // If religion has sects but no sect provided, return direct castes (if any)
       query.sect = null;
     }
   } else {
-    // If religion doesn't have sects, sect and jammat should not be provided
-    if (sectId)
-      return next(new ApiError("This religion does not support sects.", 400));
-    
+    if (sectId) return next(new ApiError("This religion does not support sects.", 400));
     query.sect = null;
     query.jammat = null;
   }
-  
-  // Add search term to query if provided
+
   if (searchTerm) {
     query.name = { $regex: searchTerm, $options: "i" };
   }
-  
-  // Get castes sorted alphabetically
-  const castes = await Caste.find(query).sort({ name: 1 });
-  
-  if (!castes || castes.length === 0)
-    return next(new ApiError("No castes found for the given criteria.", 404));
-  
+
+  const castes = await Caste.aggregate([
+    { $match: query },
+    {
+      $addFields: {
+        sortOrder: {
+          $cond: {
+            if: { $in: ["$name", ["Others", "Other"]] },
+            then: 1,
+            else: 0,
+          },
+        },
+      },
+    },
+    { $sort: { sortOrder: 1, name: 1 } },
+    {
+      $project: {
+        _id: 1,
+        religion: 1,
+        sect: 1,
+        jammat: 1,
+        name: 1,
+      },
+    },
+  ]);
+
+  if (!castes.length) return next(new ApiError("No castes found for the given criteria.", 404));
+
   return res.status(200).json({
     success: true,
     message: "Castes fetched successfully",

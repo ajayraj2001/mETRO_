@@ -34,6 +34,19 @@ const {
 } = require("../controllers/admin/courseController");
 
 const {
+    createOccupationCategory,
+    getOccupationCategories,
+    updateOccupationCategory,
+    deleteOccupationCategory,
+    createOccupation,
+    getOccupations,
+    updateOccupation,
+    deleteOccupation,
+    getOccupationsByCategory
+} = require("../controllers/admin/occupationController");
+
+
+const {
     createLanguage,
     getLanguages,
     updateLanguage,
@@ -119,6 +132,19 @@ adminRoute.get("/courses", authenticateAdmin, getCourses);
 adminRoute.get("/courses/category/:categoryId", authenticateAdmin, getCoursesByCategory);
 adminRoute.put("/courses/:id", authenticateAdmin, updateCourse);
 adminRoute.delete("/courses/:id",authenticateAdmin, deleteCourse);
+
+// Occupation Category Routes
+adminRoute.post("/occupation_category",authenticateAdmin, createOccupationCategory);
+adminRoute.get("/occupation_categories",authenticateAdmin, getOccupationCategories);
+adminRoute.put("/occupation_category/:id",authenticateAdmin, updateOccupationCategory);
+adminRoute.delete("/occupation_category/:id",authenticateAdmin, deleteOccupationCategory);
+
+// Occupation Routes
+adminRoute.post("/occupation",authenticateAdmin, createOccupation);
+adminRoute.get("/occupation",authenticateAdmin, getOccupations);
+adminRoute.put("/occupation/:id",authenticateAdmin, updateOccupation);
+adminRoute.delete("/occupation/:id",authenticateAdmin, deleteOccupation);
+adminRoute.get("/occupation_category/:categoryId",authenticateAdmin, getOccupationsByCategory);
 
 // Create a new language
 adminRoute.post("/language", authenticateAdmin, createLanguage);

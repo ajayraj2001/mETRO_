@@ -14,6 +14,7 @@ const { chatList, getChatMessages } = require("../controllers/user/messageContro
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
+const { getOccupationStructure } = require("../controllers/user/occupationController.js");
 
 const {
   getReligions,
@@ -107,6 +108,7 @@ userRoute.delete("/delete_notification", authenticateUser, deleteNotification);
 
 //Courses
 userRoute.get("/course", getCourseStructure)
+userRoute.get("/occupation", getOccupationStructure)
 
 //languages
 userRoute.get("/language", getLanguages)

@@ -88,79 +88,23 @@ const deleteReligion = asyncHandler(async (req, res, next) => {
 
 // Sect Controllers -------------
 const createSect = asyncHandler(async (req, res, next) => {
-  const { religion, sects, hasJammats } = req.body;
+  const { religion, name, hasJammats } = req.body;
 
-  // Validate input
-  if (!religion || !Array.isArray(sects) || sects.length === 0) {
-    return next(new ApiError("Religion ID and at least one sect name are required", 400));
-  }
+  if (!religion || !name) return next(new ApiError("Religion ID and sect name are required", 400));
 
-  // Check if religion exists
   const religionExists = await Religion.findById(religion);
   if (!religionExists) return next(new ApiError("Religion not found", 404));
 
-  // Ensure the religion supports sects
-  if (!religionExists.hasSects) {
-    return next(new ApiError(`Religion ${religionExists.name} doesn't support sects`, 400));
-  }
+  if (!religionExists.hasSects) return next(new ApiError("This religion doesn't support sects", 400));
 
-  // Check for existing sects to prevent duplicates
-  const existingSects = await Sect.find({
-    religion,
-    name: { $in: sects.map(name => new RegExp(`^${name}$`, "i")) }
-  });
+  const existingSect = await Sect.findOne({ religion, name: { $regex: new RegExp(`^${name}$`, "i") } });
 
-  if (existingSects.length > 0) {
-    const duplicateNames = existingSects.map(s => s.name).join(", ");
-    return next(new ApiError(`Sects already exist: ${duplicateNames}`, 400));
-  }
+  if (existingSect) return next(new ApiError("Sect already exists for this religion", 400));
 
-  // Prepare sect data for bulk insertion
-  const sectData = sects.map(name => ({
-    religion,
-    name,
-    hasJammats: !!hasJammats // Convert to boolean
-  }));
+  const sect = await Sect.create({ religion, name, hasJammats: !!hasJammats });
 
-  // Insert sects into DB
-  const createdSects = await Sect.insertMany(sectData);
-
-  return res.status(201).json({
-    success: true,
-    message: "Sects created successfully",
-    data: createdSects
-  });
+  return res.status(201).json({ success: true, message: "Sect created successfully", data: sect });
 });
-
-// const createSect = asyncHandler(async (req, res, next) => {
-//   const { religion, name, hasJammats } = req.body;
-
-//   if (!religion || !name) return next(new ApiError("Religion ID and sect name are required", 400));
-
-//   const religionExists = await Religion.findById(religion);
-//   if (!religionExists) return next(new ApiError("Religion not found", 404));
-
-//   if (!religionExists.hasSects) return next(new ApiError("This religion doesn't support sects", 400));
-
-//   const existingSect = await Sect.findOne({
-//     religion,
-//     name: { $regex: new RegExp(`^${name}$`, "i") }
-//   });
-
-//   if (existingSect) return next(new ApiError("Sect already exists for this religion", 400));
-
-//   const sect = await Sect.create({
-//     religion,
-//     name,
-//     hasJammats: !!hasJammats
-//   });
-
-//   return res.status(201).json({
-//     success: true,
-//     message: "Sect created successfully",
-//     data: sect
-//   });
-// });
 
 const getSects = asyncHandler(async (req, res) => {
   const { religionId } = req.params;
@@ -232,75 +176,65 @@ const deleteSect = asyncHandler(async (req, res, next) => {
 
 // Jammat Controllers-----------
 const createJammat = asyncHandler(async (req, res, next) => {
-  const { sect, jammats } = req.body;
+  const { sect, name } = req.body;
 
-  // Validate input
-  if (!sect || !Array.isArray(jammats) || jammats.length === 0) {
-    return next(new ApiError("Sect ID and at least one jammat name are required", 400));
-  }
+  if (!sect || !name) return next(new ApiError("Sect ID and jammat name are required", 400));
 
-  // Check if sect exists
   const sectExists = await Sect.findById(sect);
   if (!sectExists) return next(new ApiError("Sect not found", 404));
 
-  // Ensure the sect supports jammats
-  if (!sectExists.hasJammats) {
-    return next(new ApiError(`Sect ${sectExists.name} doesn't support jammats`, 400));
-  }
+  if (!sectExists.hasJammats) return next(new ApiError("This sect doesn't support jammats", 400));
 
-  // Check for existing jammats to prevent duplicates
-  const existingJammats = await Jammat.find({
-    sect,
-    name: { $in: jammats.map(name => new RegExp(`^${name}$`, "i")) }
-  });
+  const existingJammat = await Jammat.findOne({ sect, name: { $regex: new RegExp(`^${name}$`, "i") } });
 
-  if (existingJammats.length > 0) {
-    const duplicateNames = existingJammats.map(j => j.name).join(", ");
-    return next(new ApiError(`Jammats already exist: ${duplicateNames}`, 400));
-  }
+  if (existingJammat) return next(new ApiError("Jammat already exists for this sect", 400));
 
-  // Prepare jammat data for bulk insertion
-  const jammatData = jammats.map(name => ({
-    sect,
-    name
-  }));
+  const jammat = await Jammat.create({ sect, name });
 
-  // Insert jammats into DB
-  const createdJammats = await Jammat.insertMany(jammatData);
-
-  return res.status(201).json({
-    success: true,
-    message: "Jammats created successfully",
-    data: createdJammats
-  });
+  return res.status(201).json({ success: true, message: "Jammat created successfully", data: jammat });
 });
 
 // const createJammat = asyncHandler(async (req, res, next) => {
-//   const { sect, name } = req.body;
+//   const { sect, jammats } = req.body;
 
-//   if (!sect || !name) return next(new ApiError("Sect ID and jammat name are required", 400));
+//   // Validate input
+//   if (!sect || !Array.isArray(jammats) || jammats.length === 0) {
+//     return next(new ApiError("Sect ID and at least one jammat name are required", 400));
+//   }
 
+//   // Check if sect exists
 //   const sectExists = await Sect.findById(sect);
 //   if (!sectExists) return next(new ApiError("Sect not found", 404));
 
-//   if (!sectExists.hasJammats) return next(new ApiError("This sect doesn't support jammats", 400));
+//   // Ensure the sect supports jammats
+//   if (!sectExists.hasJammats) {
+//     return next(new ApiError(`Sect ${sectExists.name} doesn't support jammats`, 400));
+//   }
 
-//   const existingJammat = await Jammat.findOne({
+//   // Check for existing jammats to prevent duplicates
+//   const existingJammats = await Jammat.find({
 //     sect,
-//     name: { $regex: new RegExp(`^${name}$`, "i") }
+//     name: { $in: jammats.map(name => new RegExp(`^${name}$`, "i")) }
 //   });
 
-//   if (existingJammat) return next(new ApiError("Jammat already exists for this sect", 400));
+//   if (existingJammats.length > 0) {
+//     const duplicateNames = existingJammats.map(j => j.name).join(", ");
+//     return next(new ApiError(`Jammats already exist: ${duplicateNames}`, 400));
+//   }
 
-//   const jammat = await Jammat.create({
+//   // Prepare jammat data for bulk insertion
+//   const jammatData = jammats.map(name => ({
 //     sect,
 //     name
-//   });
+//   }));
+
+//   // Insert jammats into DB
+//   const createdJammats = await Jammat.insertMany(jammatData);
 
 //   return res.status(201).json({
 //     success: true,
-//     message: "Jammat created successfully",
-//     data: jammat
+//     message: "Jammats created successfully",
+//     data: createdJammats
 //   });
 // });
 
@@ -370,149 +304,54 @@ const deleteJammat = asyncHandler(async (req, res, next) => {
 
 // Caste Controllers -----------------
 const createCaste = asyncHandler(async (req, res, next) => {
-  const { religion, sect, jammat, castes } = req.body;
+  const { religion, sect, jammat, name } = req.body;
 
-  // Validate required fields
-  if (!religion || !Array.isArray(castes) || castes.length === 0) {
-    return next(new ApiError("Religion ID and at least one caste name are required", 400));
+  if (!religion || !name) {
+    return next(new ApiError("Religion ID and caste name are required", 400));
   }
 
-  // Validate religion exists
+  // Prevent multiple castes in one request
+  if (Array.isArray(name)) {
+    return next(new ApiError("Only one caste name can be added at a time", 400));
+  }
+
+  // Validate religion
   const religionExists = await Religion.findById(religion);
-  if (!religionExists) return next(new ApiError(`Religion with ID ${religion} not found`, 404));
+  if (!religionExists) return next(new ApiError("Religion not found", 404));
+
+  const query = { religion, name: { $regex: new RegExp(`^${name}$`, "i") } };
 
   // Validate sect if provided
   if (sect) {
-    if (!religionExists.hasSects) {
-      return next(new ApiError(`Religion ${religionExists.name} doesn't support sects`, 400));
-    }
+    if (!religionExists.hasSects) return next(new ApiError(`Religion ${religionExists.name} doesn't support sects`, 400));
 
     const sectExists = await Sect.findById(sect);
-    if (!sectExists) return next(new ApiError(`Sect with ID ${sect} not found`, 404));
-    if (sectExists.religion.toString() !== religion.toString()) {
-      return next(new ApiError(`Sect doesn't belong to specified religion`, 400));
-    }
+    if (!sectExists) return next(new ApiError("Sect not found", 404));
+    if (sectExists.religion.toString() !== religion.toString()) return next(new ApiError("Sect doesn't belong to the specified religion", 400));
+
+    query.sect = sect;
 
     // Validate jammat if provided
     if (jammat) {
-      if (!sectExists.hasJammats) {
-        return next(new ApiError(`Sect ${sectExists.name} doesn't support jammats`, 400));
-      }
+      if (!sectExists.hasJammats) return next(new ApiError(`Sect ${sectExists.name} doesn't support jammats`, 400));
 
       const jammatExists = await Jammat.findById(jammat);
-      if (!jammatExists) return next(new ApiError(`Jammat with ID ${jammat} not found`, 404));
-      if (jammatExists.sect.toString() !== sect.toString()) {
-        return next(new ApiError(`Jammat doesn't belong to specified sect`, 400));
-      }
+      if (!jammatExists) return next(new ApiError("Jammat not found", 404));
+      if (jammatExists.sect.toString() !== sect.toString()) return next(new ApiError("Jammat doesn't belong to the specified sect", 400));
+
+      query.jammat = jammat;
     }
   }
 
-  // Check for duplicate caste names within the same religion/sect/jammat
-  const existingCastes = await Caste.find({
-    religion,
-    sect: sect || null,
-    jammat: jammat || null,
-    name: { $in: castes.map(name => new RegExp(`^${name}$`, "i")) }
-  });
+  // Check if caste already exists
+  const existingCaste = await Caste.findOne(query);
+  if (existingCaste) return next(new ApiError("Caste already exists", 400));
 
-  if (existingCastes.length > 0) {
-    const duplicateNames = existingCastes.map(c => c.name).join(", ");
-    return next(new ApiError(`Castes already exist: ${duplicateNames}`, 400));
-  }
+  // Create caste
+  const caste = await Caste.create({ religion, sect: sect || null, jammat: jammat || null, name });
 
-  // Prepare caste data for insertion
-  const casteData = castes.map(name => ({
-    religion,
-    sect: sect || null,
-    jammat: jammat || null,
-    name
-  }));
-
-  // Insert new castes
-  const createdCastes = await Caste.insertMany(casteData);
-
-  return res.status(201).json({
-    success: true,
-    message: "Castes created successfully",
-    data: createdCastes
-  });
+  return res.status(201).json({ success: true, message: "Caste created successfully", data: caste });
 });
-
-// const createCaste = asyncHandler(async (req, res, next) => {
-//   const castes = req.body;
-//   const casteArray = Array.isArray(castes) ? castes : [castes];
-
-//   if (casteArray.length === 0) return next(new ApiError("At least one caste is required", 400));
-
-//   for (const caste of casteArray) {
-//     const { religion, sect, jammat, name } = caste;
-
-//     if (!religion || !name) return next(new ApiError("Religion ID and caste name are required", 400));
-
-//     // Validate religion exists
-//     const religionExists = await Religion.findById(religion);
-//     if (!religionExists) return next(new ApiError(`Religion with ID ${religion} not found`, 404));
-
-//     // Build query to check for existing caste
-//     const query = {
-//       religion,
-//       name: { $regex: new RegExp(`^${name}$`, "i") }
-//     };
-
-//     // Validate sect if provided
-//     if (sect) {
-//       if (!religionExists.hasSects) {
-//         return next(new ApiError(`Religion ${religionExists.name} doesn't support sects`, 400));
-//       }
-
-//       const sectExists = await Sect.findById(sect);
-//       if (!sectExists) return next(new ApiError(`Sect with ID ${sect} not found`, 404));
-//       if (sectExists.religion.toString() !== religion.toString()) {
-//         return next(new ApiError(`Sect doesn't belong to specified religion`, 400));
-//       }
-
-//       query.sect = sect;
-
-//       // Validate jammat if provided
-//       if (jammat) {
-//         if (!sectExists.hasJammats) {
-//           return next(new ApiError(`Sect ${sectExists.name} doesn't support jammats`, 400));
-//         }
-
-//         const jammatExists = await Jammat.findById(jammat);
-//         if (!jammatExists) return next(new ApiError(`Jammat with ID ${jammat} not found`, 404));
-//         if (jammatExists.sect.toString() !== sect.toString()) {
-//           return next(new ApiError(`Jammat doesn't belong to specified sect`, 400));
-//         }
-
-//         query.jammat = jammat;
-//       }
-//     }
-
-//     // Check if caste already exists
-//     const existingCaste = await Caste.findOne(query);
-//     if (existingCaste) {
-//       return next(new ApiError(`Caste ${name} already exists with these specifications`, 400));
-//     }
-//   }
-
-//   // All validations passed, create the castes
-//   const casteData = casteArray.map(caste => ({
-//     religion: caste.religion,
-//     sect: caste.sect || null,
-//     jammat: caste.jammat || null,
-//     name: caste.name
-//   }));
-
-//   const createdCastes = await Caste.insertMany(casteData);
-
-//   return res.status(201).json({
-//     success: true,
-//     message: "Castes created successfully",
-//     data: createdCastes
-//   });
-// });
-
 
 const getCastes = asyncHandler(async (req, res) => {
   const { religionId, sectId, jammatId } = req.params;
