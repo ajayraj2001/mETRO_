@@ -114,7 +114,7 @@ const signup = async (req, res, next) => {
 
     // Generate new OTP and set expiry
     const otp = getOtp();
-    const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
     existingUser.otp = otp;
     existingUser.otp_expiry = otpExpiry;
@@ -151,7 +151,7 @@ const verifyOtpSignUp = async (req, res, next) => {
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      return next(new ApiError("OTP expired by signup", 400));
+      return next(new ApiError("OTP expired", 400));
 
     if (user.otp !== otp && otp !== STATIC_OTP)
       return next(new ApiError("Invalid OTP", 400));
@@ -184,7 +184,7 @@ const login = async (req, res, next) => {
       if (!user) return next(new ApiError("User not found with this phone.", 403));
 
       const otp = getOtp();
-      const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
+      const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
       user.otp = otp;
       user.otp_expiry = otpExpiry;
@@ -237,7 +237,7 @@ const verifyOtpLogin = async (req, res, next) => {
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      return next(new ApiError("OTP expired by login", 400));
+      return next(new ApiError("OTP expired", 400));
 
     if (user.otp !== otp && otp !== STATIC_OTP)
       return next(new ApiError("Invalid OTP", 400));
