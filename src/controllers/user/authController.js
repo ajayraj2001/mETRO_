@@ -83,7 +83,7 @@ const signup = async (req, res, next) => {
         email,
         fullName: fullName.trim(),
         phone,
-        active: false,
+        active: true,
       });
 
       // Generate OTP and set expiry
