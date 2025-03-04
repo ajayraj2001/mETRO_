@@ -35,20 +35,22 @@ const subscriptionPlanSchema = new Schema({
       total: { type: Number },
       description: { type: String, default: "Get noticed faster with prime placement" }
     },
-    sharpFinder: {
+    // sharpFinder: {
+    //   included: { type: Boolean, default: false },
+    //   tier: { type: String, enum: ['None', 'Basic', 'Advanced', 'Premium'], default: 'None' },
+    //   description: { type: String, default: "Sort matches by relevance and compatibility" }
+    // },
+    verifiedBadge: {
       included: { type: Boolean, default: false },
-      tier: { type: String, enum: ['None', 'Basic', 'Advanced', 'Premium'], default: 'None' },
-      description: { type: String, default: "Sort matches by relevance and compatibility" }
+      description: { 
+        type: String, 
+        default: "Verified badge showing active subscription" 
+      }
     },
     rmManager: {  // New relationship manager field
       included: { type: Boolean, default: false },
       accessLevel: { type: String, enum: ['None', 'Basic', 'Premium'], default: 'None' }
     },
-    specialFeatures: [{
-      name: { type: String },
-      included: { type: Boolean, default: false },
-      description: { type: String }
-    }]
   },
   displayOrder: { type: Number, default: 0 },
   isPopular: { type: Boolean, default: false },

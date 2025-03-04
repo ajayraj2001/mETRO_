@@ -78,6 +78,18 @@ const userSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
       coordinates: { type: [Number] } // , required: true
     },
+    subscription: {
+      hasActiveSubscription: { type: Boolean, default: false },
+      currentPlan: { type: Schema.Types.ObjectId, ref: "SubscriptionPlan" },
+      verifiedBadge: { type: Boolean, default: false },
+      features: {
+        remainingContacts: { type: Number, default: 0 },
+        remainingSuperInterests: { type: Number, default: 0 },
+        sharpFinderTier: { type: String, default: "None" },
+        profileVisibility: { type: String, default: "Standard" },
+        hasRMaccess: { type: Boolean, default: false }
+      }
+    },
     maxPhoneNumbersViewable: { type: Number, default: 0 },
     contactViewsRemaining: { type: Number, default: 0 },
     subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
