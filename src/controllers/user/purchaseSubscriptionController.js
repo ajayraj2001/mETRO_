@@ -6,255 +6,148 @@ const moment = require('moment-timezone');
 const crypto = require("crypto");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 
+const durationMapping = {
+  'monthly': 30,
+  'quarterly': 90,
+  'annual': 365
+};
 
-const createTransaction = async (req, res, next) => {
+const createTransaction = asyncHandler(async (req, res, next) => {
   const razorpayInstance = new Razorpay({
     key_id: process.env.RAZOR_KEY_ID_TEST,
     key_secret: process.env.RAZOR_KEY_SECRET_TEST,
   });
 
-  try {
-    const { plan, price } = req.body;
-    const userId = req.user._id;
+  const { planId, duration } = req.body;
+  const userId = req.user._id;
 
-    console.log("==========>>>>>", req.body)
-
-    const order = await razorpayInstance.orders.create({
-      amount: price * 100, // Amount in paise
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`,
-    });
-
-    const data = new Transaction({
-      userId,
-      plan,
-      price,
-      orderId : order.id,
-      orderStatus : "initiated"
-    });
-
-    await data.save();
-
-    return res.status(200).json({
-      status: true,
-      message: "Payment initiated, order details",
-      order_id: order.id,  // Razorpay order ID
-    });
-
-  } catch (error) {
-    console.error("Error initiating payment:", error);
-    next(error);
+  // Validate duration
+  if (!['monthly', 'quarterly', 'annual'].includes(duration)) {
+    return next(new ApiError('Invalid subscription duration', 400));
   }
 
-}
+  const subscriptionPlan = await SubscriptionPlan.findById(planId);
+  if (!subscriptionPlan) return next(new ApiError('Plan not found', 404));
 
-// const transactionWebhook = async (req, res) => {
+  const priceOption = subscriptionPlan.pricing[duration];
+  if (!priceOption) return next(new ApiError('Pricing option not found', 400));
 
-//   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const order = await razorpayInstance.orders.create({
+    amount: priceOption.discounted * 100,
+    currency: "INR",
+    receipt: `receipt_${Date.now()}`,
+  });
 
-//   try {
+  const transaction = new Transaction({
+    userId,
+    plan: planId,
+    duration,
+    price: priceOption.discounted,
+    orderId: order.id,
+    orderStatus: "initiated"
+  });
 
-//     const bodyString = JSON.stringify(req.body);
-//     console.log(bodyString, "body");
+  await transaction.save();
 
-//     const shasum = crypto.createHmac("sha256", secret);
-//     shasum.update(bodyString);
-//     const digest = shasum.digest("hex");
+  res.status(200).json({
+    success: true,
+    message: "Payment initiated",
+    order_id: order.id,
+    amount: priceOption.discounted,
+    currency: "INR"
+  });
+});
 
-//     if (digest === req.headers["x-razorpay-signature"]) {
-//       const event = req.body;
-//       console.log(event, "event+++++++++++++++++++++++++++");
-
-//       const paymentEntity = event.payload.payment.entity;
-//       console.log(paymentEntity.order_id, "order_id");
-
-//       if (event.event === "payment.captured") {
-//         console.log("Payment captured or authorized event received");
-
-//         const orderId = paymentEntity.order_id;
-
-//         if (!orderId) {
-//           console.error("Order ID is null. Cannot proceed.");
-//           return res.status(400).json({ status: "error", message: "Order ID is null" });
-//         }
-
-//         const transactionObj = await Transaction.findOne({ orderId });
-
-//         const subscriptionPlanPromise = SubscriptionPlan.findById(transactionObj.plan);
-//         const userPromise = User.findById(transactionObj.userId);
-
-//         const [subscriptionPlan, user] = await Promise.all([subscriptionPlanPromise, userPromise]);
-
-//         // Set IST timezone
-//         const currentDate = moment().tz("Asia/Kolkata").toDate(); // current time in IST
-//         let startDate = moment().tz("Asia/Kolkata").startOf('day').toDate(); // current day start time in IST
-//         let endDate = moment(startDate).add(parseInt(subscriptionPlan.durationInDays), 'days').endOf('day').toDate(); // calculate end date for new plan
-
-//         const previousExpiryDate = moment(user.subscriptionExpiryDate).tz("Asia/Kolkata");
-
-//         if (previousExpiryDate && previousExpiryDate.isAfter(currentDate)) {
-//           startDate = previousExpiryDate.add(1, 'days').startOf('day').toDate();  // Start the new plan after the previous plan ends
-//           endDate = moment(startDate).add(parseInt(subscriptionPlan.durationInDays), 'days').endOf('day').toDate();  // Update end date
-//         } 
-
-//         // Adjust the user's subscription details accordingly
-//         if (user.subscriptionExpiryDate && moment(user.subscriptionExpiryDate).isAfter(currentDate)) {
-//           user.maxPhoneNumbersViewable += +subscriptionPlan.maxPhoneNumbersViewable;
-//           user.subscriptionExpiryDate = moment(user.subscriptionExpiryDate).add(parseInt(subscriptionPlan.durationInDays) + 1, 'days').endOf('day').toDate();
-//         } else {
-//           user.maxPhoneNumbersViewable = +subscriptionPlan.maxPhoneNumbersViewable;
-//           user.subscriptionExpiryDate = endDate;
-//         }
-
-//         const savePromise = user.save();
-
-//         const updatePromise = Transaction.findOneAndUpdate(
-//           { orderId },
-//           { orderStatus: "success", paymentId: paymentEntity.id, startDate, endDate },
-//           { new: true }
-//         );
-
-//         const notificationPromise = Notification.create({
-//           user : user._id,
-//           title : "Subscription Purchase",
-//           message : `You have successfully purchase our ${subscriptionPlan.planName} of worth ₹ ${subscriptionPlan.price}.`,
-//           pic : user.profile_image
-//         });
-
-//         await Promise.all([savePromise, updatePromise, notificationPromise]);
-
-//         await sendFirebaseNotification(
-//           user.deviceToken, 
-//           "Subscription Purchase",  
-//           `You have successfully purchase our ${subscriptionPlan.planName} plan of worth ₹ ${subscriptionPlan.price}.`
-//         );
-
-//         console.log("===================>>>>>>>>>>>>>", user.deviceToken)
-
-//       } else if (event.event === "payment.failed") {
-//         const orderId = paymentEntity.order_id;
-//         if (!orderId) {
-//           console.error("Order ID is null. Cannot proceed.");
-//           return res
-//             .status(400)
-//             .json({ status: "error", message: "Order ID is null" });
-//         }
-
-//         await Transaction.findOneAndUpdate(
-//           { orderId },
-//           { orderStatus: "failed", paymentId: paymentEntity.id },
-//           { new: true }
-//         );
-//       }
-
-//       res.status(200).json({ status: "ok" });
-
-//     } else {
-//       res.status(400).json({ status: "invalid signature" });
-//     }
-
-//   } catch (error) {
-//     console.error("Error processing webhook:", error);
-//     res.status(500).json({ status: "error", message: error.message });
-//   }
-
-// }
-
-
-const transactionWebhook = async (req, res) => {
+const transactionWebhook = asyncHandler(async (req, res) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers["x-razorpay-signature"];
+  
+  const bodyString = JSON.stringify(req.body);
+  const generatedSignature = crypto.createHmac("sha256", secret).update(bodyString).digest("hex");
+
+  if (generatedSignature !== signature) {
+    return res.status(400).json({ status: "error", message: "Invalid signature" });
+  }
+
+  const event = req.body;
+  const payment = event.payload?.payment?.entity;
+  if (!payment) return res.status(400).json({ status: "error", message: "Invalid webhook data" });
 
   try {
-    const bodyString = JSON.stringify(req.body);
+    const transaction = await Transaction.findOne({ orderId: payment.order_id });
+    if (!transaction) return res.status(404).json({ status: "error", message: "Transaction not found" });
 
-    const shasum = crypto.createHmac("sha256", secret);
-    shasum.update(bodyString);
-    const digest = shasum.digest("hex");
+    if (event.event === "payment.captured") {
+      const plan = await SubscriptionPlan.findById(transaction.plan);
+      const user = await User.findById(transaction.userId);
 
-    if (digest === req.headers["x-razorpay-signature"]) {
-      const event = req.body;
+      // Calculate subscription dates
+      const startDate = new Date();
+      const durationDays = durationMapping[transaction.duration];
+      const endDate = moment(startDate).add(durationDays, 'days').toDate();
 
-      const paymentEntity = event.payload.payment.entity;
+      // Update user subscription features
+      user.subscriptionExpiryDate = endDate;
+      user.subscriptionPlan = transaction.plan;
+      user.maxPhoneNumbersViewable = plan.features.contactViews.total;
+      user.rmAccess = plan.features.rmManager.included;
+      user.profileVisibility = plan.features.profileVisibility.type;
 
-      if (event.event === "payment.captured") {
-        const orderId = paymentEntity.order_id;
-
-        if (!orderId) {
-          return res.status(400).json({ status: "error", message: "Order ID is null" });
-        }
-
-        const transactionObj = await Transaction.findOne({ orderId });
-        const subscriptionPlan = await SubscriptionPlan.findById(transactionObj.plan);
-        const user = await User.findById(transactionObj.userId);
-
-        const currentDate = moment().tz("Asia/Kolkata").toDate(); // Current IST time
-        const planDurationDays = parseInt(subscriptionPlan.durationInDays, 10);
-        let startDate, endDate;
-
-        if (user.subscriptionExpiryDate && moment(user.subscriptionExpiryDate).isAfter(currentDate)) {
-          // Active plan case: Start after the current plan's expiry
-          startDate = moment(user.subscriptionExpiryDate).add(1, "days").startOf("day").toDate();
-          endDate = moment(startDate).add(planDurationDays, "days").endOf("day").toDate();
-          user.maxPhoneNumbersViewable += parseInt(subscriptionPlan.maxPhoneNumbersViewable, 10);
-        } else {
-          // Expired or no plan case: Start immediately
-          startDate = moment().tz("Asia/Kolkata").startOf("day").toDate();
-          endDate = moment(startDate).add(planDurationDays, "days").endOf("day").toDate();
-          user.maxPhoneNumbersViewable = parseInt(subscriptionPlan.maxPhoneNumbersViewable, 10);
-        }
-
-        // Update user's subscription details
-        user.subscriptionExpiryDate = endDate;
-
-        const saveUserPromise = user.save();
-        const updateTransactionPromise = Transaction.findOneAndUpdate(
-          { orderId },
-          { orderStatus: "success", paymentId: paymentEntity.id, startDate, endDate },
-          { new: true }
-        );
-        const notificationPromise = Notification.create({
-          user: user._id,
-          title: "Subscription Purchase",
-          message: `You have successfully purchased our ${subscriptionPlan.planName} plan worth ₹${subscriptionPlan.price}.`,
-          pic: user.profile_image,
-        });
-
-        // Send Firebase notification
-        const firebaseNotificationPromise = sendFirebaseNotification(
-          user.deviceToken,
-          "Subscription Purchase",
-          `You have successfully purchased our ${subscriptionPlan.planName} plan worth ₹${subscriptionPlan.price}.`
-        );
-
-        await Promise.all([saveUserPromise, updateTransactionPromise, notificationPromise, firebaseNotificationPromise]);
-
-        return res.status(200).json({ status: "ok" });
-      } else if (event.event === "payment.failed") {
-        const orderId = paymentEntity.order_id;
-
-        if (!orderId) {
-          return res.status(400).json({ status: "error", message: "Order ID is null" });
-        }
-
-        await Transaction.findOneAndUpdate(
-          { orderId },
-          { orderStatus: "failed", paymentId: paymentEntity.id },
-          { new: true }
-        );
-
-        return res.status(200).json({ status: "ok" });
+      // Handle existing active subscription
+      if (user.subscriptionExpiryDate > new Date()) {
+        user.maxPhoneNumbersViewable += plan.features.contactViews.total;
       }
 
-      return res.status(200).json({ status: "unknown event" });
-    } else {
-      return res.status(400).json({ status: "invalid signature" });
-    }
-  } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.status(500).json({ status: "error", message: error.message });
-  }
-};
+      // Create notification
+      const notification = new Notification({
+        user: user._id,
+        title: "Subscription Activated",
+        message: `${plan.planName} plan activated with ${plan.features.contactViews.total} contacts access`,
+        pic: user.profile_image[0] || ""
+      });
 
+      await Promise.all([
+        user.save(),
+        transaction.updateOne({
+          orderStatus: "success",
+          paymentId: payment.id,
+          startDate,
+          endDate,
+          status: "Active"
+        }),
+        notification.save(),
+        sendFirebaseNotification(
+          user.deviceToken,
+          "Subscription Activated",
+          `Your ${plan.planName} plan is now active!`
+        )
+      ]);
+
+      return res.status(200).json({ status: "ok" });
+    }
+    else if (event.event === "payment.failed") {
+      await transaction.updateOne({
+        orderStatus: "failed",
+        paymentId: payment.id,
+        status: "Expired"
+      });
+      return res.status(200).json({ status: "ok" });
+    }
+
+    return res.status(200).json({ status: "unhandled_event" });
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// Add to user model:
+/*
+contactViewsRemaining: { type: Number, default: 0 },
+subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
+rmAccess: { type: Boolean, default: false },
+profileVisibility: { type: String, enum: ['Standard', 'Enhanced', 'Premium', 'VIP'], default: 'Standard' }
+*/
 
 module.exports = {
   createTransaction,

@@ -2,7 +2,7 @@ const { registerAdmin, logInAdmin } = require("../controllers/admin/adminAuthCon
 // const { createCaste, getCastes, updateCaste, deleteCaste } = require("../controllers/admin/casteController");
 const { createFaq, getFaqs, updateFaq, deleteFaq } = require("../controllers/admin/faqController");
 // const { createReligion, getReligions, updateReligion, deleteReligion } = require("../controllers/admin/religionController");
-const { createSubscriptionPlan, getAllSubscriptionPlans, updateSubscriptionPlan, deleteSubscriptionPlan } = require("../controllers/admin/subscriptionPlanController");
+const { createSubscriptionPlan, getAllSubscriptionPlans, updateSubscriptionPlan, deleteSubscriptionPlan, togglePlanStatus } = require("../controllers/admin/subscriptionPlanController");
 const { getAllSupportQueries, updateSupportQuery, deleteSupportQuery } = require("../controllers/admin/supportListController");
 const { createDetails, updateDetails, getPrivacyPolicy, getTermsAndCOndition } = require("../controllers/admin/termsPrivacyAboutController");
 const { updateAdmin } = require("../controllers/admin/updateAdminProfile.controller");
@@ -45,7 +45,6 @@ const {
     getOccupationsByCategory
 } = require("../controllers/admin/occupationController");
 
-
 const {
     createLanguage,
     getLanguages,
@@ -76,6 +75,8 @@ adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscripti
 adminRoute.get("/get_subscription_plans", authenticateAdmin, getAllSubscriptionPlans);
 adminRoute.patch("/update_subscription_plan/:id", authenticateAdmin, updateSubscriptionPlan);
 adminRoute.delete("/delete_subscription_plan/:id", authenticateAdmin, deleteSubscriptionPlan);
+// Toggle plan status (active/inactive)
+adminRoute.patch('/:id/toggle_status', authenticateAdmin,togglePlanStatus);
 
 // Religion routes
 adminRoute.post("/religions", authenticateAdmin, createReligion);
