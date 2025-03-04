@@ -14,6 +14,11 @@ const userSubscriptionSchema = new Schema({
     ref: "SubscriptionPlan", 
     required: true 
   },
+  transaction: {
+    type: Schema.Types.ObjectId,
+    ref: "Transaction",
+    required: true
+  },
   startDate: { 
     type: Date, 
     required: true 
@@ -27,41 +32,25 @@ const userSubscriptionSchema = new Schema({
     enum: ["monthly", "quarterly", "annual"], 
     required: true 
   },
-  autoRenew: { 
-    type: Boolean, 
-    default: true 
-  },
-  featuresConsumed: {
-    contactViewsUsed: { type: Number, default: 0 },
-    superInterestsUsed: { type: Number, default: 0 }
-  },
   status: { 
     type: String, 
     enum: ["active", "expired", "canceled"], 
     default: "active" 
   },
-  paymentStatus: { 
-    type: String, 
-    enum: ["paid", "pending", "failed"], 
-    default: "paid" 
+  featuresConsumed: {
+    contactViews: { type: Number, default: 0 },
+    superInterests: { type: Number, default: 0 }
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 
-// Indexes for faster querying
 userSubscriptionSchema.index({ endDate: 1 });
 userSubscriptionSchema.index({ status: 1 });
 
-// Pre-save hook
 userSubscriptionSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
-
-// Method to check if subscription is active
-userSubscriptionSchema.methods.isActive = function() {
-  return this.status === "active" && this.endDate > new Date();
-};
 
 module.exports = mongoose.model("UserSubscription", userSubscriptionSchema);
