@@ -78,11 +78,28 @@ const userSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
       coordinates: { type: [Number] } // , required: true
     },
-    maxPhoneNumbersViewable: { type: Number, default: 0 },
-    contactViewsRemaining: { type: Number, default: 0 },
-    subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
-    rmAccess: { type: Boolean, default: false },
-    profileVisibility: { type: String, enum: ['Standard', 'Enhanced', 'Premium', 'VIP'], default: 'Standard' }
+    // In User model
+    subscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserSubscription"
+    },
+    verifiedBadge: { type: Boolean, default: false },
+    features: {
+      contactViews: { type: Number, default: 0 },
+      superInterests: { type: Number, default: 0 },
+      profileVisibility: {
+        type: String,
+        enum: ['Standard', 'Enhanced', 'Premium', 'VIP'],
+        default: 'Standard'
+      },
+      rmAccess: { type: Boolean, default: false }
+    },
+
+    // maxPhoneNumbersViewable: { type: Number, default: 0 },
+    // contactViewsRemaining: { type: Number, default: 0 },
+    // subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
+    // rmAccess: { type: Boolean, default: false },
+    // profileVisibility: { type: String, enum: ['Standard', 'Enhanced', 'Premium', 'VIP'], default: 'Standard' }
   },
   {
     timestamps: {

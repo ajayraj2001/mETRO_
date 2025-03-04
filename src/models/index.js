@@ -11,6 +11,7 @@ const TermsPrivacyAbout = require("./termsPrivacyAbout");
 const Like = require("./like");
 const Notification = require("./notification");
 const Transaction = require("./transaction");
+const UserSubscription = require('./userSubscription')
 const { CourseCategory, Course} = require("./course");
 const { OccupationCategory, Occupation } = require("./occupation");
 const Language = require("./language");
@@ -29,6 +30,7 @@ module.exports = {
   Like,
   Notification,
   Transaction,
+  UserSubscription,
   Religion, Sect, Jammat, Caste,
   CourseCategory, Course,
   OccupationCategory, Occupation,
