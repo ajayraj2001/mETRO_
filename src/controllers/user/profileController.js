@@ -114,10 +114,10 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
-      let { fullName, type, email, phone, heightInFeet, heightInInches, annual_income, dob, height, longitude, latitude,
+      let { fullName, type, email, phone, height, annual_income, dob, longitude, latitude, heightInCm,
         religion, sect, jammat, caste, ...otherFields } = req.body;
-      heightInFeet = +heightInFeet;
-      heightInInches = +heightInInches;
+      // heightInFeet = +heightInFeet;
+      // heightInInches = +heightInInches;
 
       const user = await User.findById(userId).select("-password");
 
@@ -161,10 +161,16 @@ const updateProfile = async (req, res, next) => {
 
       if (annual_income) user.annual_income = +annual_income;
 
-      if (heightInFeet && heightInInches) {
-        const heightData = convertHeightToCM(heightInFeet, heightInInches);
-        const heightInCm = Math.round(parseFloat(heightData));
-        user.height = `${heightInFeet} ft ${heightInInches} in`
+      // if (heightInFeet && heightInInches) {
+      //   const heightData = convertHeightToCM(heightInFeet, heightInInches);
+      //   const heightInCm = Math.round(parseFloat(heightData));
+      //   user.height = `${heightInFeet} ft ${heightInInches} in`
+      //   user.heightInCm = heightInCm;
+      // }
+      if (height) {
+        // const heightData = convertHeightToCM(heightInFeet, heightInInches);
+        // const heightInCm = Math.round(parseFloat(heightData));
+        user.height = height
         user.heightInCm = heightInCm;
       }
 
