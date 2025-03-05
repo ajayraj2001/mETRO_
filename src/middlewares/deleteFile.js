@@ -10,7 +10,6 @@ const BASE_PATH = path.resolve(__dirname, '../..'); // Go up two levels from src
  * @returns {Promise<void>} A promise that resolves when the file is deleted.
  */
 const deleteFile = (filePath) => {
-  console.log('filePath:', filePath); // Log the provided file path
 
   return new Promise((resolve, reject) => {
     if (!filePath) return resolve(); // If no file path is provided, resolve without error.
@@ -18,20 +17,15 @@ const deleteFile = (filePath) => {
     // Normalize the path to ensure compatibility across different operating systems
     const fullPath = path.resolve(BASE_PATH, filePath); // Construct the full path based on the base path
 
-    console.log('fullPath:', fullPath); // Log the constructed full path
-
     fs.access(fullPath, fs.constants.F_OK, (err) => {
       if (err) {
-        console.log('File does not exist:', fullPath); // Log if file does not exist
         return resolve(); // If the file does not exist, resolve without error.
       }
 
       fs.unlink(fullPath, (err) => {
         if (err) {
-          console.error('Error deleting file:', err); // Log any errors during deletion
           return reject(err); // If there's an error during deletion, reject the promise.
         }
-        console.log('File deleted successfully:', fullPath); // Log success message
         resolve(); // Resolve the promise when deletion is successful.
       });
     });

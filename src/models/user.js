@@ -24,13 +24,13 @@ const userSchema = new mongoose.Schema(
     height: { type: String, default: '' },
     heightInCm: { type: Number, default: 0 },
     //freeMessages: { type: Number, default: 3 }, 
-    subscriptionExpiryDate: { type: Date },
+    // subscriptionExpiryDate: { type: Date },
     country: { type: String, default: '' },
     state: { type: String, default: '' },
     city: { type: String, default: '' },
     annual_income: { type: String, default: '' }, // Could be a range or exact value
-    college_name: { type: String, default: '' },
-    company_name: { type: String, default: '' },
+    // college_name: { type: String, default: '' },
+    // company_name: { type: String, default: '' },
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
     highest_education: {
       type: mongoose.Schema.Types.ObjectId,
@@ -112,6 +112,8 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
+// userSchema.index({ 'features.profileVisibility': 1 });
+// userSchema.index({ verifiedBadge: 1 });
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

@@ -115,7 +115,7 @@ const updateProfile = async (req, res, next) => {
 
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, longitude, latitude, heightInCm,
-        religion, sect, jammat, caste, ...otherFields } = req.body;
+        religion, sect, jammat, caste,occupation, highest_education, mother_tongue, ...otherFields } = req.body;
       // heightInFeet = +heightInFeet;
       // heightInInches = +heightInInches;
 
@@ -183,6 +183,16 @@ const updateProfile = async (req, res, next) => {
       }
 
       // Religion field
+      if (occupation) {
+        user.occupation = occupation;
+      }
+      if (highest_education) {
+        user.highest_education = highest_education;
+      }
+      if (mother_tongue) {
+        user.mother_tongue = mother_tongue;
+      }
+
       if (religion !== undefined) {
         user.religion = religion;
       }

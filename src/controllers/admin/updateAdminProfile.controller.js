@@ -20,9 +20,6 @@ const updateAdmin = asyncHandler(async (req, res, next) => {
   if (email) admin.email = email;
   if (name) admin.name = name;
 
-  console.log("😁😉😎😉", req.file.profile_image)
-  //console.log("❤💖🤞✨", admin)
-
   if (req.file && req.file.profile_image) {
     if(admin.profile_image) {
         await deleteOldFile(admin.profile_image);

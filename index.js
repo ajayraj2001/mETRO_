@@ -23,7 +23,6 @@ let server;
 
 (async () => {
   try {
-    console.log("Initializing server");
     await connectToDatabase();
 
     // Create an HTTP server

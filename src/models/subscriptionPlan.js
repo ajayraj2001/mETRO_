@@ -49,7 +49,11 @@ const subscriptionPlanSchema = new Schema({
     },
     rmManager: {  // New relationship manager field
       included: { type: Boolean, default: false },
-      accessLevel: { type: String, enum: ['None', 'Basic', 'Premium'], default: 'None' }
+      accessLevel: { type: String, enum: ['None', 'Basic', 'Premium'], default: 'None' },
+      description: { 
+        type: String, 
+        default: "Verified badge showing active subscription" 
+      }
     },
   },
   displayOrder: { type: Number, default: 0 },

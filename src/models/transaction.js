@@ -34,7 +34,6 @@ const transactionSchema = new mongoose.Schema({
     type: String, 
     enum: ["credit_card", "debit_card", "netbanking", "upi", "wallet"] 
   },
-  meta: mongoose.Schema.Types.Mixed,
   createdAt: { type: Date, default: Date.now }
 });
 
