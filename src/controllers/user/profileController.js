@@ -107,6 +107,7 @@ const upload = getMultipleFilesUploader(["profile_image"], "uploads/user");
 const updateProfile = async (req, res, next) => {
   upload(req, res, async (error) => {
     try {
+      console.log('hibuddys ies', req.files)
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
