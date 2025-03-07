@@ -80,9 +80,9 @@ const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-      .populate("mother_tongue", "name")
-      .populate("highest_education", "name")
-      .populate("occupation", "name")
+      // .populate("mother_tongue", "name")
+      // .populate("highest_education", "name")
+      // .populate("occupation", "name")
 
     if (!user) {
       return res.status(404).json({
