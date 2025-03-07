@@ -3,6 +3,8 @@ const { ApiError } = require('../errorHandler');
 
 const verifyAccessToken = (token) => {
   const secretKey = process.env.ACCESS_TOKEN_SECRET;
+  console.log('token', token)
+  console.log('secretKey', secretKey)
   if (!token) {
     throw new ApiError('Token Not Found', 401);
   }
