@@ -83,10 +83,6 @@ const getProfile = async (req, res, next) => {
       .populate("mother_tongue", "name")
       .populate("highest_education", "name")
       .populate("occupation", "name")
-      .populate("religion", "name")
-      .populate("sect", "name")
-      .populate("jammat", "name")
-      .populate("caste", "name");
 
     if (!user) {
       return res.status(404).json({

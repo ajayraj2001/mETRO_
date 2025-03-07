@@ -49,24 +49,20 @@ const userSchema = new mongoose.Schema(
     },
     // Updated religious hierarchy references
     religion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Religion',
-      default: null
+      type: String,
+      default: ""
     },
     sect: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Sect',
-      default: null
+      type: String,
+      default: ""
     },
     jammat: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Jammat',
-      default: null
+      type: String,
+      default: ""
     },
     caste: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Caste',
-      default: null
+      type: String,
+      default: ""
     },
     thoughts_on_horoscope: { type: String, default: '' }, // e.g., 'Yes', 'No'
     manglik: { type: String, default: '' },
