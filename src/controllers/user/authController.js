@@ -35,7 +35,8 @@ const signup = async (req, res, next) => {
     let existingUser = await User.findOne({ phone: phone });
 
     // If the user exists but hasn't verified OTP, check the email as well
-    if (existingUser && !existingUser.active) {
+    // if (existingUser && !existingUser.active) {
+    if (existingUser) {
       const emailInUseByAnotherUser = await User.findOne({
         email: email,
         _id: { $ne: existingUser._id },
