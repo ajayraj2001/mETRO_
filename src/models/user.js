@@ -33,15 +33,15 @@ const userSchema = new mongoose.Schema(
     // company_name: { type: String, default: '' },
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
     highest_education: {
-     type: String,
+      type: String,
       default: ""
     },
     occupation: {
-     type: String,
+      type: String,
       default: ""
     },
     mother_tongue: {
-type: String,
+      type: String,
       default: ""
     },
     // Updated religious hierarchy references
