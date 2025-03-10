@@ -138,7 +138,7 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
-      let { fullName, type, email, phone, height, annual_income, dob, longitude, latitude, heightInCm,
+      let { fullName, type, email, phone, height, annual_income, dob, country, state, city, longitude, latitude, heightInCm,
         religion, sect, jammat, caste, occupation, highest_education, mother_tongue, ...otherFields } = req.body;
       // heightInFeet = +heightInFeet;
       // heightInInches = +heightInInches;
@@ -193,6 +193,15 @@ const updateProfile = async (req, res, next) => {
         user.annual_income = annual_income;
         user.min_salary = min_salary;
         user.max_salary = max_salary;
+      }
+      if (country) {
+        user.country = country;
+      }
+      if (state) {
+        user.state = state;
+      }
+      if (city) {
+        user.city = city;
       }
 
       // if (heightInFeet && heightInInches) {
@@ -304,7 +313,6 @@ const updateProfile = async (req, res, next) => {
         },
       });
     } catch (error) {
-      console.log('erer', error)
       // If an error occurs, delete the newly uploaded files
       if (req.files && req.files.profile_image) {
         for (const file of req.files.profile_image) {
