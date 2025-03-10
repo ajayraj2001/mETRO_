@@ -10,6 +10,7 @@ const signup = async (req, res, next) => {
   try {
     let { email, fullName, phone, profile_for } = req.body;
 
+    console.log('req.body_forSignUP', req.body)
     // Validate required fields
     if (!email) return next(new ApiError("Email is required.", 400));
     if (!phone) return next(new ApiError("Phone is required.", 400));
@@ -84,7 +85,7 @@ const signup = async (req, res, next) => {
         email,
         fullName: fullName.trim(),
         phone,
-        active: true,
+        active: false,
       });
 
       // Generate OTP and set expiry
@@ -142,6 +143,8 @@ const verifyOtpSignUp = async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
 
+    console.log('req.nody_forsignUpVerifyOtp', req.body)
+
     // Validate input
     if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
 
@@ -174,6 +177,7 @@ const verifyOtpSignUp = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     let { phone, email, loginType } = req.body;
+    console.log('req.nody_forLogin', req.body)
 
     if (!loginType) return next(new ApiError("Login type is required.", 400));
 
@@ -228,6 +232,8 @@ const login = async (req, res, next) => {
 const verifyOtpLogin = async (req, res, next) => {
   try {
     const { phone, otp, deviceId, deviceToken } = req.body;
+
+    console.log('req.nody_forLoginVeroifyOtp', req.body)
 
     // Validate input
     if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
