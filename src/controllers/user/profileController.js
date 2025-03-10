@@ -102,6 +102,7 @@ const getProfile = async (req, res, next) => {
 };
 
 const parseAnnualIncome = (annual_income) => {
+  console.log('annual income',annual_income)
   const match = annual_income.match(/(\d+)(?:\s*Lakh|\s*Crore)?/gi);
   if (!match) return [0, 0]; // If no numbers found, return default values
 
