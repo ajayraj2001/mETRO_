@@ -198,7 +198,7 @@ const updateProfile = async (req, res, next) => {
         user.country = country;
       }
       if (state) {
-        user.state = state;
+        user.state = state; //ajay
       }
       if (city) {
         user.city = city;
