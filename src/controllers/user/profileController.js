@@ -80,9 +80,9 @@ const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-      // .populate("mother_tongue", "name")
-      // .populate("highest_education", "name")
-      // .populate("occupation", "name")
+    // .populate("mother_tongue", "name")
+    // .populate("highest_education", "name")
+    // .populate("occupation", "name")
 
     if (!user) {
       return res.status(404).json({
@@ -101,6 +101,32 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+const parseAnnualIncome = (annual_income) => {
+  const match = annual_income.match(/(\d+)(?:\s*Lakh|\s*Crore)?/gi);
+  if (!match) return [0, 0]; // If no numbers found, return default values
+
+  let min_salary = 0;
+  let max_salary = 0;
+
+  if (match.length >= 1) {
+    min_salary = parseInt(match[0]) || 0;
+    if (annual_income.includes("Crore")) {
+      min_salary *= 100; // Convert Crore to Lakh (1 Crore = 100 Lakh)
+    }
+  }
+
+  if (match.length >= 2) {
+    max_salary = parseInt(match[1]) || min_salary;
+    if (annual_income.includes("Crore")) {
+      max_salary *= 100; // Convert Crore to Lakh
+    }
+  } else {
+    max_salary = min_salary;
+  }
+
+  return [min_salary * 100000, max_salary * 100000]; // Convert Lakh to Rupees
+};
+
 // Use the multiple files uploader for profile_image
 const upload = getMultipleFilesUploader(["profile_image"], "uploads/user");
 
@@ -109,13 +135,15 @@ const updateProfile = async (req, res, next) => {
     try {
       console.log('hibuddys ies', req.files)
       if (error) throw new ApiError(error.message, 400);
-      
+
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, longitude, latitude, heightInCm,
-        religion, sect, jammat, caste,occupation, highest_education, mother_tongue, ...otherFields } = req.body;
-        // heightInFeet = +heightInFeet;
-        // heightInInches = +heightInInches;
-        console.log('req.body_forUpdate profiel',req.body)
+        religion, sect, jammat, caste, occupation, highest_education, mother_tongue, ...otherFields } = req.body;
+      // heightInFeet = +heightInFeet;
+      // heightInInches = +heightInInches;
+      const [min_salary, max_salary] = parseAnnualIncome(annual_income);
+
+      console.log('req.body_forUpdate profiel', req.body)
 
       const user = await User.findById(userId).select("-password");
 
@@ -157,7 +185,11 @@ const updateProfile = async (req, res, next) => {
         user.dob = dateOfBirth;
       }
 
-      if (annual_income) user.annual_income = annual_income;
+      if (annual_income) {
+        user.annual_income = annual_income;
+        user.min_salary = min_salary;
+        user.max_salary = max_salary;
+      }
 
       // if (heightInFeet && heightInInches) {
       //   const heightData = convertHeightToCM(heightInFeet, heightInInches);

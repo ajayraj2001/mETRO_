@@ -29,6 +29,8 @@ const userSchema = new mongoose.Schema(
     state: { type: String, default: '' },
     city: { type: String, default: '' },
     annual_income: { type: String, default: '' }, // Could be a range or exact value
+    min_salary: { type: Number },
+    max_salary: { type: Number },
     // college_name: { type: String, default: '' },
     // company_name: { type: String, default: '' },
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.

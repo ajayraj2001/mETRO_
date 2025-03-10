@@ -11,15 +11,41 @@ const parseDate = require("../../utils/parseDate");
 const haversineDistance = require("../../utils/haversineDistance");
 const convertHeightToCM = require("../../utils/convertHeightToCM");
 
+const parseAnnualIncome = (annual_income) => {
+  const match = annual_income.match(/(\d+)(?:\s*Lakh|\s*Crore)?/gi);
+  if (!match) return [0, 0]; // If no numbers found, return default values
+
+  let min_salary = 0;
+  let max_salary = 0;
+
+  if (match.length >= 1) {
+    min_salary = parseInt(match[0]) || 0;
+    if (annual_income.includes("Crore")) {
+      min_salary *= 100; // Convert Crore to Lakh (1 Crore = 100 Lakh)
+    }
+  }
+
+  if (match.length >= 2) {
+    max_salary = parseInt(match[1]) || min_salary;
+    if (annual_income.includes("Crore")) {
+      max_salary *= 100; // Convert Crore to Lakh
+    }
+  } else {
+    max_salary = min_salary;
+  }
+
+  return [min_salary * 100000, max_salary * 100000]; // Convert Lakh to Rupees
+};
+
 const partnerPreferences = async (req, res, next) => {
   try {
     const {
       min_age,
       max_age,
-      min_height_in_feet,
-      min_height_in_inches,
-      max_height_in_feet,
-      max_height_in_inches,
+      min_height,
+      max_height,
+      max_height_in_cm,
+      min_height_in_cm,
       gender,
       marital_status,
       religion,
@@ -42,7 +68,8 @@ const partnerPreferences = async (req, res, next) => {
 
     if (existingPreferences) {
       // Update only the provided fields
-      const [min_salary, max_salary] = annual_income.split("-");
+      const [min_salary, max_salary] = parseAnnualIncome(annual_income);
+
       existingPreferences.set({
         min_age: min_age !== undefined ? min_age : existingPreferences.min_age,
         max_age: max_age !== undefined ? max_age : existingPreferences.max_age,
@@ -54,16 +81,32 @@ const partnerPreferences = async (req, res, next) => {
           max_salary !== undefined
             ? max_salary
             : existingPreferences.max_salary,
-
         min_height:
-          min_height_in_feet !== undefined && min_height_in_inches !== undefined
-            ? `${min_height_in_feet} ft ${min_height_in_inches} in`
+          min_height !== undefined
+            ? min_height
             : existingPreferences.min_height,
-
         max_height:
-          max_height_in_feet !== undefined && max_height_in_inches !== undefined
-            ? `${max_height_in_feet} ft ${max_height_in_inches} in`
+          max_height !== undefined
+            ? max_height
             : existingPreferences.max_height,
+        min_height_in_cm:
+          min_height_in_cm !== undefined
+            ? Math.round(min_height_in_cm)
+            : existingPreferences.min_height_in_cm,
+        max_height_in_cm:
+          max_height_in_cm !== undefined
+            ? Math.round(max_height_in_cm)
+            : existingPreferences.max_height_in_cm,
+
+        // min_height:
+        //   min_height_in_feet !== undefined && min_height_in_inches !== undefined
+        //     ? `${min_height_in_feet} ft ${min_height_in_inches} in`
+        //     : existingPreferences.min_height,
+
+        // max_height:
+        //   max_height_in_feet !== undefined && max_height_in_inches !== undefined
+        //     ? `${max_height_in_feet} ft ${max_height_in_inches} in`
+        //     : existingPreferences.max_height,
 
         gender: gender !== undefined ? gender : existingPreferences.gender,
         marital_status:
@@ -107,23 +150,23 @@ const partnerPreferences = async (req, res, next) => {
             : existingPreferences.thoughts_on_horoscope,
       });
 
-      if (min_height_in_feet && min_height_in_inches) {
-        const minHeightData = convertHeightToCM(
-          +min_height_in_feet,
-          +min_height_in_inches
-        );
-        const minHeightInCm = Math.round(parseFloat(minHeightData));
-        existingPreferences.min_height_in_cm = minHeightInCm;
-      }
+      // if (min_height_in_feet && min_height_in_inches) {
+      //   const minHeightData = convertHeightToCM(
+      //     +min_height_in_feet,
+      //     +min_height_in_inches
+      //   );
+      //   const minHeightInCm = Math.round(parseFloat(minHeightData));
+      //   existingPreferences.min_height_in_cm = minHeightInCm;
+      // }
 
-      if (max_height_in_feet && max_height_in_inches) {
-        const maxHeightData = convertHeightToCM(
-          +max_height_in_feet,
-          +max_height_in_inches
-        );
-        const maxHeightInCm = Math.round(parseFloat(maxHeightData));
-        existingPreferences.max_height_in_cm = maxHeightInCm;
-      }
+      // if (max_height_in_feet && max_height_in_inches) {
+      //   const maxHeightData = convertHeightToCM(
+      //     +max_height_in_feet,
+      //     +max_height_in_inches
+      //   );
+      //   const maxHeightInCm = Math.round(parseFloat(maxHeightData));
+      //   existingPreferences.max_height_in_cm = maxHeightInCm;
+      // }
 
       // Save the updated document
       await existingPreferences.save({ validateBeforeSave: false });
@@ -138,10 +181,10 @@ const partnerPreferences = async (req, res, next) => {
       if (
         !min_age ||
         !max_age ||
-        !min_height_in_feet ||
-        !min_height_in_inches ||
-        !max_height_in_feet ||
-        !max_height_in_inches ||
+        !min_height ||
+        !max_height ||
+        !max_height_in_cm ||
+        !min_height_in_cm ||
         !gender ||
         !marital_status ||
         !religion ||
@@ -159,14 +202,18 @@ const partnerPreferences = async (req, res, next) => {
         return next(new ApiError("All fields are required", 400));
       }
 
-      const [min_salary, max_salary] = annual_income.split("-");
+     const [min_salary, max_salary] = parseAnnualIncome(annual_income);
 
       const newPreferences = new PartnerPreferences({
         user_id,
         min_age,
         max_age,
-        min_height: `${min_height_in_feet} ft ${min_height_in_inches} in`,
-        max_height: `${max_height_in_feet} ft ${max_height_in_inches} in`,
+        // min_height: `${min_height_in_feet} ft ${min_height_in_inches} in`,
+        // max_height: `${max_height_in_feet} ft ${max_height_in_inches} in`,
+        min_height,
+        max_height,
+        max_height_in_cm: Math.round(max_height_in_cm),
+        min_height_in_cm: Math.round(min_height_in_cm),
         gender,
         marital_status,
         religion,
@@ -184,23 +231,23 @@ const partnerPreferences = async (req, res, next) => {
         thoughts_on_horoscope,
       });
 
-      if (min_height_in_feet && min_height_in_inches) {
-        const minHeightData = convertHeightToCM(
-          +min_height_in_feet,
-          +min_height_in_inches
-        );
-        const minHeightInCm = Math.round(parseFloat(minHeightData));
-        newPreferences.min_height_in_cm = minHeightInCm;
-      }
+      // if (min_height_in_feet && min_height_in_inches) {
+      //   const minHeightData = convertHeightToCM(
+      //     +min_height_in_feet,
+      //     +min_height_in_inches
+      //   );
+      //   const minHeightInCm = Math.round(parseFloat(minHeightData));
+      //   newPreferences.min_height_in_cm = minHeightInCm;
+      // }
 
-      if (max_height_in_feet && max_height_in_inches) {
-        const maxHeightData = convertHeightToCM(
-          +max_height_in_feet,
-          +max_height_in_inches
-        );
-        const maxHeightInCm = Math.round(parseFloat(maxHeightData));
-        newPreferences.max_height_in_cm = maxHeightInCm;
-      }
+      // if (max_height_in_feet && max_height_in_inches) {
+      //   const maxHeightData = convertHeightToCM(
+      //     +max_height_in_feet,
+      //     +max_height_in_inches
+      //   );
+      //   const maxHeightInCm = Math.round(parseFloat(maxHeightData));
+      //   newPreferences.max_height_in_cm = maxHeightInCm;
+      // }
 
       // Save the new document
       const savedPreferences = await newPreferences.save();
@@ -219,7 +266,7 @@ const partnerPreferences = async (req, res, next) => {
 
 const getPreference = async (req, res, next) => {
   try {
-    const user_id = req.user._id;
+    const user_id = '6719e4fa25089de3f6fb59c8';
 
     // Check if a document already exists for the user
     const preference = await PartnerPreferences.findOne({ user_id });
@@ -240,6 +287,7 @@ const getPreference = async (req, res, next) => {
     next(error);
   }
 };
+
 //by nikhil
 // const matchedUsers = async (req, res, next) => {
 //   try {
