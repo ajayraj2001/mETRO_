@@ -50,7 +50,7 @@ const signup = async (req, res, next) => {
 
       // Resend OTP if the email is not in use by another user
       const otp = getOtp();
-      const otpExpiry = new Date(Date.now() + 1 * 60 * 1000);
+      const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
       existingUser.profile_for = profile_for;
       existingUser.fullName = fullName;
