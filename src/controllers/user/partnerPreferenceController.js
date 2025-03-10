@@ -3,7 +3,7 @@ const { isValidObjectId } = require("mongoose");
 const { ApiError } = require("../../errorHandler");
 const PartnerPreferences = require("../../models/partnerPreference");
 const User = require("../../models/user");
-const {UserSubscription} = require("../../models")
+const { UserSubscription } = require("../../models")
 const ProfileVisit = require("../../models/profileVisit");
 const SeenContact = require("../../models/seenContact");
 const calculateAge = require("../../utils/calculateAge");
@@ -23,7 +23,7 @@ const partnerPreferences = async (req, res, next) => {
       gender,
       marital_status,
       religion,
-      caste,
+      any_caste,
       mother_tongue,
       country,
       state,
@@ -72,7 +72,8 @@ const partnerPreferences = async (req, res, next) => {
             : existingPreferences.marital_status,
         religion:
           religion !== undefined ? religion : existingPreferences.religion,
-        caste: caste !== undefined ? caste : existingPreferences.caste,
+        any_caste:
+          any_caste !== undefined ? any_caste : existingPreferences.any_caste,
         mother_tongue:
           mother_tongue !== undefined
             ? mother_tongue
@@ -144,7 +145,7 @@ const partnerPreferences = async (req, res, next) => {
         !gender ||
         !marital_status ||
         !religion ||
-        !caste ||
+        !any_caste ||
         !mother_tongue ||
         !country ||
         !state ||
@@ -169,7 +170,7 @@ const partnerPreferences = async (req, res, next) => {
         gender,
         marital_status,
         religion,
-        caste,
+        any_caste,
         mother_tongue,
         country,
         state,
@@ -383,24 +384,24 @@ const getPreference = async (req, res, next) => {
 
 const matchedUsers = async (req, res, next) => {
   try {
-    const { 
-      startDate, 
-      endDate, 
-      searchTerm, 
-      page = 1, 
-      limit = 10 
+    const {
+      startDate,
+      endDate,
+      searchTerm,
+      page = 1,
+      limit = 10
     } = req.body;
     const user_id = req.user._id;
-    
+
     // Validate page and limit
     const pageNumber = Math.max(1, Number(page));
     const pageSize = Math.min(50, Math.max(1, Number(limit)));
     const skip = (pageNumber - 1) * pageSize;
-    
+
     // Find user's current subscription
-    const userSubscription = await UserSubscription.findOne({ 
-      user: user_id, 
-      status: 'active' 
+    const userSubscription = await UserSubscription.findOne({
+      user: user_id,
+      status: 'active'
     }).populate('plan');
 
     const preferences = await PartnerPreferences.findOne({ user_id });
@@ -475,7 +476,7 @@ const matchedUsers = async (req, res, next) => {
 
     if (userSubscription && userSubscription.plan) {
       // Adjust sorting based on subscription plan
-      switch(userSubscription.plan.planName) {
+      switch (userSubscription.plan.planName) {
         case 'Silver':
           sortOptions = { created_at: -1 };
           visibilityMultiplier = 1.2;
@@ -513,42 +514,42 @@ const matchedUsers = async (req, res, next) => {
       matchedUsers.map(async (user) => {
         const currentUserLocation = req.user?.location?.coordinates;
         const matchedUserLocation = user?.location?.coordinates;
-    
+
         // Calculate distance
         const distance =
           currentUserLocation && matchedUserLocation
             ? haversineDistance(currentUserLocation, matchedUserLocation)?.toFixed(2)
             : null;
-    
+
         // Calculate age
         const age = calculateAge(user.dob);
-    
+
         // Check subscription status using UserSubscription
         const userSubscription = await UserSubscription.findOne({
           user: user._id,
           status: "active",
           endDate: { $gt: currentTime },
         }).populate("plan");
-    
+
         const isVerified =
           userSubscription?.plan?.features?.verifiedBadge?.included || false;
-    
+
         // Calculate match relevance score
         let matchScore = 0;
-    
+
         // Base matching logic
         if (user.highest_education?.toString() === preferences.highest_education)
           matchScore += 20;
-    
+
         if (user.occupation?.toString() === preferences.occupation)
           matchScore += 15;
-    
-        if (user.caste?.toString() === preferences.caste) 
+
+        if (user.caste?.toString() === preferences.caste)
           matchScore += 10;
-    
+
         // Apply visibility multiplier to match score
         matchScore *= visibilityMultiplier;
-    
+
         return {
           _id: user._id,
           profile_for: user.profile_for,
@@ -569,7 +570,7 @@ const matchedUsers = async (req, res, next) => {
         };
       })
     );
-    
+
     // Sort users by match score in descending order
     const sortedUsers = usersWithDistances.sort((a, b) => b.matchScore - a.matchScore);
 
@@ -612,8 +613,8 @@ const singleMatchedUser = async (req, res, next) => {
     const distance =
       currentUserLocation && matchedUserLocation
         ? haversineDistance(currentUserLocation, matchedUserLocation)?.toFixed(
-            2
-          )
+          2
+        )
         : null;
 
     const age = calculateAge(matchedUser.dob);
@@ -622,8 +623,8 @@ const singleMatchedUser = async (req, res, next) => {
 
     const isVerified = matchedUser.subscriptionExpiryDate
       ? moment(matchedUser.subscriptionExpiryDate)
-          .tz("Asia/Kolkata")
-          .isAfter(currentTime)
+        .tz("Asia/Kolkata")
+        .isAfter(currentTime)
       : false;
 
     // Check if the contact has already been seen

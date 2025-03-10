@@ -16,12 +16,12 @@ const partnerPreferencesSchema = new mongoose.Schema(
     gender: { type: String, required: true },
     marital_status: { type: String, required: true },
     religion: { type: String, required: true },
-    caste: { type: String, required: true },
+    any_caste: { type: Boolean, default: false },
     mother_tongue: { type: String, required: true },
     country: { type: String, required: true },
     state: { type: String, required: true },
     state: { type: String, required: true },
-    residential_status: { type: String, required: true }, // e.g., 'Citizen', 'Permanent Resident', etc.
+    // residential_status: { type: String, required: true }, // e.g., 'Citizen', 'Permanent Resident', etc.
     manglik: { type: String, required: true },
     highest_education: { type: String, required: true },
     employed_in: { type: String, required: true },
