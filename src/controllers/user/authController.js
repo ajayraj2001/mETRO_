@@ -250,10 +250,13 @@ const verifyOtpLogin = async (req, res, next) => {
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
     if (!user) return next(new ApiError("User not found", 404));
-
+console.log('ewa faki maar dalei')
     // Validate OTP
-    if (Date.now() > new Date(user.otp_expiry).getTime())
+    if (Date.now() > new Date(user.otp_expiry).getTime()){
+      console.log('yah kuarm aniunda areh')
       return next(new ApiError("OTP expired", 400));
+
+    }
 
     if (user.otp !== otp && otp !== STATIC_OTP){
       console.log('heya bewa')
