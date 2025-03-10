@@ -102,7 +102,7 @@ const getProfile = async (req, res, next) => {
 };
 
 const parseAnnualIncome = (annual_income) => {
-  console.log('annual income',annual_income)
+  console.log('annual income', annual_income)
   const match = annual_income.match(/(\d+)(?:\s*Lakh|\s*Crore)?/gi);
   if (!match) return [0, 0]; // If no numbers found, return default values
 
@@ -142,7 +142,10 @@ const updateProfile = async (req, res, next) => {
         religion, sect, jammat, caste, occupation, highest_education, mother_tongue, ...otherFields } = req.body;
       // heightInFeet = +heightInFeet;
       // heightInInches = +heightInInches;
-      const [min_salary, max_salary] = parseAnnualIncome(annual_income);
+      let min_salary, max_salary
+      if (annual_income) {
+        [min_salary, max_salary] = parseAnnualIncome(annual_income);
+      }
 
       console.log('req.body_forUpdate profiel', req.body)
 
@@ -301,7 +304,7 @@ const updateProfile = async (req, res, next) => {
         },
       });
     } catch (error) {
-      console.log('erer',error)
+      console.log('erer', error)
       // If an error occurs, delete the newly uploaded files
       if (req.files && req.files.profile_image) {
         for (const file of req.files.profile_image) {
