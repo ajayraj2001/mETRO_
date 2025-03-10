@@ -26,7 +26,7 @@ const partnerPreferences = async (req, res, next) => {
       caste,
       mother_tongue,
       country,
-      residential_status,
+      state,
       manglik,
       highest_education,
       employed_in,
@@ -78,10 +78,11 @@ const partnerPreferences = async (req, res, next) => {
             ? mother_tongue
             : existingPreferences.mother_tongue,
         country: country !== undefined ? country : existingPreferences.country,
-        residential_status:
-          residential_status !== undefined
-            ? residential_status
-            : existingPreferences.residential_status,
+        state: state !== undefined ? state : existingPreferences.state,
+        // residential_status:
+        //   residential_status !== undefined
+        //     ? residential_status
+        //     : existingPreferences.residential_status,
         manglik: manglik !== undefined ? manglik : existingPreferences.manglik,
         highest_education:
           highest_education !== undefined
@@ -146,7 +147,7 @@ const partnerPreferences = async (req, res, next) => {
         !caste ||
         !mother_tongue ||
         !country ||
-        !residential_status ||
+        !state ||
         !manglik ||
         !highest_education ||
         !employed_in ||
@@ -171,7 +172,7 @@ const partnerPreferences = async (req, res, next) => {
         caste,
         mother_tongue,
         country,
-        residential_status,
+        state,
         manglik,
         highest_education,
         employed_in,
