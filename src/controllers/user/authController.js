@@ -281,6 +281,7 @@ const verifyOtpLogin = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.log('yashk',error)
     next(error);
   }
 };
