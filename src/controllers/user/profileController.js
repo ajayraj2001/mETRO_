@@ -108,14 +108,14 @@ const updateProfile = async (req, res, next) => {
   upload(req, res, async (error) => {
     try {
       console.log('hibuddys ies', req.files)
-      console.log('req.body_forUpdate profiel',req.body)
       if (error) throw new ApiError(error.message, 400);
-
+      
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, longitude, latitude, heightInCm,
         religion, sect, jammat, caste,occupation, highest_education, mother_tongue, ...otherFields } = req.body;
-      // heightInFeet = +heightInFeet;
-      // heightInInches = +heightInInches;
+        // heightInFeet = +heightInFeet;
+        // heightInInches = +heightInInches;
+        console.log('req.body_forUpdate profiel',req.body)
 
       const user = await User.findById(userId).select("-password");
 

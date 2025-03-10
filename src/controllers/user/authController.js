@@ -164,10 +164,22 @@ const verifyOtpSignUp = async (req, res, next) => {
 
     user.save();
 
+    const token = jwt.sign(
+      { id: user._id, phone: user.phone },
+      ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "180d",
+      }
+    );
+
     // If OTP is valid, return success response
     return res.status(200).json({
       success: true,
       message: "OTP verified successfully",
+      data: {
+        token,
+        user,
+      },
     });
   } catch (error) {
     next(error);
