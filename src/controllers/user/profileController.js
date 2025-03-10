@@ -300,6 +300,7 @@ const updateProfile = async (req, res, next) => {
         },
       });
     } catch (error) {
+      console.log('erer',error)
       // If an error occurs, delete the newly uploaded files
       if (req.files && req.files.profile_image) {
         for (const file of req.files.profile_image) {

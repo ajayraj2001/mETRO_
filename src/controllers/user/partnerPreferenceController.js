@@ -178,6 +178,7 @@ console.log('req/.nody', req.body)
       });
     } else {
       // Create a new document
+      console.log('req/nodfu ', req.body)
       if (
         !min_age ||
         !max_age ||
