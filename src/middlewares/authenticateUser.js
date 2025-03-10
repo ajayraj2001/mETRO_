@@ -5,10 +5,8 @@ const { verifyAccessToken } = require('../utils');
 const authenticateUser = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    console.log('authHeader,',authHeader )
     const token = authHeader && authHeader.split(' ')[1];
-    
-    console.log('token,',token )
+
     const legit = verifyAccessToken(token);
     const user = await User.findById(legit.id);
    
