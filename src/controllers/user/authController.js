@@ -256,6 +256,7 @@ const verifyOtpLogin = async (req, res, next) => {
       return next(new ApiError("OTP expired", 400));
 
     if (user.otp !== otp && otp !== STATIC_OTP)
+      console.log('heya')
       return next(new ApiError("Invalid OTP", 400));
 
     user.active = true;
