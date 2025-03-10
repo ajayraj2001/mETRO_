@@ -255,9 +255,10 @@ const verifyOtpLogin = async (req, res, next) => {
     if (Date.now() > new Date(user.otp_expiry).getTime())
       return next(new ApiError("OTP expired", 400));
 
-    if (user.otp !== otp && otp !== STATIC_OTP)
-      console.log('heya')
+    if (user.otp !== otp && otp !== STATIC_OTP){
+      console.log('heya bewa')
       return next(new ApiError("Invalid OTP", 400));
+    }
 
     user.active = true;
     user.deviceId = deviceId;
