@@ -169,7 +169,7 @@ const updateProfile = async (req, res, next) => {
         // const heightData = convertHeightToCM(heightInFeet, heightInInches);
         // const heightInCm = Math.round(parseFloat(heightData));
         user.height = height
-        user.heightInCm = heightInCm;
+        user.heightInCm = Math.round(heightInCm);
       }
 
       // Update latitude and longitude if provided
