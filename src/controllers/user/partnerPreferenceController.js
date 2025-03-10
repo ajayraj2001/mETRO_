@@ -62,7 +62,7 @@ const partnerPreferences = async (req, res, next) => {
     } = req.body;
 
     const user_id = req.user._id;
-
+console.log('req/.nody', req.body)
     // Check if a document already exists for the user
     const existingPreferences = await PartnerPreferences.findOne({ user_id });
 
