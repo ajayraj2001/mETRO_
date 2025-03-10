@@ -108,6 +108,7 @@ const updateProfile = async (req, res, next) => {
   upload(req, res, async (error) => {
     try {
       console.log('hibuddys ies', req.files)
+      console.log('req.body_forUpdate profiel',req.body)
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
