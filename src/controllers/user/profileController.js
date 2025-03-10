@@ -157,7 +157,7 @@ const updateProfile = async (req, res, next) => {
         user.dob = dateOfBirth;
       }
 
-      if (annual_income) user.annual_income = +annual_income;
+      if (annual_income) user.annual_income = annual_income;
 
       // if (heightInFeet && heightInInches) {
       //   const heightData = convertHeightToCM(heightInFeet, heightInInches);
