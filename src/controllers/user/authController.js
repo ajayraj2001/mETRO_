@@ -15,8 +15,7 @@ const signup = async (req, res, next) => {
     if (!email) return next(new ApiError("Email is required.", 400));
     if (!phone) return next(new ApiError("Phone is required.", 400));
     if (!fullName) return next(new ApiError("Full Name is required.", 400));
-    if (!profile_for)
-      return next(new ApiError("Profile for is required.", 400));
+    if (!profile_for) return next(new ApiError("Profile for is required.", 400));
 
     // Trim inputs
     email = String(email).trim();
@@ -83,6 +82,7 @@ const signup = async (req, res, next) => {
     if (!existingUser) {
       const newUser = new User({
         email,
+        profile_for,
         fullName: fullName.trim(),
         phone,
         active: false,
