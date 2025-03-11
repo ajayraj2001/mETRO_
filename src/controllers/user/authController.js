@@ -186,7 +186,7 @@ const verifyOtpSignUp = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    let { phone, email, loginType } = req.body;
+    let { phone, email, loginType = "phone" } = req.body;
     console.log('req.nody_forLogin', req.body)
 
     if (!loginType) return next(new ApiError("Login type is required.", 400));
