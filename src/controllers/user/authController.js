@@ -177,6 +177,7 @@ const verifyOtpSignUp = async (req, res, next) => {
       success: true,
       message: "OTP verified successfully",
       token,
+      user
     });
   } catch (error) {
     next(error);
