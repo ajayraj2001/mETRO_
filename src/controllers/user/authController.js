@@ -153,7 +153,8 @@ const verifyOtpSignUp = async (req, res, next) => {
     console.log('req.nody_forsignUpVerifyOtp', req.body)
 
     // Validate input
-    if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
+    if (!phone) return next(new ApiError("Phone is required.", 400));
+    if (!otp) return next(new ApiError("OTP is required.", 400));
 
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
@@ -250,7 +251,8 @@ const verifyOtpLogin = async (req, res, next) => {
     const { phone, otp, deviceId, deviceToken } = req.body;
 
     // Validate input
-    if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
+    if (!phone) return next(new ApiError("Phone is required.", 400));
+    if (!otp) return next(new ApiError("OTP is required.", 400));
 
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
