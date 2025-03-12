@@ -1,4 +1,4 @@
-/**
+ /**
  * Custom Error class for representing API errors with additional information.
  * @class ApiError
  * @extends Error

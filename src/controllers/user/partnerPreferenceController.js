@@ -192,7 +192,6 @@ console.log('req/.nody', req.body)
         !any_caste ||
         !mother_tongue ||
         !country ||
-        !state ||
         !manglik ||
         !highest_education ||
         !employed_in ||

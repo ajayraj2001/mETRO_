@@ -34,9 +34,14 @@ const signup = async (req, res, next) => {
     // Check if the user exists by phone number
     let existingUser = await User.findOne({ phone: phone });
 
+    // If user exists and is active, return an error
+    if (existingUser && existingUser.active) {
+      return next(new ApiError("User is already registered with this phone number.", 400));
+    }
+
     // If the user exists but hasn't verified OTP, check the email as well
     // if (existingUser && !existingUser.active) {
-    if (existingUser) {
+    if (existingUser && !existingUser.active) {
       const emailInUseByAnotherUser = await User.findOne({
         email: email,
         _id: { $ne: existingUser._id },
@@ -187,7 +192,6 @@ const verifyOtpSignUp = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     let { phone, email, loginType = "phone" } = req.body;
-    console.log('req.nody_forLogin', req.body)
 
     if (!loginType) return next(new ApiError("Login type is required.", 400));
 
@@ -213,7 +217,7 @@ const login = async (req, res, next) => {
         )}.`,
       });
     } else if (loginType === "social") {
-      if (!email) 
+      if (!email)
         return next(new ApiError("Email is required for social login.", 400));
 
       // Find the user by email
@@ -230,7 +234,7 @@ const login = async (req, res, next) => {
         message: "Login successful.",
         token,
       });
-      
+
     } else {
       return next(new ApiError("Invalid login type.", 400));
     }
@@ -243,23 +247,21 @@ const verifyOtpLogin = async (req, res, next) => {
   try {
     const { phone, otp, deviceId, deviceToken } = req.body;
 
-    console.log('req.nody_forLoginVeroifyOtp', req.body)
-
     // Validate input
     if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
 
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
     if (!user) return next(new ApiError("User not found", 404));
-console.log('ewa faki maar dalei')
+    console.log('ewa faki maar dalei')
     // Validate OTP
-    if (Date.now() > new Date(user.otp_expiry).getTime()){
+    if (Date.now() > new Date(user.otp_expiry).getTime()) {
       console.log('yah kuarm aniunda areh')
       return next(new ApiError("OTP expired", 400));
 
     }
 
-    if (user.otp !== otp && otp !== STATIC_OTP){
+    if (user.otp !== otp && otp !== STATIC_OTP) {
       console.log('heya bewa')
       return next(new ApiError("Invalid OTP", 400));
     }
@@ -287,7 +289,7 @@ console.log('ewa faki maar dalei')
       },
     });
   } catch (error) {
-    console.log('yashk',error)
+    console.log('yashk', error)
     next(error);
   }
 };
@@ -332,7 +334,7 @@ const resetPassword = async (req, res, next) => {
     const { email, newPassword } = req.body;
 
     // Validate input
-    if (!email || !newPassword) 
+    if (!email || !newPassword)
       return next(new ApiError("Email and new password are required.", 400));
 
     // Find the admin by email
@@ -344,7 +346,7 @@ const resetPassword = async (req, res, next) => {
 
     // Update the admin's password
     user.password = hashedPassword;
-    user.otp = null; 
+    user.otp = null;
     user.otp_expiry = null;
     await user.save();
 
