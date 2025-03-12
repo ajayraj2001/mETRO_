@@ -36,12 +36,14 @@ const signup = async (req, res, next) => {
 
     // If user exists and is active, return an error
     if (existingUser && existingUser.active) {
+      console.log('ajay', phone)
       return next(new ApiError("User is already registered with this phone number.", 400));
     }
-
+    
     // If the user exists but hasn't verified OTP, check the email as well
     // if (existingUser && !existingUser.active) {
-    if (existingUser && !existingUser.active) {
+      if (existingUser && !existingUser.active) {
+      console.log('ajay1`````````````11111111111111111', phone)
       const emailInUseByAnotherUser = await User.findOne({
         email: email,
         _id: { $ne: existingUser._id },
