@@ -62,7 +62,7 @@ const partnerPreferences = async (req, res, next) => {
     } = req.body;
 
     const user_id = req.user._id;
-console.log('req/.nody', req.body)
+    console.log('req/.nody', req.body)
     // Check if a document already exists for the user
     const existingPreferences = await PartnerPreferences.findOne({ user_id });
 
@@ -97,17 +97,6 @@ console.log('req/.nody', req.body)
           max_height_in_cm !== undefined
             ? Math.round(max_height_in_cm)
             : existingPreferences.max_height_in_cm,
-
-        // min_height:
-        //   min_height_in_feet !== undefined && min_height_in_inches !== undefined
-        //     ? `${min_height_in_feet} ft ${min_height_in_inches} in`
-        //     : existingPreferences.min_height,
-
-        // max_height:
-        //   max_height_in_feet !== undefined && max_height_in_inches !== undefined
-        //     ? `${max_height_in_feet} ft ${max_height_in_inches} in`
-        //     : existingPreferences.max_height,
-
         gender: gender !== undefined ? gender : existingPreferences.gender,
         marital_status:
           marital_status !== undefined
@@ -123,10 +112,6 @@ console.log('req/.nody', req.body)
             : existingPreferences.mother_tongue,
         country: country !== undefined ? country : existingPreferences.country,
         state: state !== undefined ? state : existingPreferences.state,
-        // residential_status:
-        //   residential_status !== undefined
-        //     ? residential_status
-        //     : existingPreferences.residential_status,
         manglik: manglik !== undefined ? manglik : existingPreferences.manglik,
         highest_education:
           highest_education !== undefined
@@ -149,24 +134,6 @@ console.log('req/.nody', req.body)
             ? thoughts_on_horoscope
             : existingPreferences.thoughts_on_horoscope,
       });
-
-      // if (min_height_in_feet && min_height_in_inches) {
-      //   const minHeightData = convertHeightToCM(
-      //     +min_height_in_feet,
-      //     +min_height_in_inches
-      //   );
-      //   const minHeightInCm = Math.round(parseFloat(minHeightData));
-      //   existingPreferences.min_height_in_cm = minHeightInCm;
-      // }
-
-      // if (max_height_in_feet && max_height_in_inches) {
-      //   const maxHeightData = convertHeightToCM(
-      //     +max_height_in_feet,
-      //     +max_height_in_inches
-      //   );
-      //   const maxHeightInCm = Math.round(parseFloat(maxHeightData));
-      //   existingPreferences.max_height_in_cm = maxHeightInCm;
-      // }
 
       // Save the updated document
       await existingPreferences.save({ validateBeforeSave: false });
@@ -202,7 +169,7 @@ console.log('req/.nody', req.body)
         return next(new ApiError("All fields are required", 400));
       }
 
-     const [min_salary, max_salary] = parseAnnualIncome(annual_income);
+      const [min_salary, max_salary] = parseAnnualIncome(annual_income);
 
       const newPreferences = new PartnerPreferences({
         user_id,
@@ -230,24 +197,6 @@ console.log('req/.nody', req.body)
         max_salary,
         thoughts_on_horoscope,
       });
-
-      // if (min_height_in_feet && min_height_in_inches) {
-      //   const minHeightData = convertHeightToCM(
-      //     +min_height_in_feet,
-      //     +min_height_in_inches
-      //   );
-      //   const minHeightInCm = Math.round(parseFloat(minHeightData));
-      //   newPreferences.min_height_in_cm = minHeightInCm;
-      // }
-
-      // if (max_height_in_feet && max_height_in_inches) {
-      //   const maxHeightData = convertHeightToCM(
-      //     +max_height_in_feet,
-      //     +max_height_in_inches
-      //   );
-      //   const maxHeightInCm = Math.round(parseFloat(maxHeightData));
-      //   newPreferences.max_height_in_cm = maxHeightInCm;
-      // }
 
       // Save the new document
       const savedPreferences = await newPreferences.save();
@@ -481,7 +430,7 @@ const matchedUsers = async (req, res, next) => {
       highest_education,
       annual_income,
     } = preferences;
-console.log('hey',min_age, 'hi', max_age)
+    console.log('hey', min_age, 'hi', max_age)
     // Get the current date for age calculation
     const currentDate = new Date();
 
@@ -546,7 +495,7 @@ console.log('hey',min_age, 'hi', max_age)
       }
     }
 
-    console.log('query',query)
+    console.log('query', query)
     // Calculate total number of matched users
     const totalMatchedUsers = await User.countDocuments(query);
 
