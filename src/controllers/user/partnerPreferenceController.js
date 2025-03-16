@@ -439,7 +439,7 @@ const matchedUsers = async (req, res, next) => {
       page = 1,
       limit = 10
     } = req.body;
-    const user_id = '67d18c65061eb30213f06681';
+    const user_id = req.user._id;
 
     // Validate page and limit
     const pageNumber = Math.max(1, Number(page));
