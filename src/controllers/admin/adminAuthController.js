@@ -67,11 +67,14 @@ const logInAdmin = asyncHandler(async (req, res, next) => {
     { expiresIn: "180d" }
   );
 
+  const adminData = admin.toObject();
+  delete adminData.password;
+
   res.status(201).json({
     success: true,
     message: "You have logged in successfully.",
     token,
-    admin
+    user: adminData,
   });
 });
 
