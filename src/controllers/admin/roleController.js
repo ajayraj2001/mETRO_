@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const { Admin } = require('../../models');
-const { getCurrentIST } = require('../../utils/timeUtils');
 const {ApiError} = require('../../errorHandler');
 const { getFileUploader, deleteFile } = require('../../middlewares');
 
@@ -41,8 +40,6 @@ const createSubAdmin = async (req, res, next) => {
                 profile_image: profileImgPath,
                 role: 'subadmin',
                 access_tabs: access_tabs ? JSON.parse(access_tabs) : [],
-                created_at: getCurrentIST(),
-                updated_at: getCurrentIST()
             });
 
             await newSubadmin.save();
@@ -74,7 +71,7 @@ const updateSubAdmin = async (req, res, next) => {
         try {
             const { id } = req.params;
             const updates = req.body;
-            updates.updated_at = getCurrentIST();
+            // updates.updated_at = getCurrentIST();
 
             // Check if email already exists and is not the current subadmin
             if (updates.email) {
