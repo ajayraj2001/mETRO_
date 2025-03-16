@@ -162,7 +162,7 @@ adminRoute.put("/language/:id", authenticateAdmin, updateLanguage);
 adminRoute.delete("/language/:id", authenticateAdmin, deleteLanguage);
 
 //sub admin
-adminRoute.post('/role/', authenticateAdmin, createSubAdmin);
+adminRoute.post('/role', authenticateAdmin, createSubAdmin);
 adminRoute.put('/role/:id', authenticateAdmin, updateSubAdmin);
 adminRoute.delete('/role/:id', authenticateAdmin, deleteSubAdmin);
 adminRoute.get('/role', authenticateAdmin, getSubAdmins);
