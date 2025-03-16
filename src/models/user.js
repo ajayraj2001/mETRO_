@@ -67,6 +67,7 @@ const userSchema = new mongoose.Schema(
     manglik: { type: String, default: '' },
     description: { type: String, default: '' },
     profileStatus: { type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
+    preferenceStatus: { type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
     deviceId: { type: String, default: '' },
     deviceToken: { type: String, default: '' },
     location: {

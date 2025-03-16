@@ -252,6 +252,8 @@ console.log('req/.nody', req.body)
       // Save the new document
       const savedPreferences = await newPreferences.save();
 
+      await User.findByIdAndUpdate(user_id, { preferenceStatus: "Complete" });
+
       return res.status(201).json({
         success: true,
         message: "Partner preferences created successfully",
