@@ -266,7 +266,7 @@ console.log('req/.nody', req.body)
 
 const getPreference = async (req, res, next) => {
   try {
-    const user_id = '6719e4fa25089de3f6fb59c8';
+    const user_id = req.user._id;
 
     // Check if a document already exists for the user
     const preference = await PartnerPreferences.findOne({ user_id });
@@ -439,7 +439,7 @@ const matchedUsers = async (req, res, next) => {
       page = 1,
       limit = 10
     } = req.body;
-    const user_id = req.user._id;
+    const user_id = '67d18c65061eb30213f06681';
 
     // Validate page and limit
     const pageNumber = Math.max(1, Number(page));
@@ -479,7 +479,7 @@ const matchedUsers = async (req, res, next) => {
       highest_education,
       annual_income,
     } = preferences;
-
+console.log('hey',min_age, 'hi', max_age)
     // Get the current date for age calculation
     const currentDate = new Date();
 
@@ -497,22 +497,22 @@ const matchedUsers = async (req, res, next) => {
           currentDate.getDate()
         ),
       },
-      heightInCm: { $gte: min_height_in_cm, $lte: max_height_in_cm },
-      annual_income: { $gte: min_salary, $lte: max_salary },
-      gender: gender,
+      // heightInCm: { $gte: min_height_in_cm, $lte: max_height_in_cm },
+      // annual_income: { $gte: min_salary, $lte: max_salary },
+      // gender: gender,
     };
 
     // Add religion filter if it's not "Any"
-    if (religion && religion !== "Any") {
-      query.religion = religion;
-    }
+    // if (religion && religion !== "Any") {
+    //   query.religion = religion;
+    // }
 
-    if (start && end) {
-      query.created_at = {
-        $gte: start,
-        $lte: end,
-      };
-    }
+    // if (start && end) {
+    //   query.created_at = {
+    //     $gte: start,
+    //     $lte: end,
+    //   };
+    // }
 
     if (searchTerm) {
       query.fullName = { $regex: searchTerm, $options: "i" };
@@ -544,6 +544,7 @@ const matchedUsers = async (req, res, next) => {
       }
     }
 
+    console.log('query',query)
     // Calculate total number of matched users
     const totalMatchedUsers = await User.countDocuments(query);
 

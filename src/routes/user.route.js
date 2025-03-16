@@ -60,7 +60,7 @@ userRoute.delete("/delete_profile", authenticateUser, deleteProfile);
 // Preferences & Match
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
 userRoute.get("/yourPreference", authenticateUser, getPreference);
-userRoute.post("/all_match", authenticateUser, matchedUsers);
+userRoute.post("/all_match", matchedUsers);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 
