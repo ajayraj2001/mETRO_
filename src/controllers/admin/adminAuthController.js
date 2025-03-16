@@ -71,6 +71,7 @@ const logInAdmin = asyncHandler(async (req, res, next) => {
     success: true,
     message: "You have logged in successfully.",
     token,
+    admin
   });
 });
 

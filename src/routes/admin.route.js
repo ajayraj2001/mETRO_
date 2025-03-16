@@ -51,6 +51,14 @@ const {
     updateLanguage,
     deleteLanguage,
   } = require("../controllers/admin/languageController");
+
+  const {
+    createSubAdmin,
+    updateSubAdmin,
+    deleteSubAdmin,
+    getSubAdmins,
+    updateSubAdminStatus,
+  } = require("../controllers/admin/roleController");
   
 
 const adminRoute = require("express").Router();
@@ -152,6 +160,13 @@ adminRoute.post("/language", authenticateAdmin, createLanguage);
 adminRoute.get("/language", authenticateAdmin, getLanguages);
 adminRoute.put("/language/:id", authenticateAdmin, updateLanguage);
 adminRoute.delete("/language/:id", authenticateAdmin, deleteLanguage);
+
+//sub admin
+adminRoute.post('role/', authenticateAdmin, createSubAdmin);
+adminRoute.put('role/:id', authenticateAdmin, updateSubAdmin);
+adminRoute.delete('role/:id', authenticateAdmin, deleteSubAdmin);
+adminRoute.get('role/', authenticateAdmin, getSubAdmins);
+adminRoute.put('role/status/:id', authenticateAdmin, updateSubAdminStatus);
 
 
 // //------getActiveUses--------

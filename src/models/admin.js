@@ -1,25 +1,44 @@
 const mongoose = require('mongoose');
+const { getCurrentIST } = require('../utils/timeUtils'); 
 
-const admin = new mongoose.Schema(
+const submenuSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+}, { _id: false });
+
+const accessTabSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  submenu: [submenuSchema],
+}, { _id: false });
+
+const adminSchema = new mongoose.Schema(
   {
-    phone: { type: String, trim: true, required: true, unique: true },
     email: { type: String, trim: true, required: true, unique: true },
     name: { type: String, trim: true, default: '' },
-    role: { type: String, enum: ['Admin', 'Super Admin'], default: 'Admin' },
     password: { type: String, required: true },
-    otp: { type: String, default: "" },
-    otp_expiry: { type: Date, default: Date.now },
-    profile_image: { type: String, default: "" },
+    otp: { type: String, default: null },
+    otp_expiry: { type: Date, default: getCurrentIST }, // Set OTP expiry in IST
+    profile_image: { type: String, default: null },
+    role: { type: String, enum: ['admin', 'subadmin'], required: true }, // Role-based access
+    status: {
+      type: String,
+      enum: ['Active', 'Inactive'],
+      default: 'Inactive',
+    },
+    access_tabs: [accessTabSchema], // Tabs that the user has access to
+    created_at: {
+      type: Date,
+      default: getCurrentIST, // Use custom function for IST
+    },
+    updated_at: {
+      type: Date,
+      default: getCurrentIST, // Use custom function for IST
+    },
   },
   {
-    timestamps: {
-      createdAt: 'created_at',
-      updatedAt: 'updated_at',
-    },
     collection: 'admins',
   }
 );
 
-const Admin = mongoose.model('Admin', admin);
+const Admin = mongoose.model('Admin', adminSchema);
 module.exports = Admin;
 
