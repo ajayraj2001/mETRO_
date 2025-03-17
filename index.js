@@ -56,7 +56,7 @@ let server;
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {
         const { senderId, recipientId, messageText } = data;
-
+         console.log('data', data)
         const message = await sendMessage(senderId, recipientId, messageText);
 
         // Emit the message to the recipient if they are online
