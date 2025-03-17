@@ -602,7 +602,10 @@ const singleMatchedUser = async (req, res, next) => {
     }
 
     const matchedUser = await User.findOne({ _id: matchedUserId }).exec();
-    const preference = await PartnerPreferences.findOne({ user_id: matchedUserId }).select('any_caste')
+    const preference = await PartnerPreferences.findOne(
+      { user_id: matchedUserId },
+      { any_caste: 1, _id: 0 } // Selecting only 'any_caste' and excluding '_id'
+    ).lean();
 
     if (!matchedUser) {
       return next(new ApiError("User not found", 400));
