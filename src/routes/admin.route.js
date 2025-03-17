@@ -11,55 +11,56 @@ const { authenticateAdmin, authorizeRoles } = require("../middlewares/authentica
 const { getFileUploader } = require("../middlewares/fileUpload");
 
 const {
-    // Religion
-    createReligion, getReligions, updateReligion, deleteReligion,
-    // Sect
-    createSect, getSects, updateSect, deleteSect,
-    // Jammat
-    createJammat, getJammats, updateJammat, deleteJammat,
-    // Caste
-    createCaste, getCastes, updateCaste, deleteCaste
+  // Religion
+  createReligion, getReligions, updateReligion, deleteReligion,
+  // Sect
+  createSect, getSects, updateSect, deleteSect,
+  // Jammat
+  createJammat, getJammats, updateJammat, deleteJammat,
+  // Caste
+  createCaste, getCastes, updateCaste, deleteCaste
 } = require("../controllers/admin/casteController");
 
 const {
-    createCourseCategory,
-    getCourseCategories,
-    updateCourseCategory,
-    deleteCourseCategory,
-    createCourse,
-    getCourses,
-    getCoursesByCategory,
-    updateCourse,
-    deleteCourse
+  createCourseCategory,
+  getCourseCategories,
+  updateCourseCategory,
+  deleteCourseCategory,
+  createCourse,
+  getCourses,
+  getCoursesByCategory,
+  updateCourse,
+  deleteCourse
 } = require("../controllers/admin/courseController");
 
 const {
-    createOccupationCategory,
-    getOccupationCategories,
-    updateOccupationCategory,
-    deleteOccupationCategory,
-    createOccupation,
-    getOccupations,
-    updateOccupation,
-    deleteOccupation,
-    getOccupationsByCategory
+  createOccupationCategory,
+  getOccupationCategories,
+  updateOccupationCategory,
+  deleteOccupationCategory,
+  createOccupation,
+  getOccupations,
+  updateOccupation,
+  deleteOccupation,
+  getOccupationsByCategory
 } = require("../controllers/admin/occupationController");
 
 const {
-    createLanguage,
-    getLanguages,
-    updateLanguage,
-    deleteLanguage,
-  } = require("../controllers/admin/languageController");
+  createLanguage,
+  getLanguages,
+  updateLanguage,
+  deleteLanguage,
+} = require("../controllers/admin/languageController");
 
-  const {
-    createSubAdmin,
-    updateSubAdmin,
-    deleteSubAdmin,
-    getSubAdmins,
-    updateSubAdminStatus,
-  } = require("../controllers/admin/roleController");
-  
+const {
+  createSubAdmin,
+  updateSubAdmin,
+  deleteSubAdmin,
+  getSubAdmins,
+  updateSubAdminStatus,
+} = require("../controllers/admin/roleController");
+
+const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 
 const adminRoute = require("express").Router();
 
@@ -78,13 +79,16 @@ adminRoute.patch("/profile", authenticateAdmin, upload, updateAdmin);
 adminRoute.get('/users', authenticateAdmin, getAllUsers);
 adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 
+//user --preference
+adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
+
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);
 adminRoute.get("/get_subscription_plans", authenticateAdmin, getAllSubscriptionPlans);
 adminRoute.patch("/update_subscription_plan/:id", authenticateAdmin, updateSubscriptionPlan);
 adminRoute.delete("/delete_subscription_plan/:id", authenticateAdmin, deleteSubscriptionPlan);
 // Toggle plan status (active/inactive)
-adminRoute.patch('/:id/toggle_status', authenticateAdmin,togglePlanStatus);
+adminRoute.patch('/:id/toggle_status', authenticateAdmin, togglePlanStatus);
 
 // Religion routes
 adminRoute.post("/religions", authenticateAdmin, createReligion);
@@ -131,7 +135,7 @@ adminRoute.delete("/delete_single_faq/:id", authenticateAdmin, deleteFaq);
 
 // Course Category Routes
 adminRoute.post("/categories", authenticateAdmin, createCourseCategory);
-adminRoute.get("/categories",authenticateAdmin, getCourseCategories);
+adminRoute.get("/categories", authenticateAdmin, getCourseCategories);
 adminRoute.put("/categories/:id", authenticateAdmin, updateCourseCategory);
 adminRoute.delete("/categories/:id", authenticateAdmin, deleteCourseCategory);
 
@@ -140,20 +144,20 @@ adminRoute.post("/courses", authenticateAdmin, createCourse);
 adminRoute.get("/courses", authenticateAdmin, getCourses);
 adminRoute.get("/courses/category/:categoryId", authenticateAdmin, getCoursesByCategory);
 adminRoute.put("/courses/:id", authenticateAdmin, updateCourse);
-adminRoute.delete("/courses/:id",authenticateAdmin, deleteCourse);
+adminRoute.delete("/courses/:id", authenticateAdmin, deleteCourse);
 
 // Occupation Category Routes
-adminRoute.post("/occupation_category",authenticateAdmin, createOccupationCategory);
-adminRoute.get("/occupation_categories",authenticateAdmin, getOccupationCategories);
-adminRoute.put("/occupation_category/:id",authenticateAdmin, updateOccupationCategory);
-adminRoute.delete("/occupation_category/:id",authenticateAdmin, deleteOccupationCategory);
+adminRoute.post("/occupation_category", authenticateAdmin, createOccupationCategory);
+adminRoute.get("/occupation_categories", authenticateAdmin, getOccupationCategories);
+adminRoute.put("/occupation_category/:id", authenticateAdmin, updateOccupationCategory);
+adminRoute.delete("/occupation_category/:id", authenticateAdmin, deleteOccupationCategory);
 
 // Occupation Routes
-adminRoute.post("/occupation",authenticateAdmin, createOccupation);
-adminRoute.get("/occupation",authenticateAdmin, getOccupations);
-adminRoute.put("/occupation/:id",authenticateAdmin, updateOccupation);
-adminRoute.delete("/occupation/:id",authenticateAdmin, deleteOccupation);
-adminRoute.get("/occupation_category/:categoryId",authenticateAdmin, getOccupationsByCategory);
+adminRoute.post("/occupation", authenticateAdmin, createOccupation);
+adminRoute.get("/occupation", authenticateAdmin, getOccupations);
+adminRoute.put("/occupation/:id", authenticateAdmin, updateOccupation);
+adminRoute.delete("/occupation/:id", authenticateAdmin, deleteOccupation);
+adminRoute.get("/occupation_category/:categoryId", authenticateAdmin, getOccupationsByCategory);
 
 // Create a new language
 adminRoute.post("/language", authenticateAdmin, createLanguage);
