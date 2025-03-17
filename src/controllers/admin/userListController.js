@@ -12,17 +12,12 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
 
   // Build the search query
-  const searchQuery = {
-    $and: [
-      { status: statusFilter },
-      {
-        $or: [
-          { fullName: { $regex: search, $options: 'i' } }, // Case-insensitive search by name
-          { phone: { $regex: search, $options: 'i' } }, // Case-insensitive search by number
-        ]
-      }
-    ]
-  };
+const searchQuery = {
+  $or: [
+    { fullName: { $regex: search, $options: 'i' } }, // Case-insensitive search by name
+    { phone: { $regex: search, $options: 'i' } }, // Case-insensitive search by number
+  ]
+};
 
   // Add date filter if provided
   if (startDate && endDate) {
