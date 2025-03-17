@@ -663,7 +663,7 @@ const singleMatchedUser = async (req, res, next) => {
     responseUser.numberVisibility = numberVisibility;
     responseUser.currentMatchedUserCount = currentMatchedUserCount;
     responseUser.isVerified = isVerified;
-    responseUser.any_caste = preference.any_caste;
+    responseUser.any_caste = !!(preference && preference.any_caste); 
 
 
     delete responseUser.location;
