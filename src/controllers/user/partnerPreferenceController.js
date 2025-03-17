@@ -602,6 +602,7 @@ const singleMatchedUser = async (req, res, next) => {
     }
 
     const matchedUser = await User.findOne({ _id: matchedUserId }).exec();
+    const preference = await PartnerPreferences.findOne({ user_id: matchedUserId }).select('any_caste')
 
     if (!matchedUser) {
       return next(new ApiError("User not found", 400));
@@ -659,6 +660,8 @@ const singleMatchedUser = async (req, res, next) => {
     responseUser.numberVisibility = numberVisibility;
     responseUser.currentMatchedUserCount = currentMatchedUserCount;
     responseUser.isVerified = isVerified;
+    responseUser.any_caste = preference.any_caste;
+
 
     delete responseUser.location;
     delete responseUser.otp_expiry;
