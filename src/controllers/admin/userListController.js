@@ -3,6 +3,7 @@ const { ApiError } = require("../../errorHandler");
 const { User } = require("../../models");
 
 const getAllUsers = asyncHandler(async (req, res, next) => {
+  try {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const search = req.query.search || '';
@@ -10,6 +11,9 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
   const sortBy = req.query.sortBy || 'created_at';
   const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
+
+  console.log('startDate', startDate)
+  console.log('endDate', endDate)
 
   // Build the search query
 const searchQuery = {
@@ -50,6 +54,10 @@ const searchQuery = {
     data: users,
     pagination,
   });
+} catch (error) {
+  console.log('error', error)
+  next(error);
+}
 });
 
 
