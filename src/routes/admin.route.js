@@ -61,6 +61,7 @@ const {
 } = require("../controllers/admin/roleController");
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
+const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
 
 const adminRoute = require("express").Router();
 
@@ -81,6 +82,7 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 
 //user --preference
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
+adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
 
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);
