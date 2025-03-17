@@ -29,7 +29,7 @@ const createSubAdmin = async (req, res, next) => {
             const hashedPassword = await bcrypt.hash(password, 10);
 
             if (req.file) {
-                profileImgPath = `/admin_profiles/${req.file.filename}`;
+                profileImgPath = `public/admin_profiles/${req.file.filename}`;
             }
 
             const newSubadmin = new Admin({
@@ -91,7 +91,7 @@ const updateSubAdmin = async (req, res, next) => {
             }
 
             if (req.file) {
-                profileImgPath = `/admin_profiles/${req.file.filename}`;
+                profileImgPath = `public/admin_profiles/${req.file.filename}`;
                 updates.profile_image = profileImgPath
             }
 

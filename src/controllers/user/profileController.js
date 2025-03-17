@@ -129,12 +129,11 @@ const parseAnnualIncome = (annual_income) => {
 };
 
 // Use the multiple files uploader for profile_image
-const upload = getMultipleFilesUploader(["profile_image"], "uploads/user");
+const upload = getMultipleFilesUploader(["profile_image"], "user");
 
 const updateProfile = async (req, res, next) => {
   upload(req, res, async (error) => {
     try {
-      console.log('hibuddys ies', req.files)
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
