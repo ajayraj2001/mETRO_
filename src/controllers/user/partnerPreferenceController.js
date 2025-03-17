@@ -663,8 +663,7 @@ const singleMatchedUser = async (req, res, next) => {
     responseUser.numberVisibility = numberVisibility;
     responseUser.currentMatchedUserCount = currentMatchedUserCount;
     responseUser.isVerified = isVerified;
-    responseUser.any_caste = !!(preference && preference.any_caste); 
-
+    responseUser.any_caste = preference && preference.any_caste ? "Yes" : "No";
 
     delete responseUser.location;
     delete responseUser.otp_expiry;
