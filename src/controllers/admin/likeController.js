@@ -1,24 +1,24 @@
-const { Like } = require("../../models");
+// const { Like } = require("../../models");
 
-const getUserLikedByAdmin = asyncHandler(async (req, res, next) => {
-    const { user_id } = req.params; // Admin provides user ID
+// const getUserLikedByAdmin = asyncHandler(async (req, res, next) => {
+//     const { user_id } = req.params; // Admin provides user ID
   
-    const likedUsers = await Like.find({ user: user_id }).populate(
-      "userLikedTo",
-      "fullName profile_image"
-    );
+//     const likedUsers = await Like.find({ user: user_id }).populate(
+//       "userLikedTo",
+//       "fullName profile_image"
+//     );
   
-    if (!likedUsers || likedUsers.length === 0) {
-      return next(new ApiError("No liked users found for this user.", 404));
-    }
+//     if (!likedUsers || likedUsers.length === 0) {
+//       return next(new ApiError("No liked users found for this user.", 404));
+//     }
   
-    return res.status(200).json({
-      success: true,
-      message: "Liked users fetched successfully.",
-      data: likedUsers,
-    });
-  });
+//     return res.status(200).json({
+//       success: true,
+//       message: "Liked users fetched successfully.",
+//       data: likedUsers,
+//     });
+//   });
   
   
-  module.exports = {getUserLikedByAdmin};
+//   module.exports = {getUserLikedByAdmin};
   
