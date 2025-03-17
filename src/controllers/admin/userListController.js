@@ -12,9 +12,6 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
     const sortBy = req.query.sortBy || 'created_at';
     const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
 
-    console.log('startDate', startDate);
-    console.log('endDate', endDate);
-
     // Build the search query
     const searchQuery = {
       $or: [
