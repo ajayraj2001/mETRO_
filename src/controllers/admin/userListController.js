@@ -9,7 +9,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   const totalUsers = await User.countDocuments();
 
   const users = await User.find()
-    .select('-location -otp -otp_expiry -created_at -updated_at')
+    .select('-location -otp -otp_expiry -updated_at')
     .skip((page - 1) * limit)
     .limit(limit)
     .sort({ created_at: -1 });
