@@ -41,6 +41,7 @@ const partnerPreferences = async (req, res, next) => {
   try {
     const {
       min_age,
+      khan,
       max_age,
       min_height,
       max_height,
@@ -149,6 +150,7 @@ const partnerPreferences = async (req, res, next) => {
       // Create a new document
       console.log('req/nodfu ', req.body)
       if (
+        !khan ||
         !min_age ||
         !max_age ||
         !min_height ||
