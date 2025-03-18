@@ -40,7 +40,6 @@ const parseAnnualIncome = (annual_income) => {
 const partnerPreferences = async (req, res, next) => {
   try {
     const {
-      khan,
       min_age,
       max_age,
       min_height,
@@ -167,8 +166,7 @@ const partnerPreferences = async (req, res, next) => {
         !employed_in ||
         !occupation ||
         !annual_income ||
-        !thoughts_on_horoscope ||
-        !khan
+        !thoughts_on_horoscope
       ) {
         return next(new ApiError("All fields are required", 400));
       }
