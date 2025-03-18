@@ -58,8 +58,7 @@ const partnerPreferences = async (req, res, next) => {
       highest_education,
       employed_in,
       occupation,
-      annual_income,
-      thoughts_on_horoscope,
+      annual_income
     } = req.body;
 
     const user_id = req.user._id;
@@ -129,11 +128,7 @@ const partnerPreferences = async (req, res, next) => {
         annual_income:
           annual_income !== undefined
             ? annual_income
-            : existingPreferences.annual_income,
-        thoughts_on_horoscope:
-          thoughts_on_horoscope !== undefined
-            ? thoughts_on_horoscope
-            : existingPreferences.thoughts_on_horoscope,
+            : existingPreferences.annual_income
       });
 
       // Save the updated document
@@ -167,8 +162,7 @@ const partnerPreferences = async (req, res, next) => {
         !highest_education ||
         !employed_in ||
         !occupation ||
-        !annual_income ||
-        !thoughts_on_horoscope
+        !annual_income
       ) {
         return next(new ApiError("All fields are required", 400));
       }
@@ -199,7 +193,6 @@ const partnerPreferences = async (req, res, next) => {
         annual_income,
         min_salary,
         max_salary,
-        thoughts_on_horoscope,
       });
 
       // Save the new document
