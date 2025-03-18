@@ -205,7 +205,7 @@ const partnerPreferences = async (req, res, next) => {
       // Save the new document
       const savedPreferences = await newPreferences.save();
 
-      await User.findByIdAndUpdate(user_id, { preferenceStatus: "Complete" });
+      await User.findByIdAndUpdate(user_id, { preferenceStatus: "Complete" });  //extra
 
       return res.status(201).json({
         success: true,
