@@ -40,6 +40,7 @@ const parseAnnualIncome = (annual_income) => {
 const partnerPreferences = async (req, res, next) => {
   try {
     const {
+      khan,
       min_age,
       max_age,
       min_height,
