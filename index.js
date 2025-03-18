@@ -60,8 +60,7 @@ let server;
         const message = await sendMessage(senderId, recipientId, messageText);
 
         // Emit the message to the recipient if they are online
-        if (users[recipientId]) {
-          console.log('hiu uddy')
+        if (users[recipientId]) { 
           io.to(users[recipientId].socketId).emit("newMessage", message);
         }
 

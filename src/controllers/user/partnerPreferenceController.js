@@ -164,7 +164,8 @@ const partnerPreferences = async (req, res, next) => {
         !employed_in ||
         !occupation ||
         !annual_income ||
-        !thoughts_on_horoscope
+        !thoughts_on_horoscope ||
+        !khan
       ) {
         return next(new ApiError("All fields are required", 400));
       }
