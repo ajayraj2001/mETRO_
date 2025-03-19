@@ -46,7 +46,6 @@ const partnerPreferences = async (req, res, next) => {
       max_height,
       max_height_in_cm,
       min_height_in_cm,
-      gender,
       marital_status,
       religion,
       any_caste,
@@ -96,7 +95,6 @@ const partnerPreferences = async (req, res, next) => {
           max_height_in_cm !== undefined
             ? Math.round(max_height_in_cm)
             : existingPreferences.max_height_in_cm,
-        gender: gender !== undefined ? gender : existingPreferences.gender,
         marital_status:
           marital_status !== undefined
             ? marital_status
@@ -150,7 +148,6 @@ const partnerPreferences = async (req, res, next) => {
         !max_height ||
         !max_height_in_cm ||
         !min_height_in_cm ||
-        !gender ||
         !marital_status ||
         !religion ||
         !any_caste ||
@@ -177,7 +174,6 @@ const partnerPreferences = async (req, res, next) => {
         max_height,
         max_height_in_cm: Math.round(max_height_in_cm),
         min_height_in_cm: Math.round(min_height_in_cm),
-        gender,
         marital_status,
         religion,
         any_caste,
