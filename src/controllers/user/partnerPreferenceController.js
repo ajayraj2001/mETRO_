@@ -50,7 +50,6 @@ const partnerPreferences = async (req, res, next) => {
       religion,
       any_caste,
       mother_tongue,
-      country,
       state,
       manglik,
       highest_education,
@@ -152,7 +151,6 @@ const partnerPreferences = async (req, res, next) => {
         !religion ||
         !any_caste ||
         !mother_tongue ||
-        !country ||
         !manglik ||
         !highest_education ||
         !employed_in ||
@@ -178,7 +176,6 @@ const partnerPreferences = async (req, res, next) => {
         religion,
         any_caste,
         mother_tongue,
-        country,
         state,
         manglik,
         highest_education,
