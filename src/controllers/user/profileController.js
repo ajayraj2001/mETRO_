@@ -33,7 +33,7 @@ const getCountries = async (req, res, next) => {
 
 const getStates = async (req, res, next) => {
   try {
-    const { searchTerm, countryCode } = req.body; // pass isoCode in countryCode
+    const { searchTerm, countryCode= "IN" } = req.body; // pass isoCode in countryCode
 
     let states = State.getStatesOfCountry(countryCode);
 
