@@ -13,7 +13,6 @@ const partnerPreferencesSchema = new mongoose.Schema(
     max_height: { type: String, required: true },
     min_height_in_cm: { type: Number, default: 0 },
     max_height_in_cm: { type: Number, default: 0 },
-    gender: { type: String, required: true },
     marital_status: { type: String, required: true },
     religion: { type: String, required: true },
     any_caste: { type: Boolean, default: false },
