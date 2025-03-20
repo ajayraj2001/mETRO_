@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     heightInCm: { type: Number, default: 0 },
     //freeMessages: { type: Number, default: 3 }, 
     // subscriptionExpiryDate: { type: Date },
-    country: { type: String, default: '' },
+    country: { type: String, default: 'India' },
     state: { type: String, default: '' },
     city: { type: String, default: '' },
     annual_income: { type: String, default: '' }, // Could be a range or exact value
