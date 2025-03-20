@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     profile_image: [{ type: String }],
     otp: { type: String, default: null },
     otp_expiry: { type: Date, default: Date.now },
-    active: { type: Boolean, default: true },
+    active: { type: Boolean, default: false },
 
     // Extended profile fields
     dob: { type: Date, default: '' },
