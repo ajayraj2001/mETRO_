@@ -106,7 +106,7 @@ const partnerPreferences = async (req, res, next) => {
           mother_tongue !== undefined
             ? mother_tongue
             : existingPreferences.mother_tongue,
-        country: country !== undefined ? country : existingPreferences.country,
+        // country: country !== undefined ? country : existingPreferences.country,
         state: state !== undefined ? state : existingPreferences.state,
         manglik: manglik !== undefined ? manglik : existingPreferences.manglik,
         highest_education:
