@@ -337,7 +337,7 @@ const deleteProfileImage = async (req, res, next) => {
     const userId = req.user._id;
     const { imageIndex } = req.body;
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId).select("id  profile_image");
 
     if (!user) {
       return res.status(404).json({
