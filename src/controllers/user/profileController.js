@@ -33,9 +33,10 @@ const getCountries = async (req, res, next) => {
 
 const getStates = async (req, res, next) => {
   try {
-    const { searchTerm, countryCode = "IN" } = req.body; // pass isoCode in countryCode
- console.log('req.body', req.body)
-    if(countryCode){
+    const { searchTerm } = req.body; // pass isoCode in countryCode
+    const  countryCode = "IN"
+    console.log('req.body', req.body)
+    if (countryCode) {
       console.log('yes httere is a country code ')
     }
     console.log('country', countryCode)
@@ -61,8 +62,8 @@ const getStates = async (req, res, next) => {
 
 const getCities = async (req, res, next) => {
   try {
-    const { searchTerm, countryCode = "IN", stateCode } = req.body; // pass isoCode in stateCode
-
+    const { searchTerm, stateCode } = req.body; // pass isoCode in stateCode
+    const countryCode = "IN"
     console.log('country', countryCode)
     console.log('stateCode', stateCode)
 
