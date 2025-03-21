@@ -155,7 +155,8 @@ const updateProfile = async (req, res, next) => {
         [min_salary, max_salary] = parseAnnualIncome(annual_income);
       }
 
-      console.log('req.body_forUpdate profiel', req.body)
+      console.log('updaet user req.bidy ', req.body)
+      console.log('updaet state code  ', stateCode)
 
       const user = await User.findById(userId).select("-password");
 
