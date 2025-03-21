@@ -18,6 +18,11 @@ const termsPrivacyAbout = new Schema({
     type: String,
     default: "",
   },
+  cancellationAndRefundPolicy: {
+    type: String,
+    default: "",
+  },
+
   createdAt: {
     type: Date,
     default: Date.now(),
