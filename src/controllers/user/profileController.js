@@ -146,8 +146,8 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
-      let { fullName, type, email, phone, height, annual_income, dob, country, state, city, longitude, latitude, heightInCm,
-        religion, sect, jammat, caste, occupation, highest_education, mother_tongue, ...otherFields } = req.body;
+      let { fullName, type, email, phone, height, annual_income, dob, country, state, stateCode, city, longitude, latitude, heightInCm,
+        religion, sect, jammat, caste, occupation,  highest_education, mother_tongue, ...otherFields } = req.body;
       // heightInFeet = +heightInFeet;
       // heightInInches = +heightInInches;
       let min_salary, max_salary
@@ -207,6 +207,7 @@ const updateProfile = async (req, res, next) => {
       }
       if (state) {
         user.state = state; //ajay
+        user.stateCode = stateCode; //ajay
       }
       if (city) {
         user.city = city;

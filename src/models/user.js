@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema(
     // subscriptionExpiryDate: { type: Date },
     country: { type: String, default: 'India' },
     state: { type: String, default: '' },
+    stateCode: { type: String, default: '' },
     city: { type: String, default: '' },
     annual_income: { type: String, default: '' }, // Could be a range or exact value
     min_salary: { type: Number },
