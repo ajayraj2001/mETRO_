@@ -6,7 +6,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 
 const getDetailsById = asyncHandler(async (req, res, next) => {
-  const details = await TermsPrivacyAbout.findById("6703928443bcc438e88efb9b");
+  const details = await TermsPrivacyAbout.findOne()
 
   if (!details) {
     return next(new ApiError("Details not found", 404));
