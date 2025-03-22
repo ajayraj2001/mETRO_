@@ -82,7 +82,7 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 
 //user --preference
 adminRoute.get("/userPreference/:user_id", getUserPreferenceByAdmin);
-// adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
+adminRoute.get("/userLikes/:user_id", getUserLikedByAdmin);
 
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);

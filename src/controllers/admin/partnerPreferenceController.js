@@ -2,16 +2,15 @@ const PartnerPreferences = require("../../models/partnerPreference");
 
 const getUserPreferenceByAdmin = async (req, res, next) => {
     try {
-      const { user_id } = '6719e88525089de3f6fb5a74'; // Admin will provide user_id in the request params
+      const { user_id } = req.params; // Admin will provide user_id in the request params
   
       // Fetch user preference
       const preference = await PartnerPreferences.findOne({ user_id });
   
       if (!preference) {
         return res.status(404).json({
-          success: true,
+          success: false,
           message: "No preferences found for this user.",
-          data:{}
         });
       }
   
