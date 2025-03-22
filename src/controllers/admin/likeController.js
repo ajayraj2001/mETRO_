@@ -2,7 +2,7 @@ const { Like } = require("../../models");
 const asyncHandler = require("../../utils/asyncHandler");
 
 const getUserLikedByAdmin = asyncHandler(async (req, res, next) => {
-    const user_id = req.params; // Admin provides user ID
+    const {user_id} = req.params; // Admin provides user ID
     const { page = 1, limit = 10 } = req.query; // Default page: 1, limit: 10
   
     const skip = (parseInt(page) - 1) * parseInt(limit);
