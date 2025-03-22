@@ -8,6 +8,7 @@ const getUserLikedByAdmin = asyncHandler(async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
   
     const likedUsers = await Like.find({ user: user_id })
+    .sort({ _id: -1 }) 
       .populate("userLikedTo", "fullName profile_image phone")
       .skip(skip)
       .limit(parseInt(limit));
