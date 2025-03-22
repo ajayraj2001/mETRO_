@@ -11,7 +11,6 @@ const getUserPreferenceByAdmin = async (req, res, next) => {
         return res.status(200).json({
           success: true,
           message: "No preferences found for this user.",
-          data: {}
         });
       }
   
