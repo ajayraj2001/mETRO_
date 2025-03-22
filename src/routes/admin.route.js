@@ -86,7 +86,7 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 //user --preference
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
 adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
-adminRoute.get("/userchatList/:user_id", authenticateAdmin, chatList);
+adminRoute.get("/userchatList/:userId", chatList);
 
 adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);

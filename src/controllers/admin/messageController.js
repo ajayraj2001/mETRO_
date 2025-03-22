@@ -4,7 +4,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 
 const chatList = asyncHandler(async (req, res, next) => {
-  const {userId} = req.params
+  const { userId } = req.params;
   let { page = 1, limit = 15 } = req.query;
 
   page = parseInt(page);
@@ -31,25 +31,7 @@ const chatList = asyncHandler(async (req, res, next) => {
             }
           },
           lastMessage: { $last: '$message' },
-          lastMessageTime: { $last: '$timestamp' },
-          unreadCountForRecipient: {
-            $sum: {
-              $cond: [
-                { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-                1,
-                0
-              ]
-            }
-          },
-          unreadCountForSender: {
-            $sum: {
-              $cond: [
-                { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-                1,
-                0
-              ]
-            }
-          }
+          lastMessageTime: { $last: '$timestamp' }
         }
       },
       { $sort: { lastMessageTime: -1 } },
@@ -69,20 +51,13 @@ const chatList = asyncHandler(async (req, res, next) => {
           userName: '$user.fullName',
           userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
           lastMessage: 1,
-          lastMessageTime: 1,
-          unreadCount: {
-            $cond: {
-              if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
-              then: '$unreadCountForSender',
-              else: '$unreadCountForRecipient'
-            }
-          }
+          lastMessageTime: 1
         }
       },
       { $skip: skip },
       { $limit: limit }
     ]),
-    
+
     Message.countDocuments({
       $or: [
         { sender: new mongoose.Types.ObjectId(userId) },
@@ -103,6 +78,7 @@ const chatList = asyncHandler(async (req, res, next) => {
     },
   });
 });
+
 
 
 const getChatMessages  = asyncHandler(async (req, res, next) => {
