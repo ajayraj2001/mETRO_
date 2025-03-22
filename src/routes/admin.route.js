@@ -60,7 +60,8 @@ const {
   updateSubAdminStatus,
 } = require("../controllers/admin/roleController");
 
-const {chatList} = require('../controllers/admin/messageController')
+const { chatList } = require('../controllers/admin/messageController')
+const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requestedUserController')
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
@@ -85,7 +86,11 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 //user --preference
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
 adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
-adminRoute.get("/userchatList/:user_id", chatList);
+adminRoute.get("/userchatList/:user_id", authenticateAdmin, chatList);
+
+adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
+adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
+
 
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);

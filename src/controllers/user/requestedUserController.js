@@ -116,6 +116,41 @@ const sentRequestTo = asyncHandler(async (req, res, next) => {
   });
 });
 
+// const sentRequestTo = asyncHandler(async (req, res, next) => {
+//   const user = req.user._id;
+//   let { page = 1, limit = 10 } = req.query;
+
+//   page = parseInt(page);
+//   limit = parseInt(limit);
+//   const skip = (page - 1) * limit;
+
+//   const [requestedTo, total] = await Promise.all([
+//     RequestedUser.find({ user, status: "Requested" })
+//       .sort({ createdAt: -1 })  // Newest first
+//       .populate({
+//         path: "userRequestedTo",
+//         select: "fullName height city profile_image",
+//       })
+//       .skip(skip)
+//       .limit(limit),
+      
+//     RequestedUser.countDocuments({ user, status: "Requested" })
+//   ]);
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Data fetched successfully.",
+//     data: requestedTo,
+//     pagination: {
+//       totalRecords: total,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       perPage: limit,
+//     },
+//   });
+// });
+
+
 const unsendRequest = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   const { id: userRequestedTo } = req.params;
@@ -146,15 +181,47 @@ const gotRequestFrom = asyncHandler(async (req, res, next) => {
       select: "fullName height city profile_image",
     });
 
-  // if (!requestedBy || requestedBy.length === 0)
-  //   return next(new ApiError("You have not got any request so far.", 404));
-
   return res.status(200).json({
     success: true,
     message: "Data fetched successfully.",
     data: requestedBy,
   });
 });
+
+// const gotRequestFrom = asyncHandler(async (req, res, next) => {
+//   const user = req.user._id;
+//   let { page = 1, limit = 10 } = req.query;
+
+//   page = parseInt(page);
+//   limit = parseInt(limit);
+//   const skip = (page - 1) * limit;
+
+//   const [requestedBy, total] = await Promise.all([
+//     RequestedUser.find({ userRequestedTo: user, status: "Requested" })
+//       .sort({ createdAt: -1 }) // Newest first
+//       .populate({
+//         path: "user",
+//         select: "fullName height city profile_image",
+//       })
+//       .skip(skip)
+//       .limit(limit),
+
+//     RequestedUser.countDocuments({ userRequestedTo: user, status: "Requested" }),
+//   ]);
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Data fetched successfully.",
+//     data: requestedBy,
+//     pagination: {
+//       totalRecords: total,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       perPage: limit,
+//     },
+//   });
+// });
+
 
 const checkStatusForChatting = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
