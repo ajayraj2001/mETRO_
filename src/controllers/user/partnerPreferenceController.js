@@ -149,7 +149,7 @@ const partnerPreferences = async (req, res, next) => {
         !min_height_in_cm ||
         !marital_status ||
         !religion ||
-        !any_caste ||
+        any_caste === null || // Allow false but not null
         !mother_tongue ||
         !manglik ||
         !highest_education ||
