@@ -341,6 +341,7 @@ const deleteProfileImage = async (req, res, next) => {
     const userId = req.user._id;
     const { imageIndex } = req.body;
 
+    console.log('req.body', imageIndex)
     const user = await User.findById(userId).select("id  profile_image");
 
     if (!user) {
