@@ -8,7 +8,7 @@ const getUserPreferenceByAdmin = async (req, res, next) => {
       const preference = await PartnerPreferences.findOne({ user_id });
   
       if (!preference) {
-        return res.status(404).json({
+        return res.status(200).json({
           success: true,
           message: "No preferences found for this user.",
           data: {}
