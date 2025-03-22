@@ -9,8 +9,9 @@ const getUserPreferenceByAdmin = async (req, res, next) => {
   
       if (!preference) {
         return res.status(404).json({
-          success: false,
+          success: true,
           message: "No preferences found for this user.",
+          data: prefernce
         });
       }
   
