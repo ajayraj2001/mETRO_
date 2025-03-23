@@ -21,7 +21,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
     pic: profile_image
   });
 
-  await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
+  // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
 
   return res.status(201).json({
     success: true,
