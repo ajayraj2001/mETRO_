@@ -71,23 +71,20 @@ const chatList = asyncHandler(async (req, res, next) => {
     message: "Chats fetched successfully",
     data: recentChats,
     pagination: {
-      totalRecords: total,
-      currentPage: page,
+      total: total,
+      page: page,
       totalPages: Math.ceil(total / limit),
-      perPage: limit,
+      limit: limit,
     },
   });
 });
 
 
-
 const getChatMessages  = asyncHandler(async (req, res, next) => {
-  const senderId = req.user._id;
-  const { id : receiverId } = req.params;
-  const { page = 1, limit = 15 } = req.query
+  const { senderId, receiverId,  page = 1, limit = 15  } = req.query;
 
   const pageNum = parseInt(page) || 1;
-  const limitNum = parseInt(limit) || 30;
+  const limitNum = parseInt(limit) || 20;
 
   // Update the isRead status for all messages where the recipient matches the current user
   const result = await Message.updateMany(
@@ -122,9 +119,12 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
     success: true,
     message: "Message sent successfully",
     data: messages,
-    currentPage: pageNum,
-    totalPages: Math.ceil(totalMessages / limitNum),
-    totalMessages
+    pagination: {
+      total: totalMessages,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(totalMessages / limitNum),
+    },
   });
 
 });

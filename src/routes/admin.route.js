@@ -60,7 +60,7 @@ const {
   updateSubAdminStatus,
 } = require("../controllers/admin/roleController");
 
-const { chatList } = require('../controllers/admin/messageController')
+const { chatList, getChatMessages } = require('../controllers/admin/messageController')
 const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requestedUserController')
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
@@ -87,6 +87,7 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
 adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
 adminRoute.get("/userchatList/:userId", chatList);
+adminRoute.get("/getChatMessages", getChatMessages);
 
 adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);

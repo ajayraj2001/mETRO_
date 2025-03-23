@@ -227,6 +227,38 @@ const getPreference = async (req, res, next) => {
   }
 };
 
+
+const matchedUsers = async (req, res, next) => {
+  try {
+    const user_id = req.user._id;
+    const user = await User.findById(user_id);
+    
+    if (!user) {
+      return next(new ApiError("User not found.", 404));
+    }
+
+    const oppositeGender = user.gender === "Male" ? "Female" : "Male";
+
+    const query = {
+      _id: { $ne: user_id },
+      gender: oppositeGender,
+      active: true,
+      profileStatus: "Complete"
+    };
+
+    const matchedUsers = await User.find(query);
+
+    return res.status(200).json({
+      success: true,
+      message: "Matching users found.",
+      data: matchedUsers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 //by nikhil
 // const matchedUsers = async (req, res, next) => {
 //   try {
@@ -369,214 +401,321 @@ const getPreference = async (req, res, next) => {
 //   }
 // };
 
-const matchedUsers = async (req, res, next) => {
-  try {
-    const {
-      startDate,
-      endDate,
-      searchTerm,
-      page = 1,
-      limit = 10
-    } = req.body;
-    const user_id = req.user._id;
+// const matchedUsers = async (req, res, next) => {
+//   try {
+//     const { startDate, endDate, searchTerm, page = 1, limit = 20 } = req.body;
+//     const user_id = req.user._id;
+//     const preferences = await PartnerPreferences.findOne({ user_id });
 
-    // Validate page and limit
-    const pageNumber = Math.max(1, Number(page));
-    const pageSize = Math.min(50, Math.max(1, Number(limit)));
-    const skip = (pageNumber - 1) * pageSize;
+//     // Get the current user
+//     const currentUser = await User.findById(user_id);
+//     if (!currentUser) {
+//       return next(new ApiError("User not found.", 404));
+//     }
 
-    // Find user's current subscription
-    const userSubscription = await UserSubscription.findOne({
-      user: user_id,
-      status: 'active'
-    }).populate('plan');
+//     // Basic query - always show opposite gender users
+//     const baseQuery = {
+//       _id: { $ne: user_id },
+//       active: true
+//     };
 
-    const preferences = await PartnerPreferences.findOne({ user_id });
+//     // Add gender filter (opposite of current user's gender)
+//     if (currentUser.gender === 'Male') {
+//       baseQuery.gender = 'Female';
+//     } else if (currentUser.gender === 'Female') {
+//       baseQuery.gender = 'Male';
+//     }
 
-    if (!preferences)
-      return next(new ApiError("No preferences found for this user.", 404));
+//     // Apply date range filter if provided
+//     if (startDate && endDate) {
+//       const start = parseDate(startDate);
+//       start.setHours(0, 0, 0, 0);
+      
+//       const end = parseDate(endDate);
+//       end.setHours(23, 59, 59, 999);
+      
+//       baseQuery.created_at = {
+//         $gte: start,
+//         $lte: end
+//       };
+//     }
 
-    let start, end;
-    if (startDate && endDate) {
-      start = parseDate(startDate);
-      start.setHours(0, 0, 0, 0);
+//     // Apply search term if provided
+//     if (searchTerm) {
+//       baseQuery.$or = [
+//         { fullName: { $regex: searchTerm, $options: "i" } },
+//         { occupation: { $regex: searchTerm, $options: "i" } },
+//         { city: { $regex: searchTerm, $options: "i" } }
+//       ];
+//     }
 
-      end = parseDate(endDate);
-      end.setHours(23, 59, 59, 999);
-    }
+//     // Calculate pagination values
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+//     // Get all potential matches (no strict filtering)
+//     const allUsers = await User.find(baseQuery)
+//       .sort({ created_at: -1 }) // Initially sort by most recent
+//       .limit(parseInt(limit) * 3) // Fetch more than needed for better selection
+//       .lean();
 
-    const {
-      min_age,
-      max_age,
-      min_height_in_cm,
-      max_height_in_cm,
-      min_salary,
-      max_salary,
-      gender,
-      religion,
-      caste,
-      highest_education,
-      annual_income,
-    } = preferences;
-    console.log('hey', min_age, 'hi', max_age)
-    // Get the current date for age calculation
-    const currentDate = new Date();
+//     // If we found users, score and sort them
+//     if (allUsers && allUsers.length > 0) {
+//       // If user has preferences, use them for scoring
+//       if (preferences) {
+//         const {
+//           min_age,
+//           max_age,
+//           min_height_in_cm,
+//           max_height_in_cm,
+//           min_salary,
+//           max_salary,
+//           marital_status,
+//           religion,
+//           any_caste,
+//           caste,
+//           mother_tongue,
+//           state,
+//           manglik,
+//           highest_education,
+//           employed_in,
+//           occupation,
+//         } = preferences;
 
-    const query = {
-      _id: { $ne: user_id },
-      dob: {
-        $gte: new Date(
-          currentDate.getFullYear() - max_age,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        ),
-        $lte: new Date(
-          currentDate.getFullYear() - min_age,
-          currentDate.getMonth(),
-          currentDate.getDate()
-        ),
-      },
-      // heightInCm: { $gte: min_height_in_cm, $lte: max_height_in_cm },
-      // annual_income: { $gte: min_salary, $lte: max_salary },
-      // gender: gender,
-    };
+//         // Current date for age calculation
+//         const currentDate = new Date();
 
-    // Add religion filter if it's not "Any"
-    // if (religion && religion !== "Any") {
-    //   query.religion = religion;
-    // }
+//         // Score each user based on preference matches
+//         const scoredUsers = allUsers.map(user => {
+//           let score = 0;
+//           let matchedCriteria = [];
+          
+//           // Calculate user age
+//           const userAge = calculateAge(user.dob);
+          
+//           // Age match
+//           if (min_age && max_age && userAge >= min_age && userAge <= max_age) {
+//             score += 10;
+//             matchedCriteria.push('Age');
+//           }
+          
+//           // Height match
+//           if (min_height_in_cm && max_height_in_cm && 
+//               user.heightInCm >= min_height_in_cm && 
+//               user.heightInCm <= max_height_in_cm) {
+//             score += 8;
+//             matchedCriteria.push('Height');
+//           }
+          
+//           // Salary/Income match
+//           if (min_salary && max_salary && 
+//               user.min_salary && user.max_salary &&
+//               ((user.min_salary <= max_salary && user.max_salary >= min_salary) ||
+//                (min_salary <= user.max_salary && max_salary >= user.min_salary))) {
+//             score += 8;
+//             matchedCriteria.push('Income');
+//           }
+          
+//           // Religion match
+//           if (religion && religion !== "Any" && user.religion === religion) {
+//             score += 15; // Higher weight for religion
+//             matchedCriteria.push('Religion');
+//           }
+          
+//           // Caste match
+//           if (!any_caste && caste && user.caste === caste) {
+//             score += 10;
+//             matchedCriteria.push('Caste');
+//           }
+          
+//           // Marital status match
+//           if (marital_status && marital_status !== "Any" && 
+//               user.marital_status === marital_status) {
+//             score += 10;
+//             matchedCriteria.push('Marital Status');
+//           }
+          
+//           // Mother tongue match
+//           if (mother_tongue && mother_tongue !== "Any" && 
+//               user.mother_tongue === mother_tongue) {
+//             score += 8;
+//             matchedCriteria.push('Mother Tongue');
+//           }
+          
+//           // State match
+//           if (state && state !== "" && user.state === state) {
+//             score += 8;
+//             matchedCriteria.push('State');
+//           }
+          
+//           // Manglik status match
+//           if (manglik && manglik !== "Doesn't matter" && user.manglik === manglik) {
+//             score += 7;
+//             matchedCriteria.push('Manglik Status');
+//           }
+          
+//           // Education match
+//           if (highest_education && highest_education !== "Any" && 
+//               user.highest_education === highest_education) {
+//             score += 7;
+//             matchedCriteria.push('Education');
+//           }
+          
+//           // Employment type match
+//           if (employed_in && employed_in !== "Any" && user.employed_in === employed_in) {
+//             score += 6;
+//             matchedCriteria.push('Employment');
+//           }
+          
+//           // Occupation match
+//           if (occupation && occupation !== "Any" && user.occupation === occupation) {
+//             score += 6;
+//             matchedCriteria.push('Occupation');
+//           }
+          
+//           // Bonus for profile completeness
+//           if (user.profile_image && user.profile_image.length > 0) {
+//             score += 5;
+//           }
+          
+//           // Bonus for verified profiles
+//           if (user.verifiedBadge) {
+//             score += 5;
+//           }
+          
+//           // Bonus for newer profiles (less than 30 days old)
+//           const profileAgeDays = Math.floor((new Date() - new Date(user.created_at)) / (24 * 60 * 60 * 1000));
+//           if (profileAgeDays < 30) {
+//             score += 5 - Math.floor(profileAgeDays / 7); // 5 points for first week, decreasing by 1 each week
+//           }
+          
+//           // Calculate distance if location data exists
+//           const currentUserLocation = req.user?.location?.coordinates;
+//           const matchedUserLocation = user?.location?.coordinates;
+//           const distance = currentUserLocation && matchedUserLocation
+//             ? haversineDistance(currentUserLocation, matchedUserLocation)?.toFixed(2)
+//             : null;
+            
+//           // Match percentage (out of possible criteria)
+//           const possibleCriteria = 11; // Counting all major criteria
+//           const matchPercentage = Math.min(Math.round((matchedCriteria.length / possibleCriteria) * 100), 100);
 
-    // if (start && end) {
-    //   query.created_at = {
-    //     $gte: start,
-    //     $lte: end,
-    //   };
-    // }
+//           return {
+//             _id: user._id,
+//             profile_for: user.profile_for,
+//             email: user.email,
+//             fullName: user.fullName,
+//             phone: user.phone,
+//             profile_image: user.profile_image,
+//             height: user.height,
+//             state: user.state,
+//             city: user.city,
+//             highest_education: user.highest_education,
+//             annual_income: user.annual_income,
+//             marital_status: user.marital_status,
+//             caste: user.caste,
+//             religion: user.religion,
+//             occupation: user.occupation,
+//             distance: distance,
+//             age: userAge,
+//             matchScore: score,
+//             matchPercentage: matchPercentage,
+//             matchedCriteria: matchedCriteria,
+//             isVerified: user.verifiedBadge,
+//             profileVisibility: user.features?.profileVisibility || 'Standard',
+//             created_at: user.created_at
+//           };
+//         });
+        
+//         // Sort by match score (highest first)
+//         scoredUsers.sort((a, b) => b.matchScore - a.matchScore);
+        
+//         // Calculate total results and pages for pagination
+//         const totalResults = await User.countDocuments(baseQuery);
+//         const totalPages = Math.ceil(totalResults / parseInt(limit));
+        
+//         // Return results with pagination info
+//         return res.status(200).json({
+//           success: true,
+//           message: "Matching users found.",
+//           data: scoredUsers.slice(0, parseInt(limit)),
+//           pagination: {
+//             total: totalResults,
+//             pages: totalPages,
+//             page: parseInt(page),
+//             limit: parseInt(limit)
+//           }
+//         });
+//       } else {
+//         // No preferences found, just return users with basic info
+//         const usersWithBasicInfo = allUsers.map(user => {
+//           const userAge = calculateAge(user.dob);
+//           const distance = req.user?.location?.coordinates && user?.location?.coordinates
+//             ? haversineDistance(req.user.location.coordinates, user.location.coordinates)?.toFixed(2)
+//             : null;
+            
+//           return {
+//             _id: user._id,
+//             profile_for: user.profile_for,
+//             email: user.email,
+//             fullName: user.fullName,
+//             phone: user.phone,
+//             profile_image: user.profile_image,
+//             height: user.height,
+//             state: user.state,
+//             city: user.city,
+//             highest_education: user.highest_education,
+//             annual_income: user.annual_income,
+//             marital_status: user.marital_status,
+//             caste: user.caste,
+//             religion: user.religion,
+//             occupation: user.occupation,
+//             distance: distance,
+//             age: userAge,
+//             matchScore: 0,
+//             matchPercentage: 0,
+//             matchedCriteria: [],
+//             isVerified: user.verifiedBadge,
+//             profileVisibility: user.features?.profileVisibility || 'Standard',
+//             created_at: user.created_at
+//           };
+//         });
+        
+//         // Calculate total results and pages for pagination
+//         const totalResults = await User.countDocuments(baseQuery);
+//         const totalPages = Math.ceil(totalResults / parseInt(limit));
+        
+//         return res.status(200).json({
+//           success: true,
+//           message: "Users found, but no preferences set for this user.",
+//           data: usersWithBasicInfo.slice(0, parseInt(limit)),
+//           pagination: {
+//             total: totalResults,
+//             pages: totalPages,
+//             page: parseInt(page),
+//             limit: parseInt(limit)
+//           }
+//         });
+//       }
+//     } else {
+//       // No users found, still return a successful response with empty data
+//       return res.status(200).json({
+//         success: true,
+//         message: "No users found matching the criteria.",
+//         data: [],
+//         pagination: {
+//           total: 0,
+//           pages: 0,
+//           page: parseInt(page),
+//           limit: parseInt(limit)
+//         }
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Match users error:", error);
+//     next(error);
+//   }
+// };
 
-    if (searchTerm) {
-      query.fullName = { $regex: searchTerm, $options: "i" };
-    }
-
-    // Determine sorting and visibility based on user's subscription
-    let sortOptions = { created_at: -1 }; // Default sort
-    let visibilityMultiplier = 1;
-
-    if (userSubscription && userSubscription.plan) {
-      // Adjust sorting based on subscription plan
-      switch (userSubscription.plan.planName) {
-        case 'Silver':
-          sortOptions = { created_at: -1 };
-          visibilityMultiplier = 1.2;
-          break;
-        case 'Gold':
-          sortOptions = { 'features.profileVisibility': -1, created_at: -1 };
-          visibilityMultiplier = 1.5;
-          break;
-        case 'Platinum':
-          sortOptions = { 'features.profileVisibility': -1, created_at: -1 };
-          visibilityMultiplier = 2;
-          break;
-        case 'Royal':
-          sortOptions = { 'features.profileVisibility': -1, created_at: -1 };
-          visibilityMultiplier = 3;
-          break;
-      }
-    }
-
-    console.log('query', query)
-    // Calculate total number of matched users
-    const totalMatchedUsers = await User.countDocuments(query);
-
-    // Find users matching the preferences with sorting and pagination
-    const matchedUsers = await User.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(pageSize);
-
-    const currentTime = moment().tz("Asia/Kolkata");
-
-    if (!matchedUsers || matchedUsers.length === 0)
-      return next(new ApiError("No match found for this user.", 404));
-
-    const usersWithDistances = await Promise.all(
-      matchedUsers.map(async (user) => {
-        const currentUserLocation = req.user?.location?.coordinates;
-        const matchedUserLocation = user?.location?.coordinates;
-
-        // Calculate distance
-        const distance =
-          currentUserLocation && matchedUserLocation
-            ? haversineDistance(currentUserLocation, matchedUserLocation)?.toFixed(2)
-            : null;
-
-        // Calculate age
-        const age = calculateAge(user.dob);
-
-        // Check subscription status using UserSubscription
-        const userSubscription = await UserSubscription.findOne({
-          user: user._id,
-          status: "active",
-          endDate: { $gt: currentTime },
-        }).populate("plan");
-
-        const isVerified =
-          userSubscription?.plan?.features?.verifiedBadge?.included || false;
-
-        // Calculate match relevance score
-        let matchScore = 0;
-
-        // Base matching logic
-        if (user.highest_education?.toString() === preferences.highest_education)
-          matchScore += 20;
-
-        if (user.occupation?.toString() === preferences.occupation)
-          matchScore += 15;
-
-        if (user.caste?.toString() === preferences.caste)
-          matchScore += 10;
-
-        // Apply visibility multiplier to match score
-        matchScore *= visibilityMultiplier;
-
-        return {
-          _id: user._id,
-          profile_for: user.profile_for,
-          fullName: user.fullName,
-          profile_image: user.profile_image,
-          height: user.height,
-          state: user.state,
-          city: user.city,
-          highest_education: user.highest_education,
-          annual_income: user.annual_income,
-          marital_status: user.marital_status,
-          caste: user.caste,
-          occupation: user.occupation,
-          distance,
-          age,
-          isVerified,
-          matchScore,
-        };
-      })
-    );
-
-    // Sort users by match score in descending order
-    const sortedUsers = usersWithDistances.sort((a, b) => b.matchScore - a.matchScore);
-
-    return res.status(200).json({
-      success: true,
-      message: "Matching users found.",
-      data: sortedUsers,
-      pagination: {
-        currentPage: pageNumber,
-        pageSize,
-        totalUsers: totalMatchedUsers,
-        totalPages: Math.ceil(totalMatchedUsers / pageSize)
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 const singleMatchedUser = async (req, res, next) => {
   try {

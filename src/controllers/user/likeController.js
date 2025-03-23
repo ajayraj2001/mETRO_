@@ -33,10 +33,10 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 const getLikedUsers = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
 
-  const likedUsers = await Like.find({ user }).populate(
-    "userLikedTo",
-    "fullName profile_image"
-  );
+  const likedUsers = await Like.find({ user })
+  .sort({ _id: -1 }) // Sort by newest first using indexed _id field
+  .populate("userLikedTo", "fullName profile_image");
+
 
   if (!likedUsers || likedUsers.length === 0) {
     return next(new ApiError("No liked users found for this user.", 404));
