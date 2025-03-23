@@ -49,6 +49,38 @@ const getLikedUsers = asyncHandler(async (req, res, next) => {
   });
 });
 
+// const getLikedUsers = asyncHandler(async (req, res, next) => {
+//   const user = req.user._id;
+//   const page = Math.max(1, Number(req.query.page) || 1); // Default to page 1
+//   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10)); // Default limit 10, max 50
+//   const skip = (page - 1) * limit;
+
+//   const likedUsers = await Like.find({ user })
+//     .sort({ _id: -1 }) // Sort by newest first using indexed _id field
+//     .skip(skip)
+//     .limit(limit)
+//     .populate("userLikedTo", "fullName profile_image");
+
+//   const totalLikedUsers = await Like.countDocuments({ user });
+
+//   if (!likedUsers || likedUsers.length === 0) {
+//     return next(new ApiError("No liked users found for this user.", 404));
+//   }
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Liked users fetched successfully.",
+//     data: likedUsers,
+//     pagination: {
+//       currentPage: page,
+//       pageSize: limit,
+//       totalUsers: totalLikedUsers,
+//       totalPages: Math.ceil(totalLikedUsers / limit),
+//     },
+//   });
+// });
+
+
 // Unlike a user profile
 const unlikeUserProfile = asyncHandler(async (req, res, next) => {
   const { id: userLikedTo } = req.params;
