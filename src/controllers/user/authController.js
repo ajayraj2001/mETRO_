@@ -5,6 +5,7 @@ const User = require("../../models/user");
 const { getOtp } = require("../../utils");
 const { STATIC_OTP, ACCESS_TOKEN_SECRET } = process.env;
 const sendOtpEmail = require("../../utils/sendOtpToEmail"); // Assuming you have a function to send SMS as well
+const sendOTP = require("../../utils/sendOtpToPhone"); // Assuming you have a function to send SMS as well
 
 const signup = async (req, res, next) => {
   try {
@@ -36,14 +37,13 @@ const signup = async (req, res, next) => {
 
     // If user exists and is active, return an error
     if (existingUser && existingUser.active) {
-      console.log('ajay', phone)
       return next(new ApiError("User is already registered with this phone number.", 400));
     }
-    
+
     // If the user exists but hasn't verified OTP, check the email as well
     // if (existingUser && !existingUser.active) {
-      if (existingUser && !existingUser.active) {
-      console.log('ajay1`````````````11111111111111111', phone)
+    if (existingUser && !existingUser.active) {
+
       const emailInUseByAnotherUser = await User.findOne({
         email: email,
         _id: { $ne: existingUser._id },
@@ -67,7 +67,7 @@ const signup = async (req, res, next) => {
       await existingUser.save();
 
       // Resend OTP
-      // sendOtp(existingUser.phone, otp);
+      sendOTP(existingUser.phone, otp)
 
       return res.status(200).json({
         success: true,
@@ -106,7 +106,7 @@ const signup = async (req, res, next) => {
       await newUser.save();
 
       // Send OTP to user's phone
-      // sendOtp(newUser.phone, otp);
+      sendOTP(existingUser.phone, otp)
 
       return res.status(201).json({
         success: true,
@@ -213,6 +213,9 @@ const login = async (req, res, next) => {
 
       user.save();
 
+        // Resend OTP
+      sendOTP(user.phone, otp)
+
       return res.status(200).json({
         success: true,
         message: `An OTP has been successfully sent to the mobile ****${user.phone.slice(
@@ -257,16 +260,13 @@ const verifyOtpLogin = async (req, res, next) => {
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
     if (!user) return next(new ApiError("User not found", 404));
-    console.log('ewa faki maar dalei')
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime()) {
-      console.log('yah kuarm aniunda areh')
       return next(new ApiError("OTP expired", 400));
 
     }
 
     if (user.otp !== otp && otp !== STATIC_OTP) {
-      console.log('heya bewa')
       return next(new ApiError("Invalid OTP", 400));
     }
 
@@ -293,7 +293,6 @@ const verifyOtpLogin = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.log('yashk', error)
     next(error);
   }
 };
