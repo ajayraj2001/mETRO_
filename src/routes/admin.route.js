@@ -65,6 +65,7 @@ const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requeste
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
+const { updateAppConfig } = require('../controllers/admin/appconfigContoller')
 
 const adminRoute = require("express").Router();
 
@@ -79,6 +80,10 @@ adminRoute.patch("/profile", authenticateAdmin, upload, updateAdmin);
 // adminRoute.put("/profile", authenticateAdmin, updateProfile);
 // adminRoute.put("/change_password", authenticateAdmin, changePassword);
 
+//appConfig
+adminRoute.post('/updateAppConfig', authenticateAdmin, updateAppConfig);
+
+
 // -------------- Users --------------------
 adminRoute.get('/users', authenticateAdmin, getAllUsers);
 adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
@@ -86,12 +91,11 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 //user --preference
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
 adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
-adminRoute.get("/userchatList/:userId", chatList);
-adminRoute.get("/getChatMessages", getChatMessages);
+adminRoute.get("/userchatList/:userId", authenticateAdmin, chatList);
+adminRoute.get("/getChatMessages", authenticateAdmin,getChatMessages);
 
 adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
-
 
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);

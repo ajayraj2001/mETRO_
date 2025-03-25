@@ -24,6 +24,10 @@ const {
   getFullHierarchy
 } = require("../controllers/user/casteController.js");
 
+const {
+  getAppConfig
+} = require("../controllers/user/appConfigContoller.js");
+
 const {getLanguages} = require("../controllers/user/languageController.js")
 
 const userRoute = require("express").Router();
@@ -37,6 +41,7 @@ userRoute.post("/forget_password", forgotPassword);
 userRoute.post("/reset_password", resetPassword);
 
 // Get all religions  ---
+userRoute.get("/appConfig", getAppConfig);
 userRoute.get("/religions", getReligions);
 // Get sects for a religion
 userRoute.get("/religions/:religionId/sects", getSects);
