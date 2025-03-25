@@ -11,7 +11,6 @@ const signup = async (req, res, next) => {
   try {
     let { email, fullName, phone, profile_for } = req.body;
 
-    console.log('req.body_forSignUP', req.body)
     // Validate required fields
     if (!email) return next(new ApiError("Email is required.", 400));
     if (!phone) return next(new ApiError("Phone is required.", 400));
@@ -67,7 +66,7 @@ const signup = async (req, res, next) => {
       await existingUser.save();
 
       // Resend OTP
-      sendOTP(existingUser.phone, otp)
+      // sendOTP(existingUser.phone, otp)
 
       return res.status(200).json({
         success: true,
@@ -106,7 +105,7 @@ const signup = async (req, res, next) => {
       await newUser.save();
 
       // Send OTP to user's phone
-      sendOTP(existingUser.phone, otp)
+      // sendOTP(existingUser.phone, otp)
 
       return res.status(201).json({
         success: true,
@@ -214,7 +213,7 @@ const login = async (req, res, next) => {
       user.save();
 
         // Resend OTP
-      sendOTP(user.phone, otp)
+      // sendOTP(user.phone, otp)
 
       return res.status(200).json({
         success: true,

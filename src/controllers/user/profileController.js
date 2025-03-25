@@ -155,9 +155,6 @@ const updateProfile = async (req, res, next) => {
         [min_salary, max_salary] = parseAnnualIncome(annual_income);
       }
 
-      console.log('updaet user req.bidy ', req.body)
-      console.log('updaet state code  ', stateCode)
-
       const user = await User.findById(userId).select("-password");
 
       if (!user) {
@@ -214,15 +211,7 @@ const updateProfile = async (req, res, next) => {
         user.city = city;
       }
 
-      // if (heightInFeet && heightInInches) {
-      //   const heightData = convertHeightToCM(heightInFeet, heightInInches);
-      //   const heightInCm = Math.round(parseFloat(heightData));
-      //   user.height = `${heightInFeet} ft ${heightInInches} in`
-      //   user.heightInCm = heightInCm;
-      // }
       if (height) {
-        // const heightData = convertHeightToCM(heightInFeet, heightInInches);
-        // const heightInCm = Math.round(parseFloat(heightData));
         user.height = height
         user.heightInCm = Math.round(heightInCm);
       }
@@ -268,8 +257,6 @@ const updateProfile = async (req, res, next) => {
       // Update other fields if provided
       Object.assign(user, otherFields);
 
-      console.log('req.files_updaitn image **********************', req.files)
-      console.log('req.body.imageIndex -----------------------------', req.body.imageIndex)
       // Handle profile images update
       if (req.files && req.files.profile_image) {
         // Check if the user is adding new images or updating existing ones
