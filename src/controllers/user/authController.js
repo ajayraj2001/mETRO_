@@ -79,9 +79,8 @@ const signup = async (req, res, next) => {
     // Check if the email is already in use by another user (exclude the current user by _id)
     existingUser = await User.findOne({ email: email });
     if (existingUser && !existingUser._id.equals(existingUser._id)) {
-      return next(
-        new ApiError("User is already registered with this email.", 400)
-      );
+      return next(new ApiError("Email already in use. Please log in or use a different one.", 400));
+      
     }
 
     // If the user doesn't exist, create a new user
