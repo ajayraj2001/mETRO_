@@ -157,6 +157,7 @@ const unsendRequest = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   const { id: userRequestedTo } = req.params;
 
+  console.log('user'. req.params, 'userid', user)
   const unsend = await RequestedUser.findOneAndDelete({
     user,
     userRequestedTo,
