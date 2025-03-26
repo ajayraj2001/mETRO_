@@ -8,93 +8,186 @@ const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
-  const { userRequestedTo, status } = req.body;
-  const user = req.user._id;
-  const {fullName, deviceToken, profile_image } = req.user;
-  
-  if (!userRequestedTo)
-    return next(new ApiError("Requested user id is required", 400));
+  try {
+    const { userRequestedTo, status } = req.body;
+    const user = req.user._id;
+    const { fullName, deviceToken, profile_image } = req.user;
 
-  // Check if the current user is the one making the request
-  if (user.toString() === userRequestedTo.toString())
-    return next(new ApiError("You cannot request yourself.", 403));
+    if (!userRequestedTo)
+      return next(new ApiError("Requested user id is required", 400));
 
-  // Find an existing document for the users
-  const existingRequest = await RequestedUser.findOne({
-    $or: [
-      { user, userRequestedTo },
-      { user: userRequestedTo, userRequestedTo: user },
-    ],
-  });
+    // Check if the current user is the one making the request
+    if (user.toString() === userRequestedTo.toString())
+      return next(new ApiError("You cannot request yourself.", 403));
 
-  const requestedUser = await User.findById(userRequestedTo);
+    // Find an existing request
+    const existingRequest = await RequestedUser.findOne({
+      $or: [
+        { user, userRequestedTo },
+        { user: userRequestedTo, userRequestedTo: user },
+      ],
+    });
 
-  if (existingRequest) {
-    if (!status) {
-      return next(
-        new ApiError(
-          "Request already exists between these users. You cannot send a new one.",
-          403
-        )
-      );
-    }
+    const requestedUser = await User.findById(userRequestedTo);
+    if (!requestedUser) return next(new ApiError("Requested user not found", 404));
 
-    // If the document exists, update the status
-    if (existingRequest.user.toString() === user.toString()) {
-      return next(new ApiError("You cannot modify this request.", 403));
-    }
+    if (existingRequest) {
+      if (!status) {
+        return next(
+          new ApiError(
+            "Request already exists between these users. You cannot send a new one.",
+            403
+          )
+        );
+      }
 
-    existingRequest.status = status;
-    await existingRequest.save({ validateBeforeSave: false });
+      // If the document exists, update the status
+      if (existingRequest.user.toString() === user.toString()) {
+        return next(new ApiError("You cannot modify this request.", 403));
+      }
 
-    if (existingRequest.status === "Accept") {
+      existingRequest.status = status;
+      await existingRequest.save({ validateBeforeSave: false });
 
-      await Notification.create({
+      if (existingRequest.status === "Accept") {
+        await Notification.create({
+          user: userRequestedTo,
+          title: "Friend Request Accepted",
+          message: `${fullName} has accepted your Friend Request.`,
+          pic: profile_image
+        });
+
+        await sendFirebaseNotification(
+          requestedUser.deviceToken,
+          "Friend Request Accepted",
+          `${fullName} has accepted your Friend Request.`
+        );
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Status updated successfully.",
+      });
+    } else {
+      // If the document does not exist, create a new one
+      const newRequest = new RequestedUser({ user, userRequestedTo });
+      const newRequestPromise = newRequest.save();
+
+      const notificationPromise = Notification.create({
         user: userRequestedTo,
-        title: "Friend Request Accepted",
-        message: `${fullName} has accepted your Friend Request.`,
+        title: "Friend Request Received",
+        message: `${fullName} has sent you a Friend Request.`,
         pic: profile_image
       });
 
+      // Wait for both promises to resolve
+      await Promise.all([newRequestPromise, notificationPromise]);
+
       await sendFirebaseNotification(
         requestedUser.deviceToken,
-        "Friend Request Accepted",
-        `${fullName} has accepted your Friend Request.`
+        "Friend Request Received",
+        `${fullName} has sent you a Friend Request.`
       );
 
+      return res.status(201).json({
+        success: true,
+        message: "Request sent successfully.",
+      });
     }
-
-    return res.status(200).json({
-      success: true,
-      message: "Status updated successfully.",
-    });
-  } else {
-    // If the document does not exist, create a new one
-    const newRequest = new RequestedUser({ user, userRequestedTo });
-    const newRequestPromise = newRequest.save();
-
-    const notificationPromise = Notification.create({
-      user: userRequestedTo,
-      title: "Friend Request Received",
-      message: `${fullName} has sent you a Friend Request.`,
-      pic: profile_image
-    });
-
-    // Wait for both promises to resolve
-    await Promise.all([newRequestPromise, notificationPromise]);
-
-    await sendFirebaseNotification(
-      requestedUser.deviceToken,
-      "Friend Request Received",
-      `${fullName} has sent you a Friend Request.`
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: "Request sent successfully.",
-    });
+  } catch (error) {
+    console.error("Error in sendOrUpdateRequest:", error);
+    next(error);
   }
 });
+
+// const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
+//   const { userRequestedTo, status } = req.body;
+//   const user = req.user._id;
+//   const {fullName, deviceToken, profile_image } = req.user;
+  
+//   if (!userRequestedTo)
+//     return next(new ApiError("Requested user id is required", 400));
+
+//   // Check if the current user is the one making the request
+//   if (user.toString() === userRequestedTo.toString())
+//     return next(new ApiError("You cannot request yourself.", 403));
+
+//   // Find an existing document for the users
+//   const existingRequest = await RequestedUser.findOne({
+//     $or: [
+//       { user, userRequestedTo },
+//       { user: userRequestedTo, userRequestedTo: user },
+//     ],
+//   });
+
+//   const requestedUser = await User.findById(userRequestedTo);
+
+//   if (existingRequest) {
+//     if (!status) {
+//       return next(
+//         new ApiError(
+//           "Request already exists between these users. You cannot send a new one.",
+//           403
+//         )
+//       );
+//     }
+
+//     // If the document exists, update the status
+//     if (existingRequest.user.toString() === user.toString()) {
+//       return next(new ApiError("You cannot modify this request.", 403));
+//     }
+
+//     existingRequest.status = status;
+//     await existingRequest.save({ validateBeforeSave: false });
+
+//     if (existingRequest.status === "Accept") {
+
+//       await Notification.create({
+//         user: userRequestedTo,
+//         title: "Friend Request Accepted",
+//         message: `${fullName} has accepted your Friend Request.`,
+//         pic: profile_image
+//       });
+
+//       await sendFirebaseNotification(
+//         requestedUser.deviceToken,
+//         "Friend Request Accepted",
+//         `${fullName} has accepted your Friend Request.`
+//       );
+
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Status updated successfully.",
+//     });
+//   } else {
+//     // If the document does not exist, create a new one
+//     const newRequest = new RequestedUser({ user, userRequestedTo });
+//     const newRequestPromise = newRequest.save();
+
+//     const notificationPromise = Notification.create({
+//       user: userRequestedTo,
+//       title: "Friend Request Received",
+//       message: `${fullName} has sent you a Friend Request.`,
+//       pic: profile_image
+//     });
+
+//     // Wait for both promises to resolve
+//     await Promise.all([newRequestPromise, notificationPromise]);
+
+//     await sendFirebaseNotification(
+//       requestedUser.deviceToken,
+//       "Friend Request Received",
+//       `${fullName} has sent you a Friend Request.`
+//     );
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Request sent successfully.",
+//     });
+//   }
+// });
 
 const sentRequestTo = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
