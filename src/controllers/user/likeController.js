@@ -82,19 +82,42 @@ const getLikedUsers = asyncHandler(async (req, res, next) => {
 
 
 // Unlike a user profile
+// const unlikeUserProfile = asyncHandler(async (req, res, next) => {
+//   const { id: userLikedTo } = req.params;
+//   const user = req.user._id;
+  
+
+//   const like = await Like.findOneAndDelete({ user, userLikedTo });
+
+//   if (!like) return next(new ApiError("Like not found.", 404));
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "User profile unliked successfully.",
+//   });
+// });
+
 const unlikeUserProfile = asyncHandler(async (req, res, next) => {
-  const { id: userLikedTo } = req.params;
-  const user = req.user._id;
+  try {
+    const { id: userLikedTo } = req.params;
+    const user = req.user._id;
 
-  const like = await Like.findOneAndDelete({ user, userLikedTo });
+    const like = await Like.findOneAndDelete({ user, userLikedTo });
 
-  if (!like) return next(new ApiError("Like not found.", 404));
+    if (!like) {
+      return next(new ApiError("Like not found.", 404));
+    }
 
-  return res.status(200).json({
-    success: true,
-    message: "User profile unliked successfully.",
-  });
+    return res.status(200).json({
+      success: true,
+      message: "User profile unliked successfully.",
+    });
+  } catch (error) {
+    console.error("Error in unlikeUserProfile:", error); // Logs error to console
+    next(error); // Pass the error to the error-handling middleware
+  }
 });
+
 
 module.exports = {
   likeUserProfile,

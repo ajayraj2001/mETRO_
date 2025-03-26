@@ -66,7 +66,7 @@ const signup = async (req, res, next) => {
       await existingUser.save();
 
       // Resend OTP
-      // sendOTP(existingUser.phone, otp)
+      sendOTP(existingUser.phone, otp)
 
       return res.status(200).json({
         success: true,
@@ -105,7 +105,7 @@ const signup = async (req, res, next) => {
       await newUser.save();
 
       // Send OTP to user's phone
-      // sendOTP(existingUser.phone, otp)
+      sendOTP(existingUser.phone, otp)
 
       return res.status(201).json({
         success: true,
@@ -131,7 +131,7 @@ const signup = async (req, res, next) => {
     await existingUser.save();
 
     // Resend OTP
-    // sendOtp(existingUser.phone, otp);
+    sendOTP(existingUser.phone, otp);
 
     return res.status(200).json({
       success: true,
@@ -213,7 +213,7 @@ const login = async (req, res, next) => {
       user.save();
 
         // Resend OTP
-      // sendOTP(user.phone, otp)
+      sendOTP(user.phone, otp)
 
       return res.status(200).json({
         success: true,

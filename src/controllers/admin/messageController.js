@@ -136,7 +136,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Message get successfully",
+    message: "Messages get successfully",
     data: messages,
     pagination: {
       total: totalMessages,
