@@ -31,7 +31,9 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 
 // Get all users that a specific user has liked
 const getLikedUsers = asyncHandler(async (req, res, next) => {
+  console.log('get like user APi')
   const user = req.user._id;
+  console.log('get like user APi---------user', user)
 
   const likedUsers = await Like.find({ user })
   .sort({ _id: -1 }) // Sort by newest first using indexed _id field
