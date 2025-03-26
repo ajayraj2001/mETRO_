@@ -7,6 +7,4 @@ const asyncHandler = (requestHandler) => {  // Used to handle web request
             next(err);  // Pass the error to the next handler
         });
     };
-}
-
-module.exports = asyncHandler;
+}; module.exports = asyncHandler;   
