@@ -106,7 +106,7 @@ const signup = async (req, res, next) => {
       await newUser.save();
 
       // Send OTP to user's phone
-      sendOTP(existingUser.phone, otp)
+      sendOTP(newUser.phone, otp)
 
       return res.status(201).json({
         success: true,
