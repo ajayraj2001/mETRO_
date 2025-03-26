@@ -154,7 +154,6 @@ const sentRequestTo = asyncHandler(async (req, res, next) => {
 
 
 const unsendRequest = asyncHandler(async (req, res, next) => {
-  console.log('hi ra aji ')
   const user = req.user._id;
   const { id: userRequestedTo } = req.params;
 
@@ -163,10 +162,7 @@ const unsendRequest = asyncHandler(async (req, res, next) => {
     userRequestedTo,
   });
 
-  console.log('ji madam raha a ka jaya aal hai ')
-
   if (!unsend) return next(new ApiError("Request not found.", 404));
-console.log('ji madam now are oyu ')
 
   return res.status(200).json({
     success: true,
