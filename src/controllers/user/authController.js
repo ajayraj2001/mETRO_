@@ -36,7 +36,7 @@ const signup = async (req, res, next) => {
 
     // If user exists and is active, return an error
     if (existingUser && existingUser.active) {
-      return next(new ApiError("User is already registered with this phone number.", 400));
+      return next(new ApiError("This number is already registered. Try logging in.", 400));
     }
 
     // If the user exists but hasn't verified OTP, check the email as well
@@ -50,7 +50,7 @@ const signup = async (req, res, next) => {
 
       if (emailInUseByAnotherUser) {
         return next(
-          new ApiError("This email is already in use by another user.", 400)
+          new ApiError("This email is already registered with another account.", 400)
         );
       }
 
@@ -79,7 +79,7 @@ const signup = async (req, res, next) => {
     // Check if the email is already in use by another user (exclude the current user by _id)
     existingUser = await User.findOne({ email: email });
     if (existingUser && !existingUser._id.equals(existingUser._id)) {
-      return next(new ApiError("Email already in use. Please log in or use a different one.", 400));
+      return next(new ApiError("This email is already registered with another account.", 400));
 
     }
 
