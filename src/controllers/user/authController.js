@@ -86,7 +86,8 @@ const signup = async (req, res, next) => {
     }
 
     // If the user doesn't exist, create a new user
-    if (!existingUser) {
+    // if (!existingUser) {
+    
       const newUser = new User({
         email,
         profile_for,
@@ -114,32 +115,32 @@ const signup = async (req, res, next) => {
           -4
         )}.`,
       });
-    }
+    // }
 
     // If we reach here, it means the email belongs to the current user, but other fields need to be updated
     // Update other fields as needed
-    existingUser.fullName = fullName.trim();
-    existingUser.phone = phone;
+    // // existingUser.fullName = fullName.trim();
+    // // existingUser.phone = phone;
 
-    // Generate new OTP and set expiry
-    const otp = getOtp();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    // // // Generate new OTP and set expiry
+    // // const otp = getOtp();
+    // // const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    existingUser.otp = otp;
-    existingUser.otp_expiry = otpExpiry;
+    // // existingUser.otp = otp;
+    // // existingUser.otp_expiry = otpExpiry;
 
-    // Save the updated user to the database
-    await existingUser.save();
+    // // // Save the updated user to the database
+    // // await existingUser.save();
 
-    // Resend OTP
-    sendOTP(existingUser.phone, otp);
+    // // // Resend OTP
+    // // sendOTP(existingUser.phone, otp);
 
-    return res.status(200).json({
-      success: true,
-      message: `An OTP has been sent to the mobile ****${existingUser.phone.slice(
-        -4
-      )}.`,
-    });
+    // // return res.status(200).json({
+    // //   success: true,
+    // //   message: `An OTP has been sent to the mobile ****${existingUser.phone.slice(
+    // //     -4
+    // //   )}.`,
+    // });
   } catch (error) {
     console.log("error", error);
     next(error);
