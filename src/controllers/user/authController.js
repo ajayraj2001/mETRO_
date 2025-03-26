@@ -80,7 +80,7 @@ const signup = async (req, res, next) => {
     existingUser = await User.findOne({ email: email });
     if (existingUser && !existingUser._id.equals(existingUser._id)) {
       return next(new ApiError("Email already in use. Please log in or use a different one.", 400));
-      
+
     }
 
     // If the user doesn't exist, create a new user
@@ -163,8 +163,16 @@ const verifyOtpSignUp = async (req, res, next) => {
     if (Date.now() > new Date(user.otp_expiry).getTime())
       return next(new ApiError("OTP expired", 400));
 
-    if (user.otp !== otp && otp !== STATIC_OTP)
-      return next(new ApiError("Invalid OTP", 400));
+    // Allow static OTP only for 9899981720
+    if (phone == "9899981720") {
+      if (otp != STATIC_OTP) {
+        return next(new ApiError("Invalid OTP", 400));
+      }
+    } else {
+      if (user.otp != otp) {
+        return next(new ApiError("Invalid OTP", 400));
+      }
+    }
 
     user.active = true;
 
@@ -211,7 +219,7 @@ const login = async (req, res, next) => {
 
       user.save();
 
-        // Resend OTP
+      // Resend OTP
       sendOTP(user.phone, otp)
 
       return res.status(200).json({
@@ -264,8 +272,15 @@ const verifyOtpLogin = async (req, res, next) => {
 
     }
 
-    if (user.otp !== otp && otp !== STATIC_OTP) {
-      return next(new ApiError("Invalid OTP", 400));
+    // Allow static OTP only for 9899981720
+    if (phone == "9899981720") {
+      if (otp != STATIC_OTP) {
+        return next(new ApiError("Invalid OTP", 400));
+      }
+    } else {
+      if (user.otp != otp) {
+        return next(new ApiError("Invalid OTP", 400));
+      }
     }
 
     user.active = true;
