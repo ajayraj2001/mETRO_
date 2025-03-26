@@ -9,6 +9,7 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   try {
+    console.log('here rahd sais checming an error is here ')
     const { userRequestedTo, status } = req.body;
     const user = req.user._id;
     const { fullName, deviceToken, profile_image } = req.user;
