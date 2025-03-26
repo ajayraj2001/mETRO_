@@ -34,4 +34,23 @@ const updateAppConfig = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { updateAppConfig };
+const getAppConfig = asyncHandler(async (req, res) => {
+    // Fetch the most recent configuration
+    const config = await AppConfig.findOne().sort({ createdAt: -1 });
+
+    if (!config) {
+        return res.status(404).json({
+            success: true,
+            message: "Configuration not found.",
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "App configuration fetched successfully.",
+        data: config,  // Return the entire configuration
+    });
+});
+
+
+module.exports = { updateAppConfig, getAppConfig };

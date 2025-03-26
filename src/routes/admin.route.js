@@ -65,7 +65,7 @@ const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requeste
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
-const { updateAppConfig } = require('../controllers/admin/appconfigContoller')
+const { updateAppConfig , getAppConfig} = require('../controllers/admin/appconfigContoller')
 
 const adminRoute = require("express").Router();
 
@@ -82,6 +82,7 @@ adminRoute.patch("/profile", authenticateAdmin, upload, updateAdmin);
 
 //appConfig
 adminRoute.post('/updateAppConfig', authenticateAdmin, updateAppConfig);
+adminRoute.get('/getAppConfig', authenticateAdmin, getAppConfig);
 
 
 // -------------- Users --------------------
