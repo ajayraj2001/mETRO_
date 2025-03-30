@@ -5,12 +5,12 @@ const userSchema = new mongoose.Schema(
     profile_for: { type: String, default: '' },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
-    brothers: { type: String, default: '' },
-    sisters: { type: String, default: '' },
-    familyStatus: { type: String, default: '' },
-    familyType: { type: String, default: '' },
-    livingWithParents: { type: String, default: '' },
-    familyIncome: { type: String, default: '' },
+    brothers: { type: String },
+    sisters: { type: String },
+    familyStatus: { type: String },
+    familyType: { type: String },
+    livingWithParents: { type: String },
+    familyIncome: { type: String },
     phone: { type: String, trim: true, required: true },
     profile_image: [{ type: String }],
     otp: { type: String, default: null },
@@ -80,17 +80,17 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserSubscription"
     },
-    verifiedBadge: { type: Boolean, default: false },
-    features: {
-      contactViews: { type: Number, default: 0 },
-      superInterests: { type: Number, default: 0 },
-      profileVisibility: {
-        type: String,
-        enum: ['Standard', 'Enhanced', 'Premium', 'VIP'],
-        default: 'Standard'
-      },
-      rmAccess: { type: Boolean, default: false }
-    },
+    // verifiedBadge: { type: Boolean, default: false },
+    // features: {
+    //   contactViews: { type: Number, default: 0 },
+    //   superInterests: { type: Number, default: 0 },
+    //   profileVisibility: {
+    //     type: String,
+    //     enum: ['Standard', 'Enhanced', 'Premium', 'VIP'],
+    //     default: 'Standard'
+    //   },
+    //   rmAccess: { type: Boolean, default: false }
+    // },
 
     // maxPhoneNumbersViewable: { type: Number, default: 0 },
     // contactViewsRemaining: { type: Number, default: 0 },
