@@ -212,7 +212,7 @@ const login = async (req, res, next) => {
 
       // Find the user by phone
       const user = await User.findOne({ phone, active: true });
-      if (!user) return next(new ApiError("User not found with this phone.", 403));
+      if (!user) return next(new ApiError("User not found with this number.", 403));
 
       const otp = getOtp();
       const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
