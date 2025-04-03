@@ -145,18 +145,22 @@ const updateProfile = async (req, res, next) => {
     try {
       if (error) throw new ApiError(error.message, 400);
 
-      console.log('req.nopdy)_kja  _mushaq', req.body)
+      console.log('Update Profile Request Body:', req.body);
+      console.log('Update Profile Files:', req.files);
+      
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, country, state, stateCode, city, longitude, latitude, heightInCm,
-        religion, sect, jammat, caste, occupation,  highest_education, mother_tongue, ...otherFields } = req.body;
-      // heightInFeet = +heightInFeet;
-      // heightInInches = +heightInInches;
+        religion, sect, jammat, caste, occupation,  highest_education, course, mother_tongue, ...otherFields } = req.body;
+      
+      console.log('Parsed Annual Income:', annual_income);
       let min_salary, max_salary
       if (annual_income) {
         [min_salary, max_salary] = parseAnnualIncome(annual_income);
+        console.log('Calculated Salary Range:', { min_salary, max_salary });
       }
 
       const user = await User.findById(userId).select("-password");
+      console.log('Found User:', user ? 'Yes' : 'No');
 
       if (!user) {
         return res.status(404).json({
@@ -231,6 +235,9 @@ const updateProfile = async (req, res, next) => {
       }
       if (highest_education) {
         user.highest_education = highest_education;
+      }
+      if (course) {
+        user.course = course;
       }
       if (mother_tongue) {
         user.mother_tongue = mother_tongue;

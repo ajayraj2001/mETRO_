@@ -5,11 +5,11 @@ const userSchema = new mongoose.Schema(
     profile_for: { type: String, default: '' },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
-    brothers: { type: String },
-    sisters: { type: String },
-    familyStatus: { type: String },
-    familyType: { type: String },
-    livingWithParents: { type: String },
+    // brothers: { type: String },
+    // sisters: { type: String },
+    // familyStatus: { type: String },
+    // familyType: { type: String },
+    // livingWithParents: { type: String },
     familyIncome: { type: String },
     phone: { type: String, trim: true, required: true },
     profile_image: [{ type: String }],
@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema(
     // company_name: { type: String, default: '' },
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
     highest_education: {
+      type: String,
+      default: ""
+    },
+    course: {
       type: String,
       default: ""
     },
@@ -76,10 +80,10 @@ const userSchema = new mongoose.Schema(
       coordinates: { type: [Number] } // , required: true
     },
     // In User model
-    subscription: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserSubscription"
-    },
+    // subscription: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "UserSubscription"
+    // },
     // verifiedBadge: { type: Boolean, default: false },
     // features: {
     //   contactViews: { type: Number, default: 0 },
