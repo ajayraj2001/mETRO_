@@ -23,7 +23,7 @@ const partnerPreferencesSchema = new mongoose.Schema(
     manglik: { type: String, required: true },
     highest_education: { type: String, required: true },
     employed_in: { type: String, required: true },
-    occupation: { type: String, required: true },
+    // occupation: { type: String, required: true },
     annual_income: { type: String, required: true },
     min_salary: { type: Number },
     max_salary: { type: Number },

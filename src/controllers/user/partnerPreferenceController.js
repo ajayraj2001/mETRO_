@@ -54,7 +54,6 @@ const partnerPreferences = async (req, res, next) => {
       manglik,
       highest_education,
       employed_in,
-      occupation,
       annual_income
     } = req.body;
 
@@ -117,10 +116,6 @@ const partnerPreferences = async (req, res, next) => {
           employed_in !== undefined
             ? employed_in
             : existingPreferences.employed_in,
-        occupation:
-          occupation !== undefined
-            ? occupation
-            : existingPreferences.occupation,
         annual_income:
           annual_income !== undefined
             ? annual_income
@@ -154,7 +149,6 @@ const partnerPreferences = async (req, res, next) => {
         !manglik ||
         !highest_education ||
         !employed_in ||
-        !occupation ||
         !annual_income
       ) {
         return next(new ApiError("All fields are required", 400));
@@ -180,7 +174,6 @@ const partnerPreferences = async (req, res, next) => {
         manglik,
         highest_education,
         employed_in,
-        occupation,
         annual_income,
         min_salary,
         max_salary,
