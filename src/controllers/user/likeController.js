@@ -8,10 +8,6 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   const { fullName, profile_image } = req.user;
 
-  console.log('kha isr like user prifle',user)
-  console.log('req.body',req.body)
-  console.log('req.params',req.params)
-
   const likedUser = await User.findById(userLikedTo);
 
   // Create a new like

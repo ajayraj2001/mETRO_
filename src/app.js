@@ -6,7 +6,7 @@ const appRoutes = require('./routes');
 const app = express();
 
 const allowedOrigins = process.env.CORS_ORIGINS.split(',');
-
+console.log('allowedor',allowedOrigins)
 const corsOptions = {
     // origin: true,
     origin: allowedOrigins,

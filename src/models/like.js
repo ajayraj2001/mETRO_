@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const LikeSchema = new Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   userLikedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: () => new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000) }
 });
 
 const Like = mongoose.model('Like', LikeSchema);

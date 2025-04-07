@@ -19,11 +19,9 @@ const partnerPreferencesSchema = new mongoose.Schema(
     mother_tongue: { type: String, required: true },
     // country: { type: String, required: true },
     state: { type: String, default: "" },
-    // residential_status: { type: String, required: true }, // e.g., 'Citizen', 'Permanent Resident', etc.
     manglik: { type: String, required: true },
     highest_education: { type: String, required: true },
     employed_in: { type: String, required: true },
-    // occupation: { type: String, required: true },
     annual_income: { type: String, required: true },
     min_salary: { type: Number },
     max_salary: { type: Number },

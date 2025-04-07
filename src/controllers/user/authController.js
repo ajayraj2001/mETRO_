@@ -79,7 +79,7 @@ const signup = async (req, res, next) => {
 
     // Check if the email is already in use by another user (exclude the current user by _id)
     existingUser = await User.findOne({ email: email });
-   
+
     // if (existingUser && !existingUser._id.equals(existingUser._id)) {
     if (existingUser) {
       return next(new ApiError("This email is already registered with another account.", 400));
@@ -87,34 +87,34 @@ const signup = async (req, res, next) => {
 
     // If the user doesn't exist, create a new user
     // if (!existingUser) {
-    
-      const newUser = new User({
-        email,
-        profile_for,
-        fullName: fullName.trim(),
-        phone,
-        active: false,
-      });
 
-      // Generate OTP and set expiry
-      const otp = getOtp();
-      const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
+    const newUser = new User({
+      email,
+      profile_for,
+      fullName: fullName.trim(),
+      phone,
+      active: false,
+    });
 
-      newUser.otp = otp;
-      newUser.otp_expiry = otpExpiry;
+    // Generate OTP and set expiry
+    const otp = getOtp();
+    const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
 
-      // Save the new user to the database
-      await newUser.save();
+    newUser.otp = otp;
+    newUser.otp_expiry = otpExpiry;
 
-      // Send OTP to user's phone
-      sendOTP(newUser.phone, otp)
+    // Save the new user to the database
+    await newUser.save();
 
-      return res.status(201).json({
-        success: true,
-        message: `An OTP has been sent to the mobile ****${newUser.phone.slice(
-          -4
-        )}.`,
-      });
+    // Send OTP to user's phone
+    sendOTP(newUser.phone, otp)
+
+    return res.status(201).json({
+      success: true,
+      message: `An OTP has been sent to the mobile ****${newUser.phone.slice(
+        -4
+      )}.`,
+    });
     // }
 
     // If we reach here, it means the email belongs to the current user, but other fields need to be updated
@@ -275,8 +275,10 @@ const verifyOtpLogin = async (req, res, next) => {
 
     }
 
+    const allowedStaticOtpNumbers = ["9899981720", "9999999999"];
     // Allow static OTP only for 9899981720
-    if (phone == "9899981720") {
+
+    if (allowedStaticOtpNumbers.includes(phone)) {
       if (otp != STATIC_OTP) {
         return next(new ApiError("Invalid OTP", 400));
       }
