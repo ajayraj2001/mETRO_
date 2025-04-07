@@ -34,7 +34,7 @@ const getCountries = async (req, res, next) => {
 const getStates = async (req, res, next) => {
   try {
     const { searchTerm } = req.body; // pass isoCode in countryCode
-    const  countryCode = "IN"
+    const countryCode = "IN"
     console.log('req.body', req.body)
     if (countryCode) {
       console.log('yes httere is a country code ')
@@ -147,11 +147,11 @@ const updateProfile = async (req, res, next) => {
 
       console.log('Update Profile Request Body:', req.body);
       console.log('Update Profile Files:', req.files);
-      
+
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, country, state, stateCode, city, longitude, latitude, heightInCm,
-        religion, sect, jammat, caste, occupation,  highest_education, course, mother_tongue, ...otherFields } = req.body;
-     
+        religion, sect, jammat, caste, occupation, highest_education, course, mother_tongue, living_with_family, diet, ...otherFields } = req.body;
+
       let min_salary, max_salary
       if (annual_income) {
         [min_salary, max_salary] = parseAnnualIncome(annual_income);
@@ -240,6 +240,12 @@ const updateProfile = async (req, res, next) => {
       }
       if (mother_tongue) {
         user.mother_tongue = mother_tongue;
+      }
+      if (living_with_family) {
+        user.living_with_family = living_with_family;
+      }
+      if (diet) {
+        user.diet = diet;
       }
 
       if (religion !== undefined) {

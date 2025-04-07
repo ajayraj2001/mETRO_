@@ -10,7 +10,17 @@ const userSchema = new mongoose.Schema(
     // familyStatus: { type: String },
     // familyType: { type: String },
     // livingWithParents: { type: String },
-    familyIncome: { type: String },
+    living_with_family: {
+      type: String,
+      enum: ['Yes', 'No', ''],
+      default: ''
+    },
+    diet: {
+      type: String,
+      enum: ['Veg', 'Eggetarian', 'Non-Veg', 'Vegan', 'Jain', 'Occasionally Non-Veg', ''],
+      default: ''
+    },
+    // familyIncome: { type: String },
     phone: { type: String, trim: true, required: true },
     profile_image: [{ type: String }],
     otp: { type: String, default: null },
