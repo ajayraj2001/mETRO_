@@ -57,7 +57,7 @@ let server;
 
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {
-        console.log('send message api gets hit' data)
+        console.log('send message api gets hit' ,data)
         const { senderId, recipientId, messageText } = data;
         const message = await sendMessage(senderId, recipientId, messageText);
 
