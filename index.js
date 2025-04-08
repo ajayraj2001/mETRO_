@@ -76,22 +76,49 @@ let server;
         }
       });
 
-      socket.on("messageRead", async (data) => {
-        console.log('hey budyd mesage read scletr code', data)
-        const { messageIds, recipientId, senderId } = data;
+      // socket.on("messageRead", async (data) => {
+      //   console.log('hey budyd mesage read scletr code', data)
+      //   const { messageIds, recipientId, senderId } = data;
         
-        // Update messages as read in database (you'll need to implement this function)
-        await markMessagesAsRead(messageIds, recipientId);
+      //   // Update messages as read in database (you'll need to implement this function)
+      //   await markMessagesAsRead(messageIds, recipientId);
         
-        // Notify sender that messages have been read
-        if (users[senderId]) {
-          io.to(users[senderId].socketId).emit("messagesRead", {
-            messageIds,
-            recipientId
-          });
-        }
-      });
+      //   // Notify sender that messages have been read
+      //   if (users[senderId]) {
+      //     io.to(users[senderId].socketId).emit("messagesRead", {
+      //       messageIds,
+      //       recipientId
+      //     });
+      //   }
+      // });
 
+
+      // Add to your socket.io server code if not already added
+socket.on("messageRead", async (data) => {
+  const { messageIds, recipientId, senderId } = data;
+  
+  console.log(`Marking messages as read: ${messageIds.join(', ')}`);
+  
+  try {
+    // Update messages as read in database
+    // This is likely in your database code
+    await Message.updateMany(
+      { _id: { $in: messageIds } },
+      { $set: { isRead: true } }
+    );
+    
+    // Notify sender that messages have been read
+    if (users[senderId]) {
+      console.log(`Notifying ${senderId} that messages were read`);
+      io.to(users[senderId].socketId).emit("messagesRead", {
+        messageIds,
+        recipientId
+      });
+    }
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+  }
+});
       async function markMessagesAsRead(messageIds, recipientId) {
         try {
           console.log('wia thte ufnaitn here udyd')
