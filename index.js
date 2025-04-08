@@ -56,7 +56,6 @@ let server;
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {
         const { senderId, recipientId, messageText } = data;
-         console.log('data', data)
         const message = await sendMessage(senderId, recipientId, messageText);
 
         // Emit the message to the recipient if they are online
@@ -73,6 +72,37 @@ let server;
           io.to(users[recipientId].socketId).emit("userTyping", { senderId });
         }
       });
+
+      socket.on("messageRead", async (data) => {
+        const { messageIds, recipientId, senderId } = data;
+        
+        // Update messages as read in database (you'll need to implement this function)
+        await markMessagesAsRead(messageIds, recipientId);
+        
+        // Notify sender that messages have been read
+        if (users[senderId]) {
+          io.to(users[senderId].socketId).emit("messagesRead", {
+            messageIds,
+            recipientId
+          });
+        }
+      });
+
+      async function markMessagesAsRead(messageIds, recipientId) {
+        try {
+          // Update all messages with the given IDs to be marked as read
+          // This depends on your database schema, but using Mongoose it might look like:
+          await Message.updateMany(
+            { _id: { $in: messageIds }, recipient: recipientId },
+            { $set: { isRead: true } }
+          );
+          
+          return true;
+        } catch (error) {
+          console.error("Error marking messages as read:", error);
+          return false;
+        }
+      }
     
 
       // Handle message edit

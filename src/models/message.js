@@ -4,7 +4,7 @@ const messageSchema = new mongoose.Schema({
   sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   message: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
+  timestamp: { type: Date, default: () => new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000)},
   isRead: { type: Boolean, default: false },
   edited: { type: Boolean, default: false },
   deletedForEveryone: { type: Boolean, default: false },
