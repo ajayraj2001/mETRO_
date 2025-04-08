@@ -7,6 +7,7 @@ process.on("uncaughtException", (err) => {
 require("dotenv").config();
 const mongoose = require("mongoose");
 const { connectToDatabase } = require("./config");
+const { Message } = require("./src/models");
 const app = require("./src/app");
 const http = require("http");
 const {
@@ -16,6 +17,7 @@ const {
   deleteForMe,
 } = require("./src/utils/messagingOperations");
 const { Server } = require("socket.io");
+
 
 const { PORT, BASE_URL } = process.env;
 
