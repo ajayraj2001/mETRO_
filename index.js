@@ -61,7 +61,7 @@ let server;
         const message = await sendMessage(senderId, recipientId, messageText);
 
         // Emit the message to the recipient if they are online
-        if (users[recipientId]) { 
+        if (users[recipientId]) {
           io.to(users[recipientId].socketId).emit("newMessage", message);
         }
 
@@ -69,25 +69,51 @@ let server;
 
       socket.on("typing", (data) => {
         const { senderId, recipientId } = data;
-    
+
         if (users[recipientId]) {
           io.to(users[recipientId].socketId).emit("userTyping", { senderId });
         }
       });
 
+      // socket.on("messageRead", async (data) => {
+      //   console.log('hey budyd mesage read scletr code', data)
+      //   const { messageIds, recipientId, senderId } = data;
+
+      //   // Update messages as read in database (you'll need to implement this function)
+      //   await markMessagesAsRead(messageIds, recipientId);
+
+      //   // Notify sender that messages have been read
+      //   if (users[senderId]) {
+      //     io.to(users[senderId].socketId).emit("messagesRead", {
+      //       messageIds,
+      //       recipientId
+      //     });
+      //   }
+      // });
+      // Add to your socket.io server code if not already added
       socket.on("messageRead", async (data) => {
-        console.log('hey budyd mesage read scletr code', data)
         const { messageIds, recipientId, senderId } = data;
-        
-        // Update messages as read in database (you'll need to implement this function)
-        await markMessagesAsRead(messageIds, recipientId);
-        
-        // Notify sender that messages have been read
-        if (users[senderId]) {
-          io.to(users[senderId].socketId).emit("messagesRead", {
-            messageIds,
-            recipientId
-          });
+
+        console.log(`Marking messages as read: ${ messageIds.join(', ') }`);
+
+        try {
+          // Update messages as read in database
+          // This is likely in your database code
+          await Message.updateMany(
+            { _id: { $in: messageIds } },
+            { $set: { isRead: true } }
+          );
+
+          // Notify sender that messages have been read
+          if (users[senderId]) {
+            console.log(`Notifying ${ senderId } that messages were read`);
+            io.to(users[senderId].socketId).emit("messagesRead", {
+              messageIds,
+              recipientId
+            });
+          }
+        } catch (error) {
+          console.error("Error marking messages as read:", error);
         }
       });
 
@@ -100,14 +126,14 @@ let server;
             { _id: { $in: messageIds }, recipient: recipientId },
             { $set: { isRead: true } }
           );
-          
+
           return true;
         } catch (error) {
           console.error("Error marking messages as read:", error);
           return false;
         }
       }
-    
+
 
       // Handle message edit
       socket.on("editMessage", async (data) => {
