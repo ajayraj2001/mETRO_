@@ -95,6 +95,7 @@ let server;
 
       // Add to your socket.io server code if not already added
 socket.on("messageRead", async (data) => {
+  console.log('hey budy mesage read ', data)
   const { messageIds, recipientId, senderId } = data;
   
   console.log(`Marking messages as read: ${messageIds.join(', ')}`);
