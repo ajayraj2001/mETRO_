@@ -74,6 +74,7 @@ let server;
       });
 
       socket.on("messageRead", async (data) => {
+        console.log('hey budyd mesage read scletr code', data)
         const { messageIds, recipientId, senderId } = data;
         
         // Update messages as read in database (you'll need to implement this function)
@@ -90,6 +91,7 @@ let server;
 
       async function markMessagesAsRead(messageIds, recipientId) {
         try {
+          console.log('wia thte ufnaitn here udyd')
           // Update all messages with the given IDs to be marked as read
           // This depends on your database schema, but using Mongoose it might look like:
           await Message.updateMany(
