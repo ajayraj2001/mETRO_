@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const subscriptionPlanSchema = new Schema({
   planName: { 
     type: String, 
-    enum: ['Silver', 'Gold', 'Platinum', 'Royal'], 
+    enum: ['Silver', 'Gold', 'Diamond', 'Royal'], 
     required: true 
   },
   pricing: {
