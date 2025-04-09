@@ -2,48 +2,6 @@ const mongoose = require("mongoose");
 const { Message } = require("../models");
 const { User } = require("../models");
 
-// const sendMessage = async (senderId, recipientId, messageText) => {
-//   const user = await User.findById(senderId);
-
-//   if (!user) {
-//     //throw new Error("Sender not found");
-//     return "Sender not found";
-//   }
-
-//   const currentDate = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
-
-//   // Check if the user has a valid subscription
-//   if (user.subscriptionExpiryDate && user.subscriptionExpiryDate > currentDate) {
-//     // User is subscribed and can send unlimited messages
-//     const message = new Message({
-//       sender: senderId,
-//       recipient: recipientId,
-//       message: messageText,
-//     });
-
-//     await message.save();
-//     return message;
-//   } else {
-//     // User is not subscribed, check free message limit
-//     if (user.freeMessages >= 1) {
-//       // Decrement free messages count
-//       user.freeMessages -= 1;
-//       await user.save();
-
-//       const message = new Message({
-//         sender: senderId,
-//         recipient: recipientId,
-//         message: messageText,
-//       });
-
-//       await message.save();
-//       return message;
-//     } else {
-//       //throw new Error("You have used all your free messages. Please subscribe to send more messages.");
-//       return false;
-//     }
-//   }
-// };
 
 const sendMessage = async (senderId, recipientId, messageText) => {
   
