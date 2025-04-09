@@ -222,7 +222,7 @@
 // });
 
 
-// index.js - Fixed version with proper message handling and read receipts
+//index.js - Fixed version with proper message handling and read receipts
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
   console.log(err.stack);
