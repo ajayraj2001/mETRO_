@@ -261,9 +261,68 @@ let server;
       });
 
       // Sending a new message
+      // socket.on("sendMessage", async (data) => {
+      //   console.log('Send message triggered:', data);
+      //   const { senderId, recipientId, messageText } = data;
+        
+      //   try {
+      //     // Create a new message with initial 'sent' status
+      //     const newMessage = new Message({
+      //       sender: senderId,
+      //       recipient: recipientId,
+      //       message: messageText,
+      //       timestamp: new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000),
+      //       status: 'sent',
+      //       isRead: false
+      //     });
+          
+      //     const savedMessage = await newMessage.save();
+      //     // console.log('socket code', socket)
+      //     console.log('socket', socket.id)
+
+      //     if(users[senderId]){
+      //       console.log('users[senderId',users[senderId])
+      //     }
+      //     // Immediately send confirmation back to sender with 'sent' status
+      //     io.to(users[senderId].socketId).emit("messageSent", {
+      //       messageId: savedMessage._id,
+      //       status: 'sent',
+      //       timestamp: savedMessage.timestamp
+      //     });
+      //     // return
+          
+      //     // Check if recipient is online
+      //     if (users[recipientId]) {
+      //       console.log('user[recipientId]', users[recipientId])
+      //       // Update status to 'delivered' in database
+      //       savedMessage.status = 'delivered';
+      //       await savedMessage.save();
+            
+      //       // Send message to recipient
+      //       io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
+            
+      //       // Notify sender that message was delivered
+      //       io.to(socket.id).emit("messageStatusUpdate", {
+      //         messageId: savedMessage._id,
+      //         status: 'delivered'
+      //       });
+      //     }
+          
+      //     console.log('Message saved and processed:', savedMessage._id);
+      //   } catch (error) {
+      //     console.error('Error in sendMessage:', error);
+      //     // Notify sender of failure
+      //     io.to(socket.id).emit("messageError", {
+      //       error: "Failed to send message",
+      //       originalMessage: data
+      //     });
+      //   }
+      // });
+
+
       socket.on("sendMessage", async (data) => {
         console.log('Send message triggered:', data);
-        const { senderId, recipientId, messageText } = data;
+        const { senderId, recipientId, messageText, tempId } = data;
         
         try {
           // Create a new message with initial 'sent' status
@@ -277,23 +336,18 @@ let server;
           });
           
           const savedMessage = await newMessage.save();
-          // console.log('socket code', socket)
-          console.log('socket', socket.id)
-
-          if(users[senderId]){
-            console.log('users[senderId',users[senderId])
-          }
+          
           // Immediately send confirmation back to sender with 'sent' status
-          io.to(users[senderId].socketId).emit("messageSent", {
-            messageId: savedMessage._id,
+          // Include both the temporary ID and the server's ID
+          io.to(socket.id).emit("messageSent", {
+            tempId: tempId,                   // Client's temporary ID
+            messageId: savedMessage._id,      // Server's MongoDB ID
             status: 'sent',
             timestamp: savedMessage.timestamp
           });
-          // return
           
           // Check if recipient is online
           if (users[recipientId]) {
-            console.log('user[recipientId]', users[recipientId])
             // Update status to 'delivered' in database
             savedMessage.status = 'delivered';
             await savedMessage.save();
@@ -302,7 +356,9 @@ let server;
             io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
             
             // Notify sender that message was delivered
+            // Include both IDs here too for consistency
             io.to(socket.id).emit("messageStatusUpdate", {
+              tempId: tempId,
               messageId: savedMessage._id,
               status: 'delivered'
             });
@@ -318,17 +374,8 @@ let server;
           });
         }
       });
-
-      // Handle typing indicators
-      socket.on("typing", (data) => {
-        const { senderId, recipientId } = data;
-    
-        if (users[recipientId]) {
-          io.to(users[recipientId].socketId).emit("userTyping", { senderId });
-        }
-      });
-
-      // Handle message read confirmation
+      
+      // Modify the messageRead handler to ensure proper IDs
       socket.on("messageRead", async (data) => {
         console.log('Message read event received:', data);
         const { messageIds, recipientId, senderId } = data;
@@ -343,9 +390,10 @@ let server;
           console.log(`Messages marked as read: ${messageIds.join(', ')}`);
           
           // Notify sender that messages were read
+          // Make sure to pass the same IDs back
           if (users[senderId]) {
             io.to(users[senderId].socketId).emit("messagesRead", {
-              messageIds,
+              messageIds,  // Send the same message IDs
               recipientId
             });
           }
@@ -353,6 +401,41 @@ let server;
           console.error("Error marking messages as read:", error);
         }
       });
+
+      // Handle typing indicators
+      socket.on("typing", (data) => {
+        const { senderId, recipientId } = data;
+    
+        if (users[recipientId]) {
+          io.to(users[recipientId].socketId).emit("userTyping", { senderId });
+        }
+      });
+
+      // Handle message read confirmation
+      // socket.on("messageRead", async (data) => {
+      //   console.log('Message read event received:', data);
+      //   const { messageIds, recipientId, senderId } = data;
+        
+      //   try {
+      //     // Update messages as read in database
+      //     await Message.updateMany(
+      //       { _id: { $in: messageIds } },
+      //       { $set: { isRead: true, status: 'read' } }
+      //     );
+          
+      //     console.log(`Messages marked as read: ${messageIds.join(', ')}`);
+          
+      //     // Notify sender that messages were read
+      //     if (users[senderId]) {
+      //       io.to(users[senderId].socketId).emit("messagesRead", {
+      //         messageIds,
+      //         recipientId
+      //       });
+      //     }
+      //   } catch (error) {
+      //     console.error("Error marking messages as read:", error);
+      //   }
+      // });
 
       // Handle message edit
       socket.on("editMessage", async (data) => {
