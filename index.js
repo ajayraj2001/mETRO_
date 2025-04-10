@@ -279,16 +279,21 @@ let server;
           const savedMessage = await newMessage.save();
           // console.log('socket code', socket)
           console.log('socket', socket.id)
+
+          if(users[senderId]){
+            console.log('users[senderId',users[senderId])
+          }
           // Immediately send confirmation back to sender with 'sent' status
           io.to(users[senderId].socketId).emit("messageSent", {
             messageId: savedMessage._id,
             status: 'sent',
             timestamp: savedMessage.timestamp
           });
-          return
+          // return
           
           // Check if recipient is online
           if (users[recipientId]) {
+            console.log('user[recipientId]', users[recipientId])
             // Update status to 'delivered' in database
             savedMessage.status = 'delivered';
             await savedMessage.save();
