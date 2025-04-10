@@ -277,7 +277,8 @@ let server;
           });
           
           const savedMessage = await newMessage.save();
-          console.log('socket code')
+          console.log('socket code', socket)
+          console.log('socket', socket.id)
           // Immediately send confirmation back to sender with 'sent' status
           io.to(socket.id).emit("messageSent", {
             messageId: savedMessage._id,
