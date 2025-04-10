@@ -280,7 +280,7 @@ let server;
           // console.log('socket code', socket)
           console.log('socket', socket.id)
           // Immediately send confirmation back to sender with 'sent' status
-          io.to(socket.id).emit("messageSent", {
+          io.to(users[senderId].socketId).emit("messageSent", {
             messageId: savedMessage._id,
             status: 'sent',
             timestamp: savedMessage.timestamp
