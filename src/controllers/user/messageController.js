@@ -214,53 +214,141 @@ const chatList = asyncHandler(async (req, res, next) => {
 // });
 
 
-const getChatMessages  = asyncHandler(async (req, res, next) => {
+// Modified getChatMessages API endpoint to handle message reading properly
+const getChatMessages = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
-  const { id : receiverId } = req.params;
-  const { page = 1, limit = 15 } = req.query
+  const { id: receiverId } = req.params;
+  const { page = 1, limit = 15 } = req.query;
 
   const pageNum = parseInt(page) || 1;
   const limitNum = parseInt(limit) || 30;
 
-  // Update the isRead status for all messages where the recipient matches the current user
-  const result = await Message.updateMany(
-    {
-      sender: receiverId,
-      recipient: senderId,
-      isRead: false, // Only update unread messages
-    },
-    { isRead: true } // Set isRead to true
-  );
+  try {
+    // Find all messages between the two users (without updating anything)
+    const messages = await Message.find({
+      $or: [
+        { sender: senderId, recipient: receiverId },
+        { sender: receiverId, recipient: senderId },
+      ],
+    })
+      .sort({ timestamp: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .exec();
 
-  const messages = await Message.find({
-    $or: [
-      { sender: senderId, recipient: receiverId },
-      { sender: receiverId, recipient: senderId },
-    ],
-  })
-    .sort({ timestamp: -1 }) 
-    .skip((pageNum - 1) * limitNum) 
-    .limit(limitNum)
-    .exec();
+    // Find unread messages from the recipient to mark as read
+    const unreadMessageIds = messages
+      .filter(msg => msg.sender.toString() === receiverId && !msg.isRead)
+      .map(msg => msg._id);
 
-  // Get the total number of messages for pagination info
-  const totalMessages = await Message.countDocuments({
-    $or: [
-      { sender: senderId, recipient: receiverId },
-      { sender: receiverId, recipient: senderId },
-    ],
-  });
+    // If there are unread messages, mark them as read
+    if (unreadMessageIds.length > 0) {
+      console.log(`Marking ${unreadMessageIds.length} messages as read`);
+      
+      // Update the messages in the database
+      await Message.updateMany(
+        { _id: { $in: unreadMessageIds } },
+        { isRead: true, status: 'read' }
+      );
+      
+      // Also emit a socket event to notify the sender
+      // This will be handled if you have socket.io available in this context
+      // If not, you'll need to adjust your server architecture
+      try {
+        const io = req.app.get('socketio');
+        
+        // Get the sender's socket ID from your users object
+        const users = req.app.get('users') || {};
+        const senderSocketId = users[receiverId]?.socketId;
+        
+        if (io && senderSocketId) {
+          io.to(senderSocketId).emit('messagesRead', {
+            messageIds: unreadMessageIds,
+            recipientId: senderId
+          });
+          console.log(`Emitted messagesRead event to socket ${senderSocketId}`);
+        } else {
+          console.log('Could not emit socket event: socketio or user not found');
+        }
+      } catch (error) {
+        console.error('Error emitting socket event:', error);
+      }
+    }
 
-  res.status(200).json({
-    success: true,
-    message: "Message sent successfully",
-    data: messages,
-    currentPage: pageNum,
-    totalPages: Math.ceil(totalMessages / limitNum),
-    totalMessages
-  });
+    // Get the total number of messages for pagination info
+    const totalMessages = await Message.countDocuments({
+      $or: [
+        { sender: senderId, recipient: receiverId },
+        { sender: receiverId, recipient: senderId },
+      ],
+    });
 
+    res.status(200).json({
+      success: true,
+      message: "Messages retrieved successfully",
+      data: messages,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalMessages / limitNum),
+      totalMessages
+    });
+  } catch (error) {
+    console.error('Error in getChatMessages:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving messages",
+      error: error.message
+    });
+  }
 });
+
+
+// const getChatMessages  = asyncHandler(async (req, res, next) => {
+//   const senderId = req.user._id;
+//   const { id : receiverId } = req.params;
+//   const { page = 1, limit = 15 } = req.query
+
+//   const pageNum = parseInt(page) || 1;
+//   const limitNum = parseInt(limit) || 30;
+
+//   // Update the isRead status for all messages where the recipient matches the current user
+//   const result = await Message.updateMany(
+//     {
+//       sender: receiverId,
+//       recipient: senderId,
+//       isRead: false, // Only update unread messages
+//     },
+//     { isRead: true } // Set isRead to true
+//   );
+
+//   const messages = await Message.find({
+//     $or: [
+//       { sender: senderId, recipient: receiverId },
+//       { sender: receiverId, recipient: senderId },
+//     ],
+//   })
+//     .sort({ timestamp: -1 }) 
+//     .skip((pageNum - 1) * limitNum) 
+//     .limit(limitNum)
+//     .exec();
+
+//   // Get the total number of messages for pagination info
+//   const totalMessages = await Message.countDocuments({
+//     $or: [
+//       { sender: senderId, recipient: receiverId },
+//       { sender: receiverId, recipient: senderId },
+//     ],
+//   });
+
+//   res.status(200).json({
+//     success: true,
+//     message: "Message sent successfully",
+//     data: messages,
+//     currentPage: pageNum,
+//     totalPages: Math.ceil(totalMessages / limitNum),
+//     totalMessages
+//   });
+
+// });
 
 
 module.exports = {
