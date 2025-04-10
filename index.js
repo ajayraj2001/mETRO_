@@ -285,7 +285,7 @@ let server;
             status: 'sent',
             timestamp: savedMessage.timestamp
           });
-          // return
+          return
           
           // Check if recipient is online
           if (users[recipientId]) {
