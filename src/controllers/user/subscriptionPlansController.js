@@ -13,4 +13,5 @@ const getAllSubscriptionPlans = asyncHandler(async (req, res, next) => {
     data: subscriptionPlans,
   });
 });
+
 module.exports = { getAllSubscriptionPlans };
