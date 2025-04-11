@@ -682,69 +682,181 @@ function checkPendingReadReceipts(userId, socketId, io) {
     const users = {};
     app.set('users', users);
 
+    // Add this to your sendMessage event handler to avoid duplicate messages with same tempId
+const processedTempIds = new Set(); // Track processed temp IDs
+
     // Handle Socket.IO connections
     io.on("connection", (socket) => {
       console.log("A user connected:", socket.id);
 
       // Handle checking read status when reconnecting
-      socket.on("checkMessageReadStatus", async (data) => {
-        console.log('Message read status check requested:', data);
-        const { messageIds, senderId, recipientId } = data;
+      // socket.on("checkMessageReadStatus", async (data) => {
+      //   console.log('Message read status check requested:', data);
+      //   const { messageIds, senderId, recipientId } = data;
         
-        try {
-          // Find which messages are read
-          const messages = await Message.find({
-            _id: { $in: messageIds }
-          });
+      //   try {
+      //     // Find which messages are read
+      //     const messages = await Message.find({
+      //       _id: { $in: messageIds }
+      //     });
           
-          // Filter to only read messages
-          const readMessageIds = messages
-            .filter(message => message.isRead)
-            .map(message => message._id.toString());
+      //     // Filter to only read messages
+      //     const readMessageIds = messages
+      //       .filter(message => message.isRead)
+      //       .map(message => message._id.toString());
           
-          if (readMessageIds.length > 0) {
-            console.log(`Found ${readMessageIds.length} messages that are read`);
+      //     if (readMessageIds.length > 0) {
+      //       console.log(`Found ${readMessageIds.length} messages that are read`);
             
-            // Notify sender about read messages
-            socket.emit("messagesRead", {
-              messageIds: readMessageIds,
-              recipientId
-            });
-          }
-        } catch (error) {
-          console.error("Error checking message read status:", error);
-        }
-      });
+      //       // Notify sender about read messages
+      //       socket.emit("messagesRead", {
+      //         messageIds: readMessageIds,
+      //         recipientId
+      //       });
+      //     }
+      //   } catch (error) {
+      //     console.error("Error checking message read status:", error);
+      //   }
+      // });
 
       socket.on("join", (userId) => {
-        console.log('is the reiany userd id ',userId)
+        console.log('User joining with ID:', userId);
+        
         if (userId) {
           const wasOnlineBefore = users[userId] !== undefined;
-
-          console.log('was online before',wasOnlineBefore, 'userIdCheck', users[userId] )
+          console.log('Was online before:', wasOnlineBefore, 'Current users:', Object.keys(users));
           
           // Update user's socket ID and status
           users[userId] = { socketId: socket.id, status: "online" };
           console.log(`User with ID ${userId} joined`);
-      
+    
           // Notify others about the user's online status
           socket.broadcast.emit("userStatus", { userId, status: "online" });
           
           // Check if there are any pending read receipts for this user
           checkPendingReadReceipts(userId, socket.id, io);
           
-          // If this is a reconnection, send a special event to force status updates
+          // If this is a reconnection, send special event to force status updates
           if (wasOnlineBefore) {
             console.log(`User ${userId} reconnected, sending reconnection event`);
             socket.emit("reconnected");
           }
         }
       });
+    
 
       // Handling sending a new message
+      // socket.on("sendMessage", async (data) => {
+      //   console.log('Send message triggered:', data);
+      //   const { senderId, recipientId, messageText, tempId } = data;
+        
+      //   try {
+      //     // Create a new message with initial 'sent' status
+      //     const newMessage = new Message({
+      //       sender: senderId,
+      //       recipient: recipientId,
+      //       message: messageText,
+      //       timestamp: new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000),
+      //       status: 'sent',
+      //       isRead: false
+      //     });
+          
+      //     const savedMessage = await newMessage.save();
+          
+      //     // Immediately send confirmation back to sender with 'sent' status
+      //     // Include both temporary ID and server ID
+      //     io.to(socket.id).emit("messageSent", {
+      //       tempId: tempId,
+      //       messageId: savedMessage._id.toString(),
+      //       status: 'sent',
+      //       timestamp: savedMessage.timestamp
+      //     });
+          
+      //     console.log(`Message saved with ID: ${savedMessage._id}, temp ID: ${tempId}`);
+          
+      //     // Check if recipient is online
+      //     if (users[recipientId]) { 
+      //       // Update status to 'delivered' in database
+      //       savedMessage.status = 'delivered';
+      //       await savedMessage.save();
+            
+      //       // Send message to recipient
+      //       io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
+            
+      //       // Notify sender that message was delivered
+      //       io.to(socket.id).emit("messageStatusUpdate", {
+      //         tempId: tempId,
+      //         messageId: savedMessage._id.toString(),
+      //         status: 'delivered'
+      //       });
+            
+      //       console.log(`Message delivered to recipient ${recipientId}, status updated to 'delivered'`);
+      //     }
+      //   } catch (error) {
+      //     console.error('Error in sendMessage:', error);
+      //     // Notify sender of failure
+      //     io.to(socket.id).emit("messageError", {
+      //       error: "Failed to send message",
+      //       originalMessage: data
+      //     });
+      //   }
+      // });
+
       socket.on("sendMessage", async (data) => {
         console.log('Send message triggered:', data);
         const { senderId, recipientId, messageText, tempId } = data;
+        
+        // Skip duplicate sends with same tempId
+        const tempIdKey = `${senderId}:${tempId}`;
+        if (processedTempIds.has(tempIdKey)) {
+          console.log(`Skipping duplicate message with tempId: ${tempId}`);
+          
+          // Find the existing message to send status update
+          try {
+            const existingMessage = await Message.findOne({
+              sender: senderId,
+              recipient: recipientId,
+              message: messageText,
+            }).sort({ timestamp: -1 }).limit(1);
+            
+            if (existingMessage) {
+              console.log(`Found existing message, sending status update for: ${existingMessage._id}`);
+              
+              // Send status update for existing message
+              socket.emit("messageSent", {
+                tempId: tempId,
+                messageId: existingMessage._id.toString(),
+                status: existingMessage.status || 'sent',
+                timestamp: existingMessage.timestamp
+              });
+              
+              // If recipient is online, also send delivered status
+              if (users[recipientId]) {
+                socket.emit("messageStatusUpdate", {
+                  tempId: tempId,
+                  messageId: existingMessage._id.toString(),
+                  status: 'delivered'
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Error finding existing message:', error);
+          }
+          
+          return;
+        }
+        
+        // Mark this tempId as processed
+        processedTempIds.add(tempIdKey);
+        
+        // Limit the size of the set to avoid memory leaks
+        if (processedTempIds.size > 1000) {
+          // Keep only the most recent 500 entries
+          const entries = Array.from(processedTempIds);
+          const toKeep = entries.slice(entries.length - 500);
+          processedTempIds.clear();
+          toKeep.forEach(id => processedTempIds.add(id));
+        }
         
         try {
           // Create a new message with initial 'sent' status
@@ -760,8 +872,7 @@ function checkPendingReadReceipts(userId, socketId, io) {
           const savedMessage = await newMessage.save();
           
           // Immediately send confirmation back to sender with 'sent' status
-          // Include both temporary ID and server ID
-          io.to(socket.id).emit("messageSent", {
+          socket.emit("messageSent", {
             tempId: tempId,
             messageId: savedMessage._id.toString(),
             status: 'sent',
@@ -780,7 +891,7 @@ function checkPendingReadReceipts(userId, socketId, io) {
             io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
             
             // Notify sender that message was delivered
-            io.to(socket.id).emit("messageStatusUpdate", {
+            socket.emit("messageStatusUpdate", {
               tempId: tempId,
               messageId: savedMessage._id.toString(),
               status: 'delivered'
@@ -791,10 +902,46 @@ function checkPendingReadReceipts(userId, socketId, io) {
         } catch (error) {
           console.error('Error in sendMessage:', error);
           // Notify sender of failure
-          io.to(socket.id).emit("messageError", {
+          socket.emit("messageError", {
             error: "Failed to send message",
             originalMessage: data
           });
+        }
+      });
+    
+      // Add new handler for refreshing message status
+      socket.on("refreshMessageStatus", async (data) => {
+        const { userId } = data;
+        console.log(`Message status refresh requested for user ${userId}`);
+        
+        try {
+          // Find recent pending messages from this user
+          const pendingMessages = await Message.find({
+            sender: userId,
+            status: { $ne: 'read' } // Not yet read
+          }).sort({ timestamp: -1 }).limit(20);
+          
+          if (pendingMessages.length > 0) {
+            console.log(`Found ${pendingMessages.length} messages to update status for`);
+            
+            for (const message of pendingMessages) {
+              // If recipient is online, update to delivered
+              if (users[message.recipient.toString()]) {
+                if (message.status !== 'delivered' && message.status !== 'read') {
+                  message.status = 'delivered';
+                  await message.save();
+                  
+                  // Notify sender
+                  socket.emit("messageStatusUpdate", {
+                    messageId: message._id.toString(),
+                    status: 'delivered'
+                  });
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error refreshing message statuses:', error);
         }
       });
 
