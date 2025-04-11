@@ -719,6 +719,8 @@ function checkPendingReadReceipts(userId, socketId, io) {
       socket.on("join", (userId) => {
         if (userId) {
           const wasOnlineBefore = users[userId] !== undefined;
+
+          console.log('was online before',wasOnlineBefore, 'userIdCheck', users[userId] )
           
           // Update user's socket ID and status
           users[userId] = { socketId: socket.id, status: "online" };
