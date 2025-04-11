@@ -686,17 +686,55 @@ function checkPendingReadReceipts(userId, socketId, io) {
     io.on("connection", (socket) => {
       console.log("A user connected:", socket.id);
 
+      // Handle checking read status when reconnecting
+      socket.on("checkMessageReadStatus", async (data) => {
+        console.log('Message read status check requested:', data);
+        const { messageIds, senderId, recipientId } = data;
+        
+        try {
+          // Find which messages are read
+          const messages = await Message.find({
+            _id: { $in: messageIds }
+          });
+          
+          // Filter to only read messages
+          const readMessageIds = messages
+            .filter(message => message.isRead)
+            .map(message => message._id.toString());
+          
+          if (readMessageIds.length > 0) {
+            console.log(`Found ${readMessageIds.length} messages that are read`);
+            
+            // Notify sender about read messages
+            socket.emit("messagesRead", {
+              messageIds: readMessageIds,
+              recipientId
+            });
+          }
+        } catch (error) {
+          console.error("Error checking message read status:", error);
+        }
+      });
+
       socket.on("join", (userId) => {
         if (userId) {
-          // Store user's socket ID and status
+          const wasOnlineBefore = users[userId] !== undefined;
+          
+          // Update user's socket ID and status
           users[userId] = { socketId: socket.id, status: "online" };
           console.log(`User with ID ${userId} joined`);
-
+      
           // Notify others about the user's online status
           socket.broadcast.emit("userStatus", { userId, status: "online" });
           
           // Check if there are any pending read receipts for this user
           checkPendingReadReceipts(userId, socket.id, io);
+          
+          // If this is a reconnection, send a special event to force status updates
+          if (wasOnlineBefore) {
+            console.log(`User ${userId} reconnected, sending reconnection event`);
+            socket.emit("reconnected");
+          }
         }
       });
 
