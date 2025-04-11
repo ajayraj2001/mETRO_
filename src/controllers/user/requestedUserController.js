@@ -9,7 +9,6 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 
 
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
-  console.log('ajay ajrajda  lkjand d')
   const { userRequestedTo, status } = req.body;
   const user = req.user._id;
   const {fullName, deviceToken, profile_image } = req.user;
