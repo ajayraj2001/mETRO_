@@ -5,11 +5,6 @@ const userSchema = new mongoose.Schema(
     profile_for: { type: String, default: '' },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
-    // brothers: { type: String },
-    // sisters: { type: String },
-    // familyStatus: { type: String },
-    // familyType: { type: String },
-    // livingWithParents: { type: String },
     living_with_family: {
       type: String,
       enum: ['Yes', 'No', ''],
@@ -33,8 +28,7 @@ const userSchema = new mongoose.Schema(
     marital_status: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed'] },
     height: { type: String, default: '' },
     heightInCm: { type: Number, default: 0 },
-    //freeMessages: { type: Number, default: 3 }, 
-    // subscriptionExpiryDate: { type: Date },
+
     country: { type: String, default: 'India' },
     state: { type: String, default: '' },
     stateCode: { type: String, default: '' },
@@ -42,8 +36,7 @@ const userSchema = new mongoose.Schema(
     annual_income: { type: String, default: '' }, // Could be a range or exact value
     min_salary: { type: Number },
     max_salary: { type: Number },
-    // college_name: { type: String, default: '' },
-    // company_name: { type: String, default: '' },
+    
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
     highest_education: {
       type: String,

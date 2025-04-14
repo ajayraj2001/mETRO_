@@ -99,7 +99,7 @@ adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
 
 // ------------- Subscription Plan --------------
-adminRoute.post("/create_subscription_plan", authenticateAdmin, createSubscriptionPlan);
+adminRoute.post("/create_subscription_plan", createSubscriptionPlan);
 adminRoute.get("/get_subscription_plans", authenticateAdmin, getAllSubscriptionPlans);
 adminRoute.patch("/update_subscription_plan/:id", authenticateAdmin, updateSubscriptionPlan);
 adminRoute.delete("/delete_subscription_plan/:id", authenticateAdmin, deleteSubscriptionPlan);

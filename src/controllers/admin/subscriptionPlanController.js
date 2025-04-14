@@ -1,18 +1,20 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
-const { SubscriptionPlan } = require("../../models");
+const SubscriptionPlan = require("../../models/subscriptionPlan");
 
+// Create a new subscription plan
 const createSubscriptionPlan = asyncHandler(async (req, res, next) => {
-  const { planName, pricing, features, displayOrder, isPopular, active } = req.body;
+  const { planName, durationInMonths, price, features, displayOrder, isPopular, active } = req.body;
 
-  // Validate required pricing fields
-  if (!pricing?.monthly || !pricing?.quarterly || !pricing?.annual) {
-    return next(new ApiError('All pricing durations are required', 400));
+  // Validate required fields
+  if (!durationInMonths || !price?.actual || !price?.discounted) {
+    return next(new ApiError('Duration and pricing details are required', 400));
   }
 
   const subscriptionPlan = await SubscriptionPlan.create({
     planName,
-    pricing,
+    durationInMonths,
+    price,
     features,
     displayOrder,
     isPopular,
@@ -24,8 +26,9 @@ const createSubscriptionPlan = asyncHandler(async (req, res, next) => {
     message: 'Subscription plan created successfully',
     data: subscriptionPlan,
   });
-}); 
+});
 
+// Get all subscription plans
 const getAllSubscriptionPlans = asyncHandler(async (req, res, next) => {
   const subscriptionPlans = await SubscriptionPlan.find().sort({ displayOrder: 1 });
 
@@ -41,6 +44,7 @@ const getAllSubscriptionPlans = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Update a subscription plan
 const updateSubscriptionPlan = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const updates = req.body;
@@ -67,9 +71,10 @@ const updateSubscriptionPlan = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Toggle active/inactive status of a subscription plan
 const togglePlanStatus = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-  
+
   const subscriptionPlan = await SubscriptionPlan.findById(id);
   if (!subscriptionPlan) {
     return next(new ApiError('Subscription plan not found', 404));
@@ -85,6 +90,7 @@ const togglePlanStatus = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Delete a subscription plan
 const deleteSubscriptionPlan = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
