@@ -1,91 +1,87 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-const transactionSchema = new Schema({
+const paymentTransactionSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  subscriptionPlanId: {
+  subscriptionId: {
     type: Schema.Types.ObjectId,
-    ref: 'SubscriptionPlan',
+    ref: 'UserSubscription'
+  },
+  type: {
+    type: String,
+    enum: ['subscription_purchase', 'subscription_renewal', 'subscription_upgrade', 'refund'],
     required: true
   },
-  orderId: {
-    type: String,
-    required: true,
-    unique: true
+  amount: { 
+    type: Number, 
+    required: true 
   },
-  razorpayOrderId: {
-    type: String,
-    sparse: true
+  currency: { 
+    type: String, 
+    default: 'INR' 
   },
-  razorpayPaymentId: {
+  gateway: {
     type: String,
-    sparse: true
-  },
-  razorpaySignature: {
-    type: String,
-    sparse: true
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  currency: {
-    type: String,
-    default: 'INR'
+    default: 'razorpay'
   },
   status: {
     type: String,
-    enum: ['created', 'attempted', 'paid', 'failed', 'cancelled', 'expired'],
-    default: 'created'
+    enum: ['initiated', 'processing', 'completed', 'failed', 'refunded'],
+    default: 'initiated'
   },
-  startDate: {
-    type: Date
+  gatewayData: {
+    orderId: { type: String },
+    paymentId: { type: String },
+    signature: { type: String },
+    receiptId: { type: String },
+    method: { type: String },
+    bank: { type: String },
+    wallet: { type: String },
+    upi: { type: String },
+    vpa: { type: String },
+    error: {
+      code: { type: String },
+      description: { type: String },
+      source: { type: String },
+      step: { type: String },
+      reason: { type: String }
+    },
+    notes: { type: Object }
   },
-  endDate: {
-    type: Date
+  metadata: {
+    planId: { type: Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
+    planName: { type: String },
+    durationInMonths: { type: Number },
+    couponCode: { type: String },
+    originalAmount: { type: Number },
+    discountAmount: { type: Number },
+    taxAmount: { type: Number },
+    device: {
+      type: { type: String },
+      os: { type: String },
+      browser: { type: String },
+      ip: { type: String }
+    }
+  }
+}, {
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   },
-  features: {
-    contactViewsRemaining: { type: Number, default: 0 },
-    superInterestsRemaining: { type: Number, default: 0 },
-    chatEnabled: { type: Boolean, default: false },
-    profileVisibilityMultiplier: { type: Number, default: 1 },
-    verifiedBadge: { type: Boolean, default: false },
-    rmManagerEnabled: { type: Boolean, default: false }
-  },
-  receipt: {
-    type: String
-  },
-  notes: {
-    type: Object,
-    default: {}
-  },
-  paymentAttempts: [{
-    timestamp: { type: Date },
-    status: { type: String },
-    message: { type: String }
-  }],
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  collection: 'payment_transactions'
 });
 
-// Update the updatedAt field on every save
-transactionSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
+// Indexing for faster queries
+paymentTransactionSchema.index({ userId: 1 });
+// paymentTransactionSchema.index({ subscriptionId: 1 });
+// paymentTransactionSchema.index({ status: 1 });
+// paymentTransactionSchema.index({ 'gatewayData.orderId': 1 });
+// paymentTransactionSchema.index({ 'gatewayData.paymentId': 1 });
+paymentTransactionSchema.index({ created_at: -1 });
 
-// We only want to index active subscriptions
-// transactionSchema.index({ userId: 1, status: 1 });
-// // Index for finding valid subscriptions by end date
-// transactionSchema.index({ userId: 1, status: 1, endDate: 1 });
-// // Index for order lookup
-// transactionSchema.index({ orderId: 1 });
-// // Index for Razorpay payment ID lookup
-// transactionSchema.index({ razorpayPaymentId: 1 });
-
-const Transaction = mongoose.model("Transaction", transactionSchema);
-module.exports = Transaction;
+const PaymentTransaction = mongoose.model('PaymentTransaction', paymentTransactionSchema);
+module.exports = PaymentTransaction;

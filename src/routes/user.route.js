@@ -8,7 +8,7 @@ const { sendOrUpdateRequest, sentRequestTo, unsendRequest, gotRequestFrom, check
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
-const { createTransaction, transactionWebhook } = require("../controllers/user/purchaseSubscriptionController");
+// const { createTransaction, transactionWebhook } = require("../controllers/user/purchaseSubscriptionController");
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
 const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
@@ -62,6 +62,21 @@ userRoute.put("/profile", authenticateUser, updateProfile);
 userRoute.post("/deleteProfileImage", authenticateUser, deleteProfileImage);
 userRoute.delete("/delete_profile", authenticateUser, deleteProfile);
 
+//subscription
+const subscriptionController = require('../controllers/user/purchaseSubscriptionController.js');
+
+// Public routes
+userRoute.post('/webhook', subscriptionController.webhookHandler);
+
+// Protected routes (require authentication)
+userRoute.get('/plans', subscriptionController.getSubscriptionPlans);
+userRoute.get('/my-subscription', authenticateUser, subscriptionController.getUserSubscription);
+userRoute.post('/create-order', authenticateUser, subscriptionController.createSubscriptionOrder);
+userRoute.post('/verify-payment', authenticateUser, subscriptionController.verifyPayment);
+userRoute.post('/cancel', authenticateUser, subscriptionController.cancelSubscription);
+userRoute.post('/auto-renewal', authenticateUser, subscriptionController.setupAutoRenewal);
+userRoute.get('/payment-history', authenticateUser, subscriptionController.getPaymentHistory);
+
 // Preferences & Match
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
 userRoute.get("/yourPreference", authenticateUser, getPreference);
@@ -85,12 +100,12 @@ userRoute.get("/chat_eligibility/:id", authenticateUser, checkStatusForChatting)
 userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 
 // Purchase Subscription
-userRoute.post("/create_transaction", authenticateUser, createTransaction);
-userRoute.post(
-    "/transactionWebhook",
-    bodyParser.raw({ type: "application/json" }),
-    transactionWebhook
-  );
+// userRoute.post("/create_transaction", authenticateUser, createTransaction);
+// userRoute.post(
+//     "/transactionWebhook",
+//     bodyParser.raw({ type: "application/json" }),
+//     transactionWebhook
+//   );
 
 // chat message
 //userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
