@@ -70,12 +70,12 @@ userRoute.post('/webhook', subscriptionController.webhookHandler);
 
 // Protected routes (require authentication)
 userRoute.get('/plans', subscriptionController.getSubscriptionPlans);
-userRoute.get('/my-subscription', authenticateUser, subscriptionController.getUserSubscription);
-userRoute.post('/create-order', authenticateUser, subscriptionController.createSubscriptionOrder);
-userRoute.post('/verify-payment', authenticateUser, subscriptionController.verifyPayment);
+userRoute.get('/my_subscription', authenticateUser, subscriptionController.getUserSubscription);
+userRoute.post('/create_order', authenticateUser, subscriptionController.createSubscriptionOrder);
+userRoute.post('/verify_payment', authenticateUser, subscriptionController.verifyPayment);
 userRoute.post('/cancel', authenticateUser, subscriptionController.cancelSubscription);
-userRoute.post('/auto-renewal', authenticateUser, subscriptionController.setupAutoRenewal);
-userRoute.get('/payment-history', authenticateUser, subscriptionController.getPaymentHistory);
+userRoute.post('/auto_renewal', authenticateUser, subscriptionController.setupAutoRenewal);
+userRoute.get('/payment_history', authenticateUser, subscriptionController.getPaymentHistory);
 
 // Preferences & Match
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
