@@ -64,7 +64,6 @@ const userSubscriptionSchema = new Schema({
       default: 'pending'
     },
     receiptId: { type: String },
-    metadata: { type: Object, default: {} }
   },
   autoRenewal: {
     enabled: { type: Boolean, default: false },

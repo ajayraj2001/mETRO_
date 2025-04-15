@@ -142,11 +142,18 @@ const subscriptionController = {
       const receiptId = `JODI4EVER_${uuidv4().substring(0, 8)}_${Date.now()}`;
 
       // Create Razorpay order
-      const amount = plan.price.discounted * 100; // Amount in paisa
-      const currency = 'INR';
+      // const amount = plan.price.discounted * 100; // Amount in paisa
+      // const currency = 'INR';
+
+      const orderAmount = plan.price.discounted;
+      const gstAmount = orderAmount * 0.18;
+      const totalAmount = orderAmount + gstAmount;
+
+      // Razorpay amount in paisa
+      const razorpayAmount = totalAmount * 100;
 
       const order = await razorpay.orders.create({
-        amount,
+        amount: razorpayAmount,
         currency,
         receipt: receiptId,
         notes: {
@@ -161,8 +168,10 @@ const subscriptionController = {
       const transaction = new PaymentTransaction({
         userId,
         type: activeSubscription ? 'subscription_upgrade' : 'subscription_purchase',
-        amount: plan.price.discounted,
-        currency,
+        orderAmount: orderAmount,
+        gstAmount: gstAmount,
+        totalAmount: totalAmount,
+        currency: 'INR',
         gateway: 'razorpay',
         status: 'initiated',
         gatewayData: {
@@ -174,7 +183,8 @@ const subscriptionController = {
           planName: plan.planName,
           durationInMonths: plan.durationInMonths,
           originalAmount: plan.price.actual,
-          discountAmount: plan.price.actual - plan.price.discounted
+          discountAmount: plan.price.actual - plan.price.discounted,
+          taxAmount: gstAmount
         }
       });
 
@@ -334,7 +344,7 @@ const subscriptionController = {
           payment: {
             transactionId: transaction._id,
             orderId: razorpay_order_id,
-            amount: transaction.amount,
+            amount: transaction.totalAmount,
             currency: transaction.currency,
             method: payment.method,
             gateway: 'razorpay',
@@ -561,9 +571,14 @@ const subscriptionController = {
       }
 
       // Create a subscription plan in Razorpay
+      // Inside setupAutoRenewal function
+      const orderAmount = plan.price.discounted;
+      const gstAmount = orderAmount * 0.18;
+      const totalAmount = orderAmount + gstAmount;
+
       const item = {
         name: `${plan.planName} Plan - ${plan.durationInMonths} Month${plan.durationInMonths > 1 ? 's' : ''}`,
-        amount: plan.price.discounted * 100,
+        amount: totalAmount * 100, // Include GST in Razorpay plan
         currency: 'INR',
         description: `Auto-renewal for ${plan.planName} Plan`
       };
@@ -786,12 +801,19 @@ async function handleRefundCreated(payload) {
       return;
     }
 
+    // Inside handleRefundCreated function
+    const refundAmountINR = refund.amount / 100;
+    const orderAmount = parseFloat((refundAmountINR / 1.18).toFixed(2));
+    const gstAmount = parseFloat((refundAmountINR - orderAmount).toFixed(2));
+
     // Create a new refund transaction
     const refundTransaction = new PaymentTransaction({
       userId: transaction.userId,
       subscriptionId: transaction.subscriptionId,
       type: 'refund',
-      amount: refund.amount / 100, // Convert from paisa to rupees
+      orderAmount: orderAmount,
+      gstAmount: gstAmount,
+      totalAmount: refundAmountINR,
       currency: refund.currency,
       gateway: 'razorpay',
       status: 'completed',
@@ -803,7 +825,8 @@ async function handleRefundCreated(payload) {
         originalTransactionId: transaction._id,
         planId: transaction.metadata.planId,
         planName: transaction.metadata.planName,
-        refundReason: refund.notes?.reason || 'Customer requested'
+        refundReason: refund.notes?.reason || 'Customer requested',
+        taxAmount: gstAmount
       }
     });
 
@@ -849,11 +872,17 @@ async function handleSubscriptionCharged(payload) {
       return;
     }
 
-    // Create a payment transaction
+    // Inside handleSubscriptionCharged function
+    const totalAmount = payment.amount / 100;
+    const orderAmount = parseFloat((totalAmount / 1.18).toFixed(2));
+    const gstAmount = parseFloat((totalAmount - orderAmount).toFixed(2));
+
     const transaction = new PaymentTransaction({
       userId: userSubscription.userId,
       type: 'subscription_renewal',
-      amount: payment.amount / 100, // Convert from paisa to rupees
+      orderAmount: orderAmount,
+      gstAmount: gstAmount,
+      totalAmount: totalAmount,
       currency: payment.currency,
       gateway: 'razorpay',
       status: 'completed',
@@ -864,9 +893,12 @@ async function handleSubscriptionCharged(payload) {
       },
       metadata: {
         planId: userSubscription.planId,
-        planName: subscription.plan_id, // This is the Razorpay plan ID, not our plan name
+        planName: subscription.plan_id,
         subscriptionId: subscription.id,
-        autoRenewal: true
+        autoRenewal: true,
+        originalAmount: plan.price.actual,
+        discountAmount: plan.price.actual - plan.price.discounted,
+        taxAmount: gstAmount
       }
     });
 

@@ -16,7 +16,15 @@ const paymentTransactionSchema = new Schema({
     enum: ['subscription_purchase', 'subscription_renewal', 'subscription_upgrade', 'refund'],
     required: true
   },
-  amount: { 
+  orderAmount: { 
+    type: Number, 
+    required: true 
+  },
+  gstAmount: { 
+    type: Number, 
+    required: true 
+  },
+  totalAmount: { 
     type: Number, 
     required: true 
   },
@@ -60,12 +68,6 @@ const paymentTransactionSchema = new Schema({
     originalAmount: { type: Number },
     discountAmount: { type: Number },
     taxAmount: { type: Number },
-    device: {
-      type: { type: String },
-      os: { type: String },
-      browser: { type: String },
-      ip: { type: String }
-    }
   }
 }, {
   timestamps: {
