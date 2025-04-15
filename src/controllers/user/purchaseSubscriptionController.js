@@ -354,7 +354,7 @@ const subscriptionController = {
           }
         });
 
-        // Immediately update the user document
+        // Immediately update the user document  --- just added
         await User.findByIdAndUpdate(userId, {
           verifiedBadge: plan.features.verifiedBadge.included,
           subscriptionStatus: 'active',
