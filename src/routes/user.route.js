@@ -4,7 +4,7 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
 const { partnerPreferences, getPreference, matchedUsers, singleMatchedUser, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
-const { sendOrUpdateRequest, sentRequestTo, unsendRequest, gotRequestFrom, checkStatusForChatting } = require("../controllers/user/requestedUserController");
+const { getFollowData, sendOrUpdateRequest, sentRequestTo, unsendRequest, gotRequestFrom, checkStatusForChatting } = require("../controllers/user/requestedUserController");
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
@@ -91,6 +91,7 @@ userRoute.get("/unlike_user/:id", authenticateUser, unlikeUserProfile);
 
 // request user
 userRoute.post("/send_request", authenticateUser, sendOrUpdateRequest);
+userRoute.get("/getFollowData", authenticateUser, getFollowData);
 userRoute.get("/requested_to", authenticateUser, sentRequestTo);
 userRoute.get("/unsend_request/:id", authenticateUser, unsendRequest);
 userRoute.get("/requested_by", authenticateUser, gotRequestFrom);

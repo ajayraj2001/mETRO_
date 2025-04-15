@@ -12,7 +12,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const { userRequestedTo, status } = req.body;
   const user = req.user._id;
   const {fullName, deviceToken, profile_image } = req.user;
-  console.log('req.dy', req.body, 'userid', user)
   
   if (!userRequestedTo)
     return next(new ApiError("Requested user id is required", 400));
@@ -98,59 +97,93 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   }
 });
 
-const sentRequestTo = asyncHandler(async (req, res, next) => {
-  const user = req.user._id;
-
-  const requestedTo = await RequestedUser.find({ user, status : "Requested" })
-    .sort({ createdAt: -1 })
-    .populate({
-      path: "userRequestedTo",
-      select: "fullName height city profile_image",
-    });
-
-  // if (!requestedTo || requestedTo.length === 0)
-  //   return next(new ApiError("You have not requested to anyone so far.", 404));
-
-  return res.status(200).json({
-    success: true,
-    message: "Data fetched successfully.",
-    data: requestedTo,
-  });
-});
-
 // const sentRequestTo = asyncHandler(async (req, res, next) => {
 //   const user = req.user._id;
-//   let { page = 1, limit = 10 } = req.query;
 
-//   page = parseInt(page);
-//   limit = parseInt(limit);
-//   const skip = (page - 1) * limit;
+//   const requestedTo = await RequestedUser.find({ user, status : "Requested" })
+//     .sort({ createdAt: -1 })
+//     .populate({
+//       path: "userRequestedTo",
+//       select: "fullName height city profile_image",
+//     });
 
-//   const [requestedTo, total] = await Promise.all([
-//     RequestedUser.find({ user, status: "Requested" })
-//       .sort({ createdAt: -1 })  // Newest first
-//       .populate({
-//         path: "userRequestedTo",
-//         select: "fullName height city profile_image",
-//       })
-//       .skip(skip)
-//       .limit(limit),
-      
-//     RequestedUser.countDocuments({ user, status: "Requested" })
-//   ]);
+//   // if (!requestedTo || requestedTo.length === 0)
+//   //   return next(new ApiError("You have not requested to anyone so far.", 404));
 
 //   return res.status(200).json({
 //     success: true,
 //     message: "Data fetched successfully.",
 //     data: requestedTo,
-//     pagination: {
-//       totalRecords: total,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       perPage: limit,
-//     },
 //   });
 // });
+
+const sentRequestTo = asyncHandler(async (req, res, next) => {
+  const user = req.user._id;
+  let { page = 1, limit = 10 } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+  const skip = (page - 1) * limit;
+
+  const [requestedTo, total] = await Promise.all([
+    RequestedUser.find({ user, status: "Requested" })
+      .sort({ createdAt: -1 })  // Newest first
+      .populate({
+        path: "userRequestedTo",
+        select: "fullName height city profile_image",
+      })
+      .skip(skip)
+      .limit(limit),
+      
+    RequestedUser.countDocuments({ user, status: "Requested" })
+  ]);
+
+  return res.status(200).json({
+    success: true,
+    message: "Data fetched successfully.",
+    data: requestedTo,
+    pagination: {
+      totalRecords: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      perPage: limit,
+    },
+  });
+});
+
+const gotRequestFrom = asyncHandler(async (req, res, next) => {
+  const user = req.user._id;
+  let { page = 1, limit = 10 } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+  const skip = (page - 1) * limit;
+
+  const [requestedBy, total] = await Promise.all([
+    RequestedUser.find({ userRequestedTo: user, status: "Requested" })
+      .sort({ createdAt: -1 }) // Newest first
+      .populate({
+        path: "user",
+        select: "fullName height city profile_image",
+      })
+      .skip(skip)
+      .limit(limit),
+
+    RequestedUser.countDocuments({ userRequestedTo: user, status: "Requested" }),
+  ]);
+
+  return res.status(200).json({
+    success: true,
+    message: "Data fetched successfully.",
+    data: requestedBy,
+    pagination: {
+      totalRecords: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      perPage: limit,
+    },
+  });
+});
 
 
 const unsendRequest = asyncHandler(async (req, res, next) => {
@@ -171,57 +204,91 @@ const unsendRequest = asyncHandler(async (req, res, next) => {
   });
 });
 
-const gotRequestFrom = asyncHandler(async (req, res, next) => {
-  const user = req.user._id;
+//main
+const getFollowData = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { type = "", page = 1, limit = 10 } = req.query;
 
-  const requestedBy = await RequestedUser.find({
-    userRequestedTo: user,
-    status: "Requested",
-  })
-    .sort({ createdAt: -1 })
-    .populate({
-      path: "user",
-      select: "fullName height city profile_image",
-    });
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  let query = {};
+  let populateOptions = {};
+  let modelField = "";
+
+  switch (type) {
+    case "followers":
+      query = { userRequestedTo: userId, status: "Accept" };
+      populateOptions = { path: "user", select: "fullName height city profile_image" };
+      modelField = "user";
+      break;
+
+    case "following":
+      query = { user: userId, status: "Accept" };
+      populateOptions = { path: "userRequestedTo", select: "fullName height city profile_image" };
+      modelField = "userRequestedTo";
+      break;
+
+    case "requestedTo":
+      query = { user: userId, status: "Requested" };
+      populateOptions = { path: "userRequestedTo", select: "fullName height city profile_image" };
+      modelField = "userRequestedTo";
+      break;
+
+    case "requestedFrom":
+      query = { userRequestedTo: userId, status: "Requested" };
+      populateOptions = { path: "user", select: "fullName height city profile_image" };
+      modelField = "user";
+      break;
+
+    default:
+      return res.status(400).json({
+        success: false,
+        message: "Invalid 'type' parameter. Use: followers, following, requestedTo, or requestedFrom.",
+      });
+  }
+
+  const [records, total] = await Promise.all([
+    RequestedUser.find(query)
+      .sort({ createdAt: -1 })
+      .populate(populateOptions)
+      .skip(skip)
+      .limit(limitNum),
+    RequestedUser.countDocuments(query),
+  ]);
 
   return res.status(200).json({
     success: true,
-    message: "Data fetched successfully.",
-    data: requestedBy,
+    message: `${type} data fetched successfully.`,
+    data: records,
+    pagination: {
+      totalRecords: total,
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      perPage: limitNum,
+    },
   });
 });
 
+
 // const gotRequestFrom = asyncHandler(async (req, res, next) => {
 //   const user = req.user._id;
-//   let { page = 1, limit = 10 } = req.query;
 
-//   page = parseInt(page);
-//   limit = parseInt(limit);
-//   const skip = (page - 1) * limit;
-
-//   const [requestedBy, total] = await Promise.all([
-//     RequestedUser.find({ userRequestedTo: user, status: "Requested" })
-//       .sort({ createdAt: -1 }) // Newest first
-//       .populate({
-//         path: "user",
-//         select: "fullName height city profile_image",
-//       })
-//       .skip(skip)
-//       .limit(limit),
-
-//     RequestedUser.countDocuments({ userRequestedTo: user, status: "Requested" }),
-//   ]);
+//   const requestedBy = await RequestedUser.find({
+//     userRequestedTo: user,
+//     status: "Requested",
+//   })
+//     .sort({ createdAt: -1 })
+//     .populate({
+//       path: "user",
+//       select: "fullName height city profile_image",
+//     });
 
 //   return res.status(200).json({
 //     success: true,
 //     message: "Data fetched successfully.",
 //     data: requestedBy,
-//     pagination: {
-//       totalRecords: total,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       perPage: limit,
-//     },
 //   });
 // });
 
@@ -265,4 +332,5 @@ module.exports = {
   unsendRequest,
   gotRequestFrom,
   checkStatusForChatting,
+  getFollowData
 };
