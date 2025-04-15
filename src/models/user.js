@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
     annual_income: { type: String, default: '' }, // Could be a range or exact value
     min_salary: { type: Number },
     max_salary: { type: Number },
-    
+
     employed_in: { type: String, default: '' }, // e.g., 'Private', 'Government', 'Business', etc.
     highest_education: {
       type: String,
@@ -82,28 +82,18 @@ const userSchema = new mongoose.Schema(
       type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
       coordinates: { type: [Number] } // , required: true
     },
-    // In User model
-    // subscription: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "UserSubscription"
-    // },
-    // verifiedBadge: { type: Boolean, default: false },
-    // features: {
-    //   contactViews: { type: Number, default: 0 },
-    //   superInterests: { type: Number, default: 0 },
-    //   profileVisibility: {
-    //     type: String,
-    //     enum: ['Standard', 'Enhanced', 'Premium', 'VIP'],
-    //     default: 'Standard'
-    //   },
-    //   rmAccess: { type: Boolean, default: false }
-    // },
 
-    // maxPhoneNumbersViewable: { type: Number, default: 0 },
-    // contactViewsRemaining: { type: Number, default: 0 },
-    // subscriptionPlan: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
-    // rmAccess: { type: Boolean, default: false },
-    // profileVisibility: { type: String, enum: ['Standard', 'Enhanced', 'Premium', 'VIP'], default: 'Standard' }
+    // Add these fields to the User schema  -- suscription purpose
+    verifiedBadge: { type: Boolean, default: false },
+    subscriptionStatus: { type: String, enum: ['none', 'active', 'expired'], default: 'none' },
+    subscriptionPlan: { type: String, enum: ['', 'Silver', 'Gold', 'Diamond', 'Royal'], default: '' },
+    subscriptionExpiry: { type: Date },
+    messageCreditsRemaining: { type: Number, default: 0 },
+    contactViewsRemaining: { type: Number, default: 0 },
+    superInterestsRemaining: { type: Number, default: 0 },
+    unlimitedMessaging: { type: Boolean, default: false },
+    profileVisibilityBoost: { type: Number, default: 1 },
+    lastSubscriptionCheck: { type: Date }
   },
   {
     timestamps: {
@@ -116,8 +106,12 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
-// userSchema.index({ 'features.profileVisibility': 1 });
-// userSchema.index({ verifiedBadge: 1 });
+
+//for subscription
+// userSchema.index({ verifiedBadge: -1, created_at: -1 });
+// userSchema.index({ subscriptionStatus: 1 });
+// userSchema.index({ subscriptionExpiry: 1 });
+// userSchema.index({ profileVisibilityBoost: -1 });
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

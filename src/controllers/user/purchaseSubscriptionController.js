@@ -36,14 +36,14 @@ const subscriptionController = {
   getUserSubscription: async (req, res) => {
     try {
       const userId = req.user._id;
-      
+
       // Find the latest active subscription for the user
       const subscription = await UserSubscription.findOne({
         userId: userId,
         status: 'active',
         endDate: { $gt: new Date() }
       }).populate('planId', 'planName durationInMonths').sort({ created_at: -1 });
-      
+
       if (!subscription) {
         return res.status(200).json({
           success: true,
@@ -52,13 +52,13 @@ const subscriptionController = {
           message: 'No active subscription found'
         });
       }
-      
+
       // Calculate remaining feature usage
       const featureUsage = {
         chat: {
           total: subscription.features.chat.total,
           used: subscription.features.chat.used,
-          remaining: subscription.features.chat.isUnlimited ? 'Unlimited' : 
+          remaining: subscription.features.chat.isUnlimited ? 'Unlimited' :
             (subscription.features.chat.total - subscription.features.chat.used),
           isUnlimited: subscription.features.chat.isUnlimited
         },
@@ -82,12 +82,12 @@ const subscriptionController = {
           active: subscription.features.rmManager.active
         }
       };
-      
+
       // Calculate days remaining
       const today = new Date();
       const endDate = new Date(subscription.endDate);
       const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-      
+
       return res.status(200).json({
         success: true,
         hasActiveSubscription: true,
@@ -98,7 +98,7 @@ const subscriptionController = {
           expiryDate: subscription.endDate
         }
       });
-      
+
     } catch (error) {
       console.error('Error fetching user subscription:', error);
       return res.status(500).json({
@@ -114,14 +114,14 @@ const subscriptionController = {
     try {
       const { planId } = req.body;
       const userId = req.user._id;
-      
+
       if (!planId) {
         return res.status(400).json({
-          success: false, 
+          success: false,
           message: 'Plan ID is required'
         });
       }
-      
+
       // Check if plan exists
       const plan = await SubscriptionPlan.findById(planId);
       if (!plan) {
@@ -130,21 +130,21 @@ const subscriptionController = {
           message: 'Subscription plan not found'
         });
       }
-      
+
       // Check if user already has an active subscription
       const activeSubscription = await UserSubscription.findOne({
         userId,
         status: 'active',
         endDate: { $gt: new Date() }
       });
-      
+
       // Generate a unique receipt id
       const receiptId = `JODI4EVER_${uuidv4().substring(0, 8)}_${Date.now()}`;
-      
+
       // Create Razorpay order
       const amount = plan.price.discounted * 100; // Amount in paisa
       const currency = 'INR';
-      
+
       const order = await razorpay.orders.create({
         amount,
         currency,
@@ -156,7 +156,7 @@ const subscriptionController = {
           durationInMonths: plan.durationInMonths
         }
       });
-      
+
       // Create a pending payment transaction
       const transaction = new PaymentTransaction({
         userId,
@@ -177,9 +177,9 @@ const subscriptionController = {
           discountAmount: plan.price.actual - plan.price.discounted
         }
       });
-      
+
       await transaction.save();
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -193,7 +193,7 @@ const subscriptionController = {
           }
         }
       });
-      
+
     } catch (error) {
       console.error('Error creating subscription order:', error);
       return res.status(500).json({
@@ -203,56 +203,56 @@ const subscriptionController = {
       });
     }
   },
-  
+
   // Verify payment and activate subscription
   verifyPayment: async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-      
+
       if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
         return res.status(400).json({
           success: false,
           message: 'Missing payment verification parameters'
         });
       }
-      
+
       // Verify the payment signature
       const generatedSignature = crypto
         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest('hex');
-        
+
       if (generatedSignature !== razorpay_signature) {
         return res.status(400).json({
           success: false,
           message: 'Invalid payment signature'
         });
       }
-      
+
       // Get payment details from Razorpay
       const payment = await razorpay.payments.fetch(razorpay_payment_id);
-      
+
       // Update the transaction
-      const transaction = await PaymentTransaction.findOne({ 
-        'gatewayData.orderId': razorpay_order_id 
+      const transaction = await PaymentTransaction.findOne({
+        'gatewayData.orderId': razorpay_order_id
       });
-      
+
       if (!transaction) {
         return res.status(404).json({
           success: false,
           message: 'Transaction not found'
         });
       }
-      
+
       // Update transaction with payment details
       transaction.status = payment.status === 'captured' ? 'completed' : 'failed';
       transaction.gatewayData.paymentId = razorpay_payment_id;
       transaction.gatewayData.signature = razorpay_signature;
       transaction.gatewayData.method = payment.method;
-      
+
       // Set method specific details
       if (payment.method === 'card') {
         transaction.gatewayData.bank = payment.bank;
@@ -262,31 +262,31 @@ const subscriptionController = {
         transaction.gatewayData.upi = payment.upi;
         transaction.gatewayData.vpa = payment.vpa;
       }
-      
+
       await transaction.save({ session });
-      
+
       // If payment is successful, create or update the subscription
       if (payment.status === 'captured') {
         const userId = transaction.userId;
         const planId = transaction.metadata.planId;
-        
+
         // Get the plan details
         const plan = await SubscriptionPlan.findById(planId);
         if (!plan) {
           throw new Error('Subscription plan not found');
         }
-        
+
         // Check if user already has an active subscription
         const existingSubscription = await UserSubscription.findOne({
           userId,
           status: 'active',
           endDate: { $gt: new Date() }
         });
-        
+
         let startDate = new Date();
         let endDate = new Date();
         endDate.setMonth(endDate.getMonth() + plan.durationInMonths);
-        
+
         // If user has an existing subscription, extend it or upgrade it
         if (existingSubscription) {
           // If upgrading to a better plan, start the new subscription immediately
@@ -294,20 +294,20 @@ const subscriptionController = {
             // Mark old subscription as cancelled
             existingSubscription.status = 'cancelled';
             await existingSubscription.save({ session });
-            
+
             // Use the features from the new plan
           } else {
             // If extending the same plan, add duration to the existing end date
             startDate = existingSubscription.endDate;
             endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + plan.durationInMonths);
-            
+
             // Mark old subscription as expired
             existingSubscription.status = 'expired';
             await existingSubscription.save({ session });
           }
         }
-        
+
         // Create new subscription
         const newSubscription = new UserSubscription({
           userId,
@@ -353,7 +353,21 @@ const subscriptionController = {
             receiptId: transaction.gatewayData.receiptId
           }
         });
-        
+
+        // Immediately update the user document
+        await User.findByIdAndUpdate(userId, {
+          verifiedBadge: plan.features.verifiedBadge.included,
+          subscriptionStatus: 'active',
+          subscriptionPlan: plan.planName,
+          subscriptionExpiry: newSubscription.endDate,
+          messageCreditsRemaining: plan.features.chat.isUnlimited ? -1 : plan.features.chat.total,
+          contactViewsRemaining: plan.features.contactViews.total,
+          superInterestsRemaining: plan.features.superInterest.total,
+          unlimitedMessaging: plan.features.chat.isUnlimited,
+          profileVisibilityBoost: plan.features.profileVisibility.multiplier,
+          lastSubscriptionCheck: new Date()
+        });
+
         // If continuing from a previous subscription, add to renewal history
         if (existingSubscription) {
           newSubscription.renewalHistory.push({
@@ -362,22 +376,22 @@ const subscriptionController = {
             paymentId: razorpay_payment_id
           });
         }
-        
+
         await newSubscription.save({ session });
-        
+
         // Update the transaction with subscription id
         transaction.subscriptionId = newSubscription._id;
         await transaction.save({ session });
-        
+
         // Update user document to add verified badge
         if (plan.features.verifiedBadge.included) {
           await User.findByIdAndUpdate(userId, {
             $set: { verifiedBadge: true }
           }, { session });
         }
-        
+
         await session.commitTransaction();
-        
+
         return res.status(200).json({
           success: true,
           message: 'Payment verified and subscription activated successfully',
@@ -386,11 +400,11 @@ const subscriptionController = {
             transaction
           }
         });
-        
+
       } else {
         // If payment failed
         await session.commitTransaction();
-        
+
         return res.status(400).json({
           success: false,
           message: 'Payment failed',
@@ -399,7 +413,7 @@ const subscriptionController = {
           }
         });
       }
-      
+
     } catch (error) {
       await session.abortTransaction();
       console.error('Error verifying payment:', error);
@@ -417,23 +431,23 @@ const subscriptionController = {
   cancelSubscription: async (req, res) => {
     try {
       const userId = req.user._id;
-      
+
       const subscription = await UserSubscription.findOne({
         userId,
         status: 'active',
         endDate: { $gt: new Date() }
       });
-      
+
       if (!subscription) {
         return res.status(404).json({
           success: false,
           message: 'No active subscription found'
         });
       }
-      
+
       // If auto-renewal is enabled, cancel it in payment gateway
-      if (subscription.autoRenewal && subscription.autoRenewal.enabled && 
-          subscription.autoRenewal.subscriptionId) {
+      if (subscription.autoRenewal && subscription.autoRenewal.enabled &&
+        subscription.autoRenewal.subscriptionId) {
         try {
           await razorpay.subscriptions.cancel(subscription.autoRenewal.subscriptionId);
         } catch (err) {
@@ -441,22 +455,22 @@ const subscriptionController = {
           // Continue with cancellation even if Razorpay fails
         }
       }
-      
+
       // Update subscription
       subscription.autoRenewal.enabled = false;
       subscription.status = 'cancelled';
       await subscription.save();
-      
+
       // Remove verified badge from user
       await User.findByIdAndUpdate(userId, {
         $set: { verifiedBadge: false }
       });
-      
+
       return res.status(200).json({
         success: true,
         message: 'Subscription cancelled successfully'
       });
-      
+
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       return res.status(500).json({
@@ -466,20 +480,20 @@ const subscriptionController = {
       });
     }
   },
-  
+
   // Setup subscription auto-renewal
   setupAutoRenewal: async (req, res) => {
     try {
       const userId = req.user._id;
       const { planId } = req.body;
-      
+
       if (!planId) {
         return res.status(400).json({
-          success: false, 
+          success: false,
           message: 'Plan ID is required'
         });
       }
-      
+
       // Check if plan exists
       const plan = await SubscriptionPlan.findById(planId);
       if (!plan) {
@@ -488,21 +502,21 @@ const subscriptionController = {
           message: 'Subscription plan not found'
         });
       }
-      
+
       // Check if user already has an active subscription
       const activeSubscription = await UserSubscription.findOne({
         userId,
         status: 'active',
         endDate: { $gt: new Date() }
       });
-      
+
       if (!activeSubscription) {
         return res.status(404).json({
           success: false,
           message: 'No active subscription found. Please purchase a subscription first.'
         });
       }
-      
+
       // Check if auto-renewal is already enabled
       if (activeSubscription.autoRenewal.enabled && activeSubscription.autoRenewal.subscriptionId) {
         return res.status(400).json({
@@ -510,7 +524,7 @@ const subscriptionController = {
           message: 'Auto-renewal is already enabled for this subscription'
         });
       }
-      
+
       // Get user details
       const user = await User.findById(userId);
       if (!user) {
@@ -519,17 +533,17 @@ const subscriptionController = {
           message: 'User not found'
         });
       }
-      
+
       // Create a Razorpay customer if not already exists
       let customerId;
-      
+
       // Try to fetch existing customer by email
       try {
         const customers = await razorpay.customers.all();
-        const existingCustomer = customers.items.find(customer => 
+        const existingCustomer = customers.items.find(customer =>
           customer.email === user.email || customer.contact === user.phone
         );
-        
+
         if (existingCustomer) {
           customerId = existingCustomer.id;
         } else {
@@ -542,7 +556,7 @@ const subscriptionController = {
               userId: userId.toString()
             }
           });
-          
+
           customerId = customer.id;
         }
       } catch (error) {
@@ -553,7 +567,7 @@ const subscriptionController = {
           error: error.message
         });
       }
-      
+
       // Create a subscription plan in Razorpay
       const item = {
         name: `${plan.planName} Plan - ${plan.durationInMonths} Month${plan.durationInMonths > 1 ? 's' : ''}`,
@@ -561,11 +575,11 @@ const subscriptionController = {
         currency: 'INR',
         description: `Auto-renewal for ${plan.planName} Plan`
       };
-      
+
       // Calculate subscription period based on duration
       let period = 'monthly';
       let interval = 1;
-      
+
       if (plan.durationInMonths === 3) {
         period = 'monthly';
         interval = 3;
@@ -576,7 +590,7 @@ const subscriptionController = {
         period = 'yearly';
         interval = 1;
       }
-      
+
       try {
         // Create a Razorpay plan
         const razorpayPlan = await razorpay.plans.create({
@@ -584,7 +598,7 @@ const subscriptionController = {
           interval,
           item
         });
-        
+
         // Create a Razorpay subscription
         const razorpaySubscription = await razorpay.subscriptions.create({
           plan_id: razorpayPlan.id,
@@ -597,15 +611,15 @@ const subscriptionController = {
             durationInMonths: plan.durationInMonths
           }
         });
-        
+
         // Update user subscription with auto-renewal info
         activeSubscription.autoRenewal = {
           enabled: true,
           subscriptionId: razorpaySubscription.id
         };
-        
+
         await activeSubscription.save();
-        
+
         return res.status(200).json({
           success: true,
           message: 'Auto-renewal setup successfully',
@@ -614,7 +628,7 @@ const subscriptionController = {
             razorpaySubscriptionId: razorpaySubscription.id
           }
         });
-        
+
       } catch (error) {
         console.error('Error setting up Razorpay auto-renewal:', error);
         return res.status(500).json({
@@ -632,7 +646,7 @@ const subscriptionController = {
       });
     }
   },
-  
+
   // Get payment history for a user
   getPaymentHistory: async (req, res) => {
     try {
@@ -640,21 +654,21 @@ const subscriptionController = {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const skip = (page - 1) * limit;
-      
-      const transactions = await PaymentTransaction.find({ 
-        userId, 
+
+      const transactions = await PaymentTransaction.find({
+        userId,
         status: { $in: ['completed', 'refunded'] }
       })
-      .sort({ created_at: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('metadata.planId', 'planName durationInMonths');
-      
-      const total = await PaymentTransaction.countDocuments({ 
-        userId, 
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('metadata.planId', 'planName durationInMonths');
+
+      const total = await PaymentTransaction.countDocuments({
+        userId,
         status: { $in: ['completed', 'refunded'] }
       });
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -667,7 +681,7 @@ const subscriptionController = {
           }
         }
       });
-      
+
     } catch (error) {
       console.error('Error fetching payment history:', error);
       return res.status(500).json({
@@ -677,87 +691,87 @@ const subscriptionController = {
       });
     }
   },
-  
+
   // Webhook handler for Razorpay events
   webhookHandler: async (req, res) => {
     try {
       // Verify webhook signature
       const webhookSignature = req.headers['x-razorpay-signature'];
       const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-      
+
       const payload = req.body;
-      
+
       if (!webhookSignature || !webhookSecret) {
         console.error('Missing webhook signature or secret');
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: 'Missing webhook signature or secret'
         });
       }
-      
+
       // Verify the webhook signature
       const generatedSignature = crypto
         .createHmac('sha256', webhookSecret)
         .update(JSON.stringify(payload))
         .digest('hex');
-        
+
       if (generatedSignature !== webhookSignature) {
         console.error('Invalid webhook signature');
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: 'Invalid webhook signature'
         });
       }
-      
+
       // Handle different webhook events
       const event = payload.event;
-      
+
       switch (event) {
         case 'payment.authorized':
           // Payment was authorized but not captured yet
           console.log('Payment authorized:', payload);
           break;
-          
+
         case 'payment.captured':
           // Payment was captured successfully
           await handlePaymentCaptured(payload);
           break;
-          
+
         case 'payment.failed':
           // Payment failed
           await handlePaymentFailed(payload);
           break;
-          
+
         case 'refund.created':
           // Refund was initiated
           await handleRefundCreated(payload);
           break;
-          
+
         case 'subscription.charged':
           // Auto-renewal subscription was charged
           await handleSubscriptionCharged(payload);
           break;
-          
+
         case 'subscription.cancelled':
           // Subscription was cancelled
           await handleSubscriptionCancelled(payload);
           break;
-          
+
         default:
           console.log(`Unhandled webhook event: ${event}`);
       }
-      
+
       // Always respond with 200 to acknowledge receipt of the webhook
-      return res.status(200).json({ 
-        success: true, 
+      return res.status(200).json({
+        success: true,
         message: 'Webhook received and processed'
       });
-      
+
     } catch (error) {
       console.error('Error processing webhook:', error);
       // Still return 200 to acknowledge receipt, even if there was an error processing
-      return res.status(200).json({ 
-        success: true, 
+      return res.status(200).json({
+        success: true,
         message: 'Webhook received but error during processing'
       });
     }
@@ -768,18 +782,18 @@ const subscriptionController = {
 async function handleRefundCreated(payload) {
   const refund = payload.payload.refund.entity;
   const paymentId = refund.payment_id;
-  
+
   try {
     // Find the transaction using the payment ID
     const transaction = await PaymentTransaction.findOne({
       'gatewayData.paymentId': paymentId
     });
-    
+
     if (!transaction) {
       console.error(`Transaction not found for payment ID: ${paymentId}`);
       return;
     }
-    
+
     // Create a new refund transaction
     const refundTransaction = new PaymentTransaction({
       userId: transaction.userId,
@@ -800,28 +814,28 @@ async function handleRefundCreated(payload) {
         refundReason: refund.notes?.reason || 'Customer requested'
       }
     });
-    
+
     await refundTransaction.save();
-    
+
     // Update original transaction
     transaction.status = 'refunded';
     await transaction.save();
-    
+
     // If there's an active subscription connected to this payment, cancel it
     if (transaction.subscriptionId) {
       const subscription = await UserSubscription.findById(transaction.subscriptionId);
-      
+
       if (subscription && subscription.status === 'active') {
         subscription.status = 'cancelled';
         await subscription.save();
-        
+
         // Remove verified badge from user
         await User.findByIdAndUpdate(subscription.userId, {
           $set: { verifiedBadge: false }
         });
       }
     }
-    
+
     console.log(`Refund processed for payment ID: ${paymentId}`);
   } catch (error) {
     console.error('Error processing refund:', error);
@@ -831,18 +845,18 @@ async function handleRefundCreated(payload) {
 async function handleSubscriptionCharged(payload) {
   const subscription = payload.payload.subscription.entity;
   const payment = payload.payload.payment.entity;
-  
+
   try {
     // Find the user subscription using Razorpay subscription ID
     const userSubscription = await UserSubscription.findOne({
       'autoRenewal.subscriptionId': subscription.id
     });
-    
+
     if (!userSubscription) {
       console.error(`User subscription not found for Razorpay subscription ID: ${subscription.id}`);
       return;
     }
-    
+
     // Create a payment transaction
     const transaction = new PaymentTransaction({
       userId: userSubscription.userId,
@@ -863,26 +877,26 @@ async function handleSubscriptionCharged(payload) {
         autoRenewal: true
       }
     });
-    
+
     await transaction.save();
-    
+
     // Create a new subscription period
     const plan = await SubscriptionPlan.findById(userSubscription.planId);
-    
+
     if (!plan) {
       console.error(`Plan not found for ID: ${userSubscription.planId}`);
       return;
     }
-    
+
     // Mark current subscription as expired
     userSubscription.status = 'expired';
     await userSubscription.save();
-    
+
     // Create new subscription period
     const startDate = new Date(userSubscription.endDate); // Start from end of previous period
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + plan.durationInMonths);
-    
+
     const newSubscription = new UserSubscription({
       userId: userSubscription.userId,
       planId: userSubscription.planId,
@@ -933,13 +947,13 @@ async function handleSubscriptionCharged(payload) {
         paymentId: payment.id
       }]
     });
-    
+
     await newSubscription.save();
-    
+
     // Update transaction with new subscription ID
     transaction.subscriptionId = newSubscription._id;
     await transaction.save();
-    
+
     console.log(`Auto-renewal processed for user ${userSubscription.userId}, new subscription created`);
   } catch (error) {
     console.error('Error processing subscription charge:', error);
@@ -948,23 +962,23 @@ async function handleSubscriptionCharged(payload) {
 
 async function handleSubscriptionCancelled(payload) {
   const subscription = payload.payload.subscription.entity;
-  
+
   try {
     // Find the user subscription using Razorpay subscription ID
     const userSubscription = await UserSubscription.findOne({
       'autoRenewal.subscriptionId': subscription.id,
       status: 'active'
     });
-    
+
     if (!userSubscription) {
       console.error(`Active user subscription not found for Razorpay subscription ID: ${subscription.id}`);
       return;
     }
-    
+
     // Update subscription auto-renewal status
     userSubscription.autoRenewal.enabled = false;
     await userSubscription.save();
-    
+
     console.log(`Auto-renewal cancelled for user ${userSubscription.userId}`);
   } catch (error) {
     console.error('Error processing subscription cancellation:', error);
@@ -973,22 +987,22 @@ async function handleSubscriptionCancelled(payload) {
 
 async function handlePaymentCaptured(payload) {
   const payment = payload.payload.payment.entity;
-  
+
   // Find the transaction using the order ID
   const transaction = await PaymentTransaction.findOne({
     'gatewayData.orderId': payment.order_id
   });
-  
+
   if (!transaction) {
     console.error(`Transaction not found for order ID: ${payment.order_id}`);
     return;
   }
-  
+
   // Update transaction status
   transaction.status = 'completed';
   transaction.gatewayData.paymentId = payment.id;
   transaction.gatewayData.method = payment.method;
-  
+
   // Save method-specific details
   if (payment.method === 'card') {
     transaction.gatewayData.bank = payment.bank;
@@ -998,41 +1012,41 @@ async function handlePaymentCaptured(payload) {
     transaction.gatewayData.upi = payment.upi;
     transaction.gatewayData.vpa = payment.vpa;
   }
-  
+
   await transaction.save();
-  
+
   // Check if subscription already exists for this transaction
   const existingSubscription = await UserSubscription.findOne({
     'payment.transactionId': transaction._id
   });
-  
+
   if (existingSubscription) {
     console.log(`Subscription already exists for transaction ID: ${transaction._id}`);
     return;
   }
-  
+
   // Create subscription if it doesn't exist (this can happen if webhook arrives before client verification)
   try {
     const userId = transaction.userId;
     const planId = transaction.metadata.planId;
-    
+
     // Get the plan details
     const plan = await SubscriptionPlan.findById(planId);
     if (!plan) {
       throw new Error('Subscription plan not found');
     }
-    
+
     // Check if user already has an active subscription
     const existingUserSubscription = await UserSubscription.findOne({
       userId,
       status: 'active',
       endDate: { $gt: new Date() }
     }).populate('planId');
-    
+
     let startDate = new Date();
     let endDate = new Date();
     endDate.setMonth(endDate.getMonth() + plan.durationInMonths);
-    
+
     // If user has an existing subscription, extend it or upgrade it
     if (existingUserSubscription) {
       // If upgrading to a better plan, start the new subscription immediately
@@ -1045,13 +1059,13 @@ async function handlePaymentCaptured(payload) {
         startDate = existingUserSubscription.endDate;
         endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + plan.durationInMonths);
-        
+
         // Mark old subscription as expired
         existingUserSubscription.status = 'expired';
         await existingUserSubscription.save();
       }
     }
-    
+
     // Create new subscription
     const newSubscription = new UserSubscription({
       userId,
@@ -1097,7 +1111,7 @@ async function handlePaymentCaptured(payload) {
         receiptId: transaction.gatewayData.receiptId
       }
     });
-    
+
     // If continuing from a previous subscription, add to renewal history
     if (existingUserSubscription) {
       newSubscription.renewalHistory.push({
@@ -1106,20 +1120,20 @@ async function handlePaymentCaptured(payload) {
         paymentId: payment.id
       });
     }
-    
+
     await newSubscription.save();
-    
+
     // Update the transaction with subscription id
     transaction.subscriptionId = newSubscription._id;
     await transaction.save();
-    
+
     // Update user document to add verified badge if plan includes it
     if (plan.features.verifiedBadge.included) {
       await User.findByIdAndUpdate(userId, {
         $set: { verifiedBadge: true }
       });
     }
-    
+
     console.log(`Subscription created via webhook for user ${userId}, plan ${planId}`);
   } catch (error) {
     console.error('Error creating subscription from webhook:', error);
@@ -1128,22 +1142,22 @@ async function handlePaymentCaptured(payload) {
 
 async function handlePaymentFailed(payload) {
   const payment = payload.payload.payment.entity;
-  
+
   // Find the transaction using the order ID
   const transaction = await PaymentTransaction.findOne({
     'gatewayData.orderId': payment.order_id
   });
-  
+
   if (!transaction) {
     console.error(`Transaction not found for order ID: ${payment.order_id}`);
     return;
   }
-  
+
   // Update transaction status
   transaction.status = 'failed';
   transaction.gatewayData.paymentId = payment.id;
   transaction.gatewayData.method = payment.method;
-  
+
   // Update error information if available
   if (payment.error_code) {
     transaction.gatewayData.error = {
@@ -1154,7 +1168,7 @@ async function handlePaymentFailed(payload) {
       reason: payment.error_reason
     };
   }
-  
+
   await transaction.save();
 }
 
