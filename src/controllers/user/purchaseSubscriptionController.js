@@ -182,16 +182,7 @@ const subscriptionController = {
 
       return res.status(200).json({
         success: true,
-        data: {
-          order,
-          key: process.env.RAZORPAY_KEY_ID,
-          plan,
-          transaction: {
-            id: transaction._id,
-            amount: transaction.amount,
-            currency: transaction.currency
-          }
-        }
+        data: order
       });
 
     } catch (error) {
