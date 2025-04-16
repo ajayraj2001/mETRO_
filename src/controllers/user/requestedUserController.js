@@ -229,19 +229,19 @@ const getFollowData = asyncHandler(async (req, res, next) => {
 
     case "following":
       query = { user: userId, status: "Accept" };
-      populateOptions = { path: "userRequestedTo", select: "fullName height city profile_image" };
+      populateOptions = { path: "userRequestedTo", select: "fullName dob state profile_image" };
       modelField = "userRequestedTo";
       break;
 
     case "requestedTo":
       query = { user: userId, status: "Requested" };
-      populateOptions = { path: "userRequestedTo", select: "fullName height city profile_image" };
+      populateOptions = { path: "userRequestedTo", select: "fullName dob state profile_image" };
       modelField = "userRequestedTo";
       break;
 
     case "requestedFrom":
       query = { userRequestedTo: userId, status: "Requested" };
-      populateOptions = { path: "user", select: "fullName height city profile_image" };
+      populateOptions = { path: "user", select: "fullName dob state profile_image" };
       modelField = "user";
       break;
 
