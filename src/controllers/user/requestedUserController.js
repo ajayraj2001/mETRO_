@@ -209,6 +209,7 @@ const getFollowData = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { type = "", page = 1, limit = 10 } = req.query;
 
+  console.log('userId', req.query)
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
@@ -249,6 +250,7 @@ const getFollowData = asyncHandler(async (req, res, next) => {
       });
   }
 
+  console.log('query',query)
   const [records, total] = await Promise.all([
     RequestedUser.find(query)
       .sort({ createdAt: -1 })
