@@ -47,25 +47,48 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       return next(new ApiError("You cannot modify this request.", 403));
     }
 
-    existingRequest.status = status;
-    await existingRequest.save({ validateBeforeSave: false });
+    // existingRequest.status = status;
+    // await existingRequest.save({ validateBeforeSave: false });
 
-    if (existingRequest.status === "Accept") {
+    // if (existingRequest.status === "Accept") {
 
-      await Notification.create({
-        user: userRequestedTo,
-        title: "Friend Request Accepted",
-        message: `${fullName} has accepted your Friend Request.`,
-        pic: profile_image
-      });
+    //   await Notification.create({
+    //     user: userRequestedTo,
+    //     title: "Friend Request Accepted",
+    //     message: `${fullName} has accepted your Friend Request.`,
+    //     pic: profile_image
+    //   });
 
-      await sendFirebaseNotification(
-        requestedUser.deviceToken,
-        "Friend Request Accepted",
-        `${fullName} has accepted your Friend Request.`
-      );
+    //   await sendFirebaseNotification(
+    //     requestedUser.deviceToken,
+    //     "Friend Request Accepted",
+    //     `${fullName} has accepted your Friend Request.`
+    //   );
 
+    // }
+
+    if (status === "Ignore") {
+      await RequestedUser.findByIdAndDelete(existingRequest._id);
+    } else {
+      existingRequest.status = status;
+      await existingRequest.save({ validateBeforeSave: false });
+    
+      if (status === "Accept") {
+        await Notification.create({
+          user: userRequestedTo,
+          title: "Friend Request Accepted",
+          message: `${fullName} has accepted your Friend Request.`,
+          pic: profile_image,
+        });
+    
+        await sendFirebaseNotification(
+          requestedUser.deviceToken,
+          "Friend Request Accepted",
+          `${fullName} has accepted your Friend Request.`
+        );
+      }
     }
+    
 
     return res.status(200).json({
       success: true,
