@@ -12,6 +12,8 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const { userRequestedTo, status } = req.body;
   const user = req.user._id;
   const {fullName, deviceToken, profile_image } = req.user;
+
+  console.log('req.bodu',req.body)
   
   if (!userRequestedTo)
     return next(new ApiError("Requested user id is required", 400));
