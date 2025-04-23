@@ -221,178 +221,70 @@ const getPreference = async (req, res, next) => {
 };
 
 
+// const matchedUsers = async (req, res, next) => {
+//   try {
+//     const user_id = req.user._id;
+//     const user = await User.findById(user_id);
+    
+//     if (!user) {
+//       return next(new ApiError("User not found.", 404));
+//     }
+
+//     const oppositeGender = user.gender === "Male" ? "Female" : "Male";
+
+//     const query = {
+//       _id: { $ne: user_id },
+//       gender: oppositeGender,
+//       active: true,
+//       profileStatus: "Complete"
+//     };
+
+//     const matchedUsers = await User.find(query);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Matching users found.",
+//       data: matchedUsers,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const matchedUsers = async (req, res, next) => {
   try {
     const user_id = req.user._id;
     const user = await User.findById(user_id);
-    
+
     if (!user) {
       return next(new ApiError("User not found.", 404));
     }
 
     const oppositeGender = user.gender === "Male" ? "Female" : "Male";
 
-    const query = {
-      _id: { $ne: user_id },
-      gender: oppositeGender,
-      active: true,
-      profileStatus: "Complete"
-    };
+    const pipeline = [
+      {
+        $match: {
+          _id: { $ne: user._id },
+          gender: oppositeGender,
+          active: true,
+          profileStatus: "Complete"
+        }
+      },
+      { $sample: { size: 10 } } // returns 10 random users
+    ];
 
-    const matchedUsers = await User.find(query);
+    const matchedUsers = await User.aggregate(pipeline);
 
     return res.status(200).json({
       success: true,
-      message: "Matching users found.",
+      message: "Random matching users found.",
       data: matchedUsers,
     });
   } catch (error) {
     next(error);
   }
 };
-
-
-//by nikhil
-// const matchedUsers = async (req, res, next) => {
-//   try {
-//     const { startDate, endDate, searchTerm } = req.body;
-//     const user_id = req.user._id;
-//     const preferences = await PartnerPreferences.findOne({ user_id });
-
-//     if (!preferences)
-//       return next(new ApiError("No preferences found for this user.", 404));
-
-//     let start, end;
-//     if (startDate && endDate) {
-//       start = parseDate(startDate);
-//       start.setHours(0, 0, 0, 0); // Set start date to the beginning of the day
-
-//       end = parseDate(endDate);
-//       end.setHours(23, 59, 59, 999); // Set end date to the end of the day
-//     }
-
-//     const {
-//       min_age,
-//       max_age,
-//       min_height_in_cm,
-//       max_height_in_cm,
-//       min_salary,
-//       max_salary,
-//       gender,
-//       marital_status,
-//       religion,
-//       caste,
-//       mother_tongue,
-//       country,
-//       residential_status,
-//       manglik,
-//       highest_education,
-//       annual_income,
-//     } = preferences;
-
-//     // Get the current date for age calculation
-//     const currentDate = new Date();
-
-//     const query = {
-//       _id: { $ne: user_id },
-//       dob: {
-//         $gte: new Date(
-//           currentDate.getFullYear() - max_age,
-//           currentDate.getMonth(),
-//           currentDate.getDate()
-//         ),
-//         $lte: new Date(
-//           currentDate.getFullYear() - min_age,
-//           currentDate.getMonth(),
-//           currentDate.getDate()
-//         ),
-//       },
-//       heightInCm: { $gte: min_height_in_cm, $lte: max_height_in_cm },
-//       annual_income: { $gte: min_salary, $lte: max_salary },
-//       gender: gender,
-//       //manglik: manglik
-//     };
-
-//     // Add religion filter if it's not "Any"
-//     if (religion && religion !== "Any") {
-//       query.religion = religion;
-//     }
-
-//     // if (marital_status && marital_status !== "Any") {
-//     //   query.marital_status = marital_status;
-//     // }
-
-//     if (start && end) {
-//       query.created_at = {
-//         $gte: start,
-//         $lte: end,
-//       };
-//     }
-
-//     if (searchTerm) {
-//       query.fullName = { $regex: searchTerm, $options: "i" };
-//     }
-
-//     // Find users matching the preferences
-//     const matchedUsers = await User.find(query);
-
-//     const currentTime = moment().tz("Asia/Kolkata");
-
-//     if (!matchedUsers || matchedUsers.length === 0)
-//       return next(new ApiError("No match found for this user.", 404));
-
-//     const usersWithDistances = matchedUsers.map((user) => {
-//       const currentUserLocation = req.user?.location?.coordinates;
-//       const matchedUserLocation = user?.location?.coordinates;
-
-//       const distance =
-//         currentUserLocation && matchedUserLocation
-//           ? haversineDistance(
-//               currentUserLocation,
-//               matchedUserLocation
-//             )?.toFixed(2)
-//           : null;
-
-//       const age = calculateAge(user.dob);
-
-//       const isVerified = user.subscriptionExpiryDate
-//         ? moment(user.subscriptionExpiryDate)
-//             .tz("Asia/Kolkata")
-//             .isAfter(currentTime)
-//         : false;
-
-//       return {
-//         _id: user._id,
-//         profile_for: user.profile_for,
-//         email: user.email,
-//         fullName: user.fullName,
-//         phone: user.phone,
-//         profile_image: user.profile_image,
-//         height: user.height,
-//         state: user.state,
-//         city: user.city,
-//         highest_education: user.highest_education,
-//         annual_income: user.annual_income,
-//         marital_status: user.marital_status,
-//         caste: user.caste,
-//         occupation: user.occupation,
-//         distance: distance,
-//         age: age,
-//         isVerified,
-//         profileVisibility: user.features.profileVisibility, // Add profile visibility
-//         created_at: user.created_at, // Include creation date for sorting
-//       };
-//     });
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Matching users found.",
-//       data: usersWithDistances,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 
 const singleMatchedUser = async (req, res, next) => {
