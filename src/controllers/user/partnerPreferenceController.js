@@ -271,14 +271,19 @@ const matchedUsers = async (req, res, next) => {
           profileStatus: "Complete"
         }
       },
-      { $sample: { size: 10 } } // returns 10 random users
+      {
+        $addFields: { randomSort: { $rand: {} } }
+      },
+      {
+        $sort: { randomSort: 1 }
+      }
     ];
 
     const matchedUsers = await User.aggregate(pipeline);
 
     return res.status(200).json({
       success: true,
-      message: "Random matching users found.",
+      message: "Randomized matching users found.",
       data: matchedUsers,
     });
   } catch (error) {
