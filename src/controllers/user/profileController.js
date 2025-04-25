@@ -373,14 +373,38 @@ const deleteProfileImage = async (req, res, next) => {
 const deleteProfile = async (req, res, next) => {
   const userId = req.user._id;
 
-  await User.findByIdAndUpdate(userId, { active: false });
+  try {
+    const user = await User.findById(userId).select("profile_image");
 
-  return res.status(200).json({
-    success: true,
-    message: "You have successfully deleted your profile."
-  });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-}
+    // Delete all profile images from the file system
+    if (user.profile_image && user.profile_image.length > 0) {
+      for (const imagePath of user.profile_image) {
+        await deleteOldFile(imagePath); // This should be your file system delete function
+      }
+    }
+
+    // Mark user as inactive and clear the profile_image array
+    await User.findByIdAndUpdate(userId, {
+      active: false,
+      profile_image: [],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "You have successfully deleted your profile and images.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   getCountries,
