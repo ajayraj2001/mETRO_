@@ -169,7 +169,7 @@ function checkPendingReadReceipts(userId, socketId, io) {
           });
 
           const savedMessage = await newMessage.save();
-
+console.log('socket.id', socket.id)
           // Immediately send confirmation back to sender with 'sent' status
           // Include both temporary ID and server ID
           io.to(socket.id).emit("messageSent", {
