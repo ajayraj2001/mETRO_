@@ -29,7 +29,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       { user: userRequestedTo, userRequestedTo: user },
     ],
   });
-
+ console.log('fhgfhgfjgfjf',existingRequest, 'req.odu', req.body)
   const requestedUser = await User.findById(userRequestedTo);
 
   if (existingRequest) {
