@@ -24,41 +24,41 @@ const { PORT, BASE_URL } = process.env;
 let server;
 
 // Store pending read receipts when sender is offline
-// const pendingReadReceipts = {};
+const pendingReadReceipts = {};
 
-// function storePendingReadReceipt(senderId, messageIds, recipientId) {
-//   if (!pendingReadReceipts[senderId]) {
-//     pendingReadReceipts[senderId] = [];
-//   }
+function storePendingReadReceipt(senderId, messageIds, recipientId) {
+  if (!pendingReadReceipts[senderId]) {
+    pendingReadReceipts[senderId] = [];
+  }
 
-//   pendingReadReceipts[senderId].push({
-//     messageIds,
-//     recipientId,
-//     timestamp: new Date()
-//   });
+  pendingReadReceipts[senderId].push({
+    messageIds,
+    recipientId,
+    timestamp: new Date()
+  });
 
-//   console.log(`Stored pending read receipt for ${senderId}`);
-// }
+  console.log(`Stored pending read receipt for ${senderId}`);
+}
 
-// // Check and send pending read receipts when user comes online
-// function checkPendingReadReceipts(userId, socketId, io) {
-//   if (pendingReadReceipts[userId] && pendingReadReceipts[userId].length > 0) {
-//     console.log(`Found ${pendingReadReceipts[userId].length} pending read receipts for ${userId}`);
+// Check and send pending read receipts when user comes online
+function checkPendingReadReceipts(userId, socketId, io) {
+  if (pendingReadReceipts[userId] && pendingReadReceipts[userId].length > 0) {
+    console.log(`Found ${pendingReadReceipts[userId].length} pending read receipts for ${userId}`);
 
-//     // Send all pending read receipts
-//     pendingReadReceipts[userId].forEach(receipt => {
-//       io.to(socketId).emit("messagesRead", {
-//         messageIds: receipt.messageIds,
-//         recipientId: receipt.recipientId
-//       });
+    // Send all pending read receipts
+    pendingReadReceipts[userId].forEach(receipt => {
+      io.to(socketId).emit("messagesRead", {
+        messageIds: receipt.messageIds,
+        recipientId: receipt.recipientId
+      });
 
-//       console.log(`Sent delayed read receipt to ${userId} for messages ${receipt.messageIds.join(', ')}`);
-//     });
+      console.log(`Sent delayed read receipt to ${userId} for messages ${receipt.messageIds.join(', ')}`);
+    });
 
-//     // Clear pending receipts for this user
-//     delete pendingReadReceipts[userId];
-//   }
-// }
+    // Clear pending receipts for this user
+    delete pendingReadReceipts[userId];
+  }
+}
 
 (async () => {
   try {
@@ -81,444 +81,282 @@ let server;
     // Track users and their socket connections
     // Modified socket.io server code to handle user status properly
 
-    // Track users and their socket connections
-    const users = {};
-    app.set('users', users);
+// Track users and their socket connections
+const users = {};
+app.set('users', users);
 
-    // Store user activity and presence information
-    const userPresence = {};
+// Handle Socket.IO connections
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
 
-    // Store pending read receipts when sender is offline
-    const pendingReadReceipts = {};
+  // Handle checking read status when reconnecting
+  socket.on("checkMessageReadStatus", async (data) => {
+    console.log('Message read status check requested:', data);
+    const { messageIds, senderId, recipientId } = data;
 
-    // Constants for presence system
-    const INACTIVE_TIMEOUT = 30000; // 30 seconds of inactivity = away
-    const OFFLINE_TIMEOUT = 60000;  // 60 seconds without activity = offline
-    let presenceInterval = null;
-
-    // Initialize presence monitoring
-    function initializePresenceSystem() {
-      // Clear any existing interval
-      if (presenceInterval) {
-        clearInterval(presenceInterval);
-      }
-
-      // Run presence checks every 15 seconds (only for inactive detection)
-      presenceInterval = setInterval(checkUserPresence, 15000);
-      console.log('Presence monitoring system initialized');
-    }
-
-    // Check for users who have become inactive or offline
-    function checkUserPresence() {
-      const now = Date.now();
-      const statusChanges = [];
-
-      // Check each connected user
-      for (const [userId, data] of Object.entries(userPresence)) {
-        if (!data.lastActivity) continue;
-
-        const timeSinceActivity = now - data.lastActivity;
-        const currentStatus = data.status;
-        let newStatus = currentStatus;
-
-        // Determine status based on activity
-        if (timeSinceActivity > OFFLINE_TIMEOUT && currentStatus !== 'offline') {
-          newStatus = 'offline';
-        } else if (timeSinceActivity > INACTIVE_TIMEOUT && currentStatus === 'online') {
-          newStatus = 'away';
-        }
-
-        // If status changed, queue it for broadcast
-        if (newStatus !== currentStatus) {
-          userPresence[userId].status = newStatus;
-
-          // Add to status changes to broadcast
-          statusChanges.push({
-            userId,
-            status: newStatus,
-            lastSeen: newStatus === 'offline' ? new Date(data.lastActivity).toISOString() : undefined
-          });
-
-          console.log(`User ${userId} automatically changed status to ${newStatus}`);
-        }
-      }
-
-      // Broadcast status changes if any
-      if (statusChanges.length > 0) {
-        io.emit('usersStatus', statusChanges);
-      }
-    }
-
-    // Update a user's activity timestamp
-    function updateUserActivity(userId) {
-      if (!userId) return;
-
-      // Create presence data if it doesn't exist
-      if (!userPresence[userId]) {
-        userPresence[userId] = {
-          status: 'online',
-          lastActivity: Date.now(),
-          connections: 0
-        };
-      } else {
-        // Update last activity time
-        userPresence[userId].lastActivity = Date.now();
-
-        // If user was offline or away, update to online
-        if (userPresence[userId].status !== 'online') {
-          userPresence[userId].status = 'online';
-
-          // Broadcast user's online status
-          io.emit('userStatus', {
-            userId,
-            status: 'online'
-          });
-        }
-      }
-    }
-
-    // Initialize the presence system on startup
-    initializePresenceSystem();
-
-    // Handle Socket.IO connections
-    io.on("connection", (socket) => {
-      console.log("A user connected:", socket.id);
-      let currentUserId = null;
-
-      // Handle checking read status when reconnecting
-      socket.on("checkMessageReadStatus", async (data) => {
-        const { messageIds, senderId, recipientId } = data;
-        if (!messageIds || messageIds.length === 0) return;
-
-        // Update activity timestamp
-        updateUserActivity(senderId);
-
-        try {
-          // Find which messages are read
-          const messages = await Message.find({
-            _id: { $in: messageIds }
-          });
-
-          // Filter to only read messages
-          const readMessageIds = messages
-            .filter(message => message.isRead)
-            .map(message => message._id.toString());
-
-          if (readMessageIds.length > 0) {
-            // Notify sender about read messages
-            socket.emit("messagesRead", {
-              messageIds: readMessageIds,
-              recipientId
-            });
-          }
-        } catch (error) {
-          console.error("Error checking message read status:", error);
-        }
+    try {
+      // Find which messages are read
+      const messages = await Message.find({
+        _id: { $in: messageIds }
       });
 
-      // When a user joins
-      socket.on("join", (userId) => {
-        if (!userId) return;
+      // Filter to only read messages
+      const readMessageIds = messages
+        .filter(message => message.isRead)
+        .map(message => message._id.toString());
 
-        currentUserId = userId;
+      if (readMessageIds.length > 0) {
+        console.log(`Found ${readMessageIds.length} messages that are read`);
 
-        // Store user's socket ID
-        users[userId] = {
-          socketId: socket.id,
-          status: "online"
-        };
+        // Notify sender about read messages
+        socket.emit("messagesRead", {
+          messageIds: readMessageIds,
+          recipientId
+        });
+      }
+    } catch (error) {
+      console.error("Error checking message read status:", error);
+    }
+  });
 
-        // Initialize or update presence data
-        if (!userPresence[userId]) {
-          userPresence[userId] = {
-            status: 'online',
-            lastActivity: Date.now(),
-            connections: 1
-          };
-        } else {
-          userPresence[userId].connections = (userPresence[userId].connections || 0) + 1;
-          userPresence[userId].status = 'online';
-          userPresence[userId].lastActivity = Date.now();
+  // When a user joins
+  socket.on("join", (userId) => {
+    if (userId) {
+      const isNewUser = !users[userId];
+      
+      // Store user's socket ID and status
+      users[userId] = { socketId: socket.id, status: "online" };
+      console.log(`User with ID ${userId} joined`);
+
+      // Notify others about the user's online status
+      socket.broadcast.emit("userStatus", { userId, status: "online" });
+
+      // Send the new user the status of all currently online users
+      const onlineUsers = [];
+      for (const [id, user] of Object.entries(users)) {
+        if (id !== userId) { // Don't include the user themselves
+          onlineUsers.push({ userId: id, status: user.status });
         }
+      }
+      
+      if (onlineUsers.length > 0) {
+        socket.emit("usersStatus", onlineUsers);
+        console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
+      }
 
-        console.log(`User with ID ${userId} joined`);
+      // Check if there are any pending read receipts for this user
+      checkPendingReadReceipts(userId, socket.id, io);
+    }
+  });
 
-        // Broadcast the user's online status to everyone else
+  // Handle individual user status check requests
+  socket.on("checkUserStatus", (data) => {
+    const { userId } = data;
+    console.log(`Status check requested for user ${userId}`);
+    
+    if (users[userId]) {
+      // User is online, send their status to requester
+      socket.emit("userStatus", { userId, status: "online" });
+    } else {
+      // User is offline
+      socket.emit("userStatus", { userId, status: "offline" });
+    }
+  });
+
+  // Handle bulk user status check requests
+  socket.on("checkUsersStatus", (data) => {
+    const { userIds } = data;
+    console.log(`Status check requested for users: ${userIds ? userIds.join(', ') : 'all'}`);
+    
+    // If no specific userIds provided, check all users
+    const idsToCheck = userIds || Object.keys(users);
+    
+    const statusUpdates = idsToCheck.map(userId => ({
+      userId,
+      status: users[userId] ? "online" : "offline"
+    }));
+    
+    socket.emit("usersStatus", statusUpdates);
+  });
+
+  // Handling sending a new message
+  socket.on("sendMessage", async (data) => {
+    console.log('Send message triggered:', data);
+    const { senderId, recipientId, messageText, tempId } = data;
+
+    try {
+      // Create a new message with initial 'sent' status
+      const newMessage = new Message({
+        sender: senderId,
+        recipient: recipientId,
+        message: messageText,
+        timestamp: new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000),
+        status: 'sent',
+        isRead: false
+      });
+
+      const savedMessage = await newMessage.save();
+      console.log('socket.id', socket.id)
+      
+      // Immediately send confirmation back to sender with 'sent' status
+      // Include both temporary ID and server ID
+      io.to(socket.id).emit("messageSent", {
+        tempId: tempId,
+        messageId: savedMessage._id.toString(),
+        status: 'sent',
+        timestamp: savedMessage.timestamp
+      });
+
+      console.log(`Message saved with ID: ${savedMessage._id}, temp ID: ${tempId}`);
+
+      // Check if recipient is online
+      if (users[recipientId]) {
+        // Update status to 'delivered' in database
+        savedMessage.status = 'delivered';
+        await savedMessage.save();
+
+        // Send message to recipient
+        io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
+
+        // Notify sender that message was delivered
+        io.to(socket.id).emit("messageStatusUpdate", {
+          tempId: tempId,
+          messageId: savedMessage._id.toString(),
+          status: 'delivered'
+        });
+
+        console.log(`Message delivered to recipient ${recipientId}, status updated to 'delivered'`);
+      }
+    } catch (error) {
+      console.error('Error in sendMessage:', error);
+      // Notify sender of failure
+      io.to(socket.id).emit("messageError", {
+        error: "Failed to send message",
+        originalMessage: data
+      });
+    }
+  });
+
+  socket.on("typing", (data) => {
+    const { senderId, recipientId } = data;
+
+    if (users[recipientId]) {
+      io.to(users[recipientId].socketId).emit("userTyping", { senderId });
+    }
+  });
+
+  // Handle message read status
+  socket.on("messageRead", async (data) => {
+    console.log('Message read event received:', data);
+    const { messageIds, recipientId, senderId } = data;
+
+    try {
+      // Update messages as read in database
+      await Message.updateMany(
+        { _id: { $in: messageIds } },
+        { $set: { isRead: true, status: 'read' } }
+      );
+
+      console.log(`Messages marked as read: ${messageIds.join(', ')}`);
+
+      // Notify sender that messages were read
+      if (users[senderId]) {
+        console.log(`Notifying ${senderId} that messages were read`);
+        io.to(users[senderId].socketId).emit("messagesRead", {
+          messageIds,
+          recipientId
+        });
+      } else {
+        // If sender is offline, store the read receipt for later
+        console.log(`Sender ${senderId} is offline, storing read receipt`);
+        storePendingReadReceipt(senderId, messageIds, recipientId);
+      }
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  });
+
+  // Handle message edit
+  socket.on("editMessage", async (data) => {
+    const { messageId, newMessageText, senderId } = data;
+    const updatedMessage = await editMessage(
+      messageId,
+      newMessageText,
+      senderId
+    );
+
+    // Emit the edited message to both participants
+    if (updatedMessage) {
+      if (users[updatedMessage.recipient.toString()]) {
+        io.to(users[updatedMessage.recipient.toString()].socketId).emit(
+          "messageEdited",
+          updatedMessage
+        );
+      }
+
+      if (users[updatedMessage.sender.toString()]) {
+        io.to(users[updatedMessage.sender.toString()].socketId).emit(
+          "messageEdited",
+          updatedMessage
+        );
+      }
+    }
+  });
+
+  // Handle delete for everyone
+  socket.on("deleteForEveryone", async (data) => {
+    const { messageId, userId } = data;
+    const message = await deleteForEveryone(messageId, userId);
+
+    if (message) {
+      // Emit the delete event to both participants
+      if (users[message.recipient.toString()]) {
+        io.to(users[message.recipient.toString()].socketId).emit("messageDeletedForEveryone", {
+          messageId,
+        });
+      }
+
+      if (users[message.sender.toString()]) {
+        io.to(users[message.sender.toString()].socketId).emit("messageDeletedForEveryone", {
+          messageId,
+        });
+      }
+    }
+  });
+
+  // Handle delete for self
+  socket.on("deleteForMe", async (data) => {
+    const { messageId, userId } = data;
+    const message = await deleteForMe(messageId, userId);
+
+    // Emit the delete event only to the user who requested the deletion
+    if (message && users[userId]) {
+      io.to(users[userId].socketId).emit("messageDeletedForMe", { messageId });
+    }
+  });
+
+  // On client disconnect
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+
+    // Find and remove disconnected user
+    for (const [userId, user] of Object.entries(users)) {
+      if (user.socketId === socket.id) {
+        // Update user status to offline and send last seen timestamp
         socket.broadcast.emit("userStatus", {
           userId,
-          status: "online"
+          status: "offline",
+          lastSeen: new Date().toISOString()
         });
 
-        // Send the new user the current status of all users
-        const statusUpdates = [];
-
-        for (const [id, data] of Object.entries(userPresence)) {
-          if (id !== userId && data.status) {
-            statusUpdates.push({
-              userId: id,
-              status: data.status,
-              lastSeen: data.status === 'offline' && data.lastActivity ?
-                new Date(data.lastActivity).toISOString() : undefined
-            });
-          }
-        }
-
-        if (statusUpdates.length > 0) {
-          socket.emit("usersStatus", statusUpdates);
-          console.log(`Sent status of ${statusUpdates.length} users to ${userId}`);
-        }
-
-        // Check if there are any pending read receipts for this user
-        if (pendingReadReceipts[userId] && pendingReadReceipts[userId].length > 0) {
-          console.log(`Found ${pendingReadReceipts[userId].length} pending read receipts for ${userId}`);
-
-          // Group receipts by recipient for efficiency
-          const groupedReceipts = {};
-
-          pendingReadReceipts[userId].forEach(receipt => {
-            if (!groupedReceipts[receipt.recipientId]) {
-              groupedReceipts[receipt.recipientId] = new Set();
-            }
-            receipt.messageIds.forEach(id => groupedReceipts[receipt.recipientId].add(id));
-          });
-
-          // Send each group
-          for (const [recipientId, messageIds] of Object.entries(groupedReceipts)) {
-            socket.emit("messagesRead", {
-              messageIds: Array.from(messageIds),
-              recipientId
-            });
-          }
-
-          // Clear pending receipts
-          delete pendingReadReceipts[userId];
-        }
-      });
-
-      // Handle individual user status check - only used when opening a chat
-      socket.on("checkUserStatus", (data) => {
-        const { userId } = data;
-        if (!userId) return;
-
-        // Update requester's activity
-        if (currentUserId) {
-          updateUserActivity(currentUserId);
-        }
-
-        // Respond with current status from presence system
-        if (userPresence[userId]) {
-          socket.emit("userStatus", {
-            userId,
-            status: userPresence[userId].status,
-            lastSeen: userPresence[userId].status === 'offline' && userPresence[userId].lastActivity ?
-              new Date(userPresence[userId].lastActivity).toISOString() : undefined
-          });
-        } else {
-          // User not in system at all
-          socket.emit("userStatus", {
-            userId,
-            status: "offline"
-          });
-        }
-      });
-
-      // Handle bulk user status check - only used when app launches
-      socket.on("checkUsersStatus", (data) => {
-        const { userIds } = data;
-
-        // Update requester's activity
-        if (currentUserId) {
-          updateUserActivity(currentUserId);
-        }
-
-        // Determine which users to check
-        const idsToCheck = userIds && userIds.length > 0 ?
-          userIds :
-          Object.keys(userPresence);
-
-        // Prepare status updates
-        const statusUpdates = idsToCheck.map(userId => {
-          if (userPresence[userId]) {
-            return {
-              userId,
-              status: userPresence[userId].status,
-              lastSeen: userPresence[userId].status === 'offline' && userPresence[userId].lastActivity ?
-                new Date(userPresence[userId].lastActivity).toISOString() : undefined
-            };
-          } else {
-            return { userId, status: 'offline' };
-          }
-        });
-
-        // Send status updates
-        if (statusUpdates.length > 0) {
-          socket.emit("usersStatus", statusUpdates);
-        }
-      });
-
-      // Handle sending a new message
-      socket.on("sendMessage", async (data) => {
-        const { senderId, recipientId, messageText, tempId } = data;
-        if (!senderId || !recipientId || !messageText) {
-          socket.emit("messageError", {
-            error: "Missing required fields",
-            originalMessage: data
-          });
-          return;
-        }
-
-        // Update sender's activity
-        updateUserActivity(senderId);
-
-        try {
-          // Create a new message with initial 'sent' status
-          const newMessage = new Message({
-            sender: senderId,
-            recipient: recipientId,
-            message: messageText,
-            timestamp: new Date(),
-            status: 'sent',
-            isRead: false
-          });
-
-          const savedMessage = await newMessage.save();
-
-          // Immediately send confirmation back to sender with 'sent' status
-          socket.emit("messageSent", {
-            tempId: tempId,
-            messageId: savedMessage._id.toString(),
-            status: 'sent',
-            timestamp: savedMessage.timestamp
-          });
-
-          // Check if recipient is online
-          const isRecipientOnline = userPresence[recipientId] &&
-            (userPresence[recipientId].status === 'online' ||
-              userPresence[recipientId].status === 'away');
-
-          if (isRecipientOnline && users[recipientId]) {
-            // Update status to 'delivered'
-            savedMessage.status = 'delivered';
-            await savedMessage.save();
-
-            // Send message to recipient
-            io.to(users[recipientId].socketId).emit("newMessage", savedMessage);
-
-            // Notify sender that message was delivered
-            socket.emit("messageStatusUpdate", {
-              tempId: tempId,
-              messageId: savedMessage._id.toString(),
-              status: 'delivered'
-            });
-          }
-        } catch (error) {
-          console.error('Error in sendMessage:', error);
-          socket.emit("messageError", {
-            error: "Failed to send message",
-            originalMessage: data
-          });
-        }
-      });
-
-      // Handle typing indicator
-      socket.on("typing", (data) => {
-        const { senderId, recipientId } = data;
-        if (!senderId || !recipientId) return;
-
-        // Update activity timestamp
-        updateUserActivity(senderId);
-
-        // Only forward typing indicator if recipient is online
-        if (users[recipientId]) {
-          io.to(users[recipientId].socketId).emit("userTyping", { senderId });
-        }
-      });
-
-      // Handle message read status
-      socket.on("messageRead", async (data) => {
-        const { messageIds, recipientId, senderId } = data;
-        if (!messageIds || !messageIds.length || !recipientId || !senderId) return;
-
-        // Update activity timestamp
-        updateUserActivity(recipientId);
-
-        try {
-          // Update messages as read in database
-          await Message.updateMany(
-            { _id: { $in: messageIds } },
-            { $set: { isRead: true, status: 'read' } }
-          );
-
-          // Notify sender that messages were read if online
-          if (users[senderId]) {
-            io.to(users[senderId].socketId).emit("messagesRead", {
-              messageIds,
-              recipientId
-            });
-          } else {
-            // Store read receipt for later if sender is offline
-            if (!pendingReadReceipts[senderId]) {
-              pendingReadReceipts[senderId] = [];
-            }
-
-            // Add new receipt
-            pendingReadReceipts[senderId].push({
-              messageIds,
-              recipientId,
-              timestamp: new Date()
-            });
-          }
-        } catch (error) {
-          console.error("Error marking messages as read:", error);
-        }
-      });
-
-      // Handle client disconnect
-      socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
-
-        // Find the disconnected user
-        if (!currentUserId) return;
-
-        // Update presence data
-        if (userPresence[currentUserId]) {
-          // Decrease connection count
-          userPresence[currentUserId].connections = Math.max(0, (userPresence[currentUserId].connections || 1) - 1);
-
-          // If this was the last connection, mark user as away first (not immediately offline)
-          // This helps handle temporary disconnections without flickering status
-          if (userPresence[currentUserId].connections === 0) {
-            userPresence[currentUserId].status = 'away';
-            userPresence[currentUserId].disconnectedAt = Date.now();
-
-            // We don't immediately broadcast offline - presence system will handle this
-            // after the timeout if the user doesn't reconnect
-          }
-        }
-
-        // Remove socket reference
-        if (users[currentUserId] && users[currentUserId].socketId === socket.id) {
-          delete users[currentUserId];
-        }
-      });
-
-      // Generic activity event for any interaction
-      socket.on("userActivity", (data) => {
-        if (currentUserId) {
-          updateUserActivity(currentUserId);
-        }
-      });
-    });
-
-    // Cleanup resources on server shutdown
-    process.on('SIGINT', () => {
-      if (presenceInterval) {
-        clearInterval(presenceInterval);
+        delete users[userId];
+        console.log(`User ${userId} is now offline`);
+        break;
       }
-      process.exit(0);
-    });
+    }
+  });
+});
 
-    
     // Start the server
     server
       .listen(PORT, () => console.log(`Server is running on ${BASE_URL}`))
