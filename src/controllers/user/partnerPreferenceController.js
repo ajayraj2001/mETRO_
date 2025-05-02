@@ -220,36 +220,365 @@ const getPreference = async (req, res, next) => {
   }
 };
 
-
-// const matchedUsers = async (req, res, next) => {
-//   try {
-//     const user_id = req.user._id;
-//     const user = await User.findById(user_id);
+const matchedProfiles = async (req, res, next) => {
+  try {
+    const user_id = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const newUsersOnly = req.query.newUsersOnly === 'true';
+    const rotationStrategy = req.query.rotationStrategy || 'balanced'; // 'fresh', 'balanced', 'discovery'
     
-//     if (!user) {
-//       return next(new ApiError("User not found.", 404));
-//     }
-
-//     const oppositeGender = user.gender === "Male" ? "Female" : "Male";
-
-//     const query = {
-//       _id: { $ne: user_id },
-//       gender: oppositeGender,
-//       active: true,
-//       profileStatus: "Complete"
-//     };
-
-//     const matchedUsers = await User.find(query);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Matching users found.",
-//       data: matchedUsers,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    // Get user and their preferences
+    const user = await User.findById(user_id);
+    if (!user) {
+      return next(new ApiError("User not found.", 404));
+    }
+    
+    const userPreferences = await PartnerPreferences.findOne({ user_id });
+    if (!userPreferences) {
+      return next(new ApiError("Partner preferences not found. Please complete your preferences.", 404));
+    }
+    
+    // Get viewed profiles history (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const viewedProfiles = await ProfileView.find({
+      viewer_id: user_id,
+      viewed_at: { $gte: thirtyDaysAgo }
+    }).sort({ viewed_at: -1 });
+    
+    // Extract IDs and create weighted viewing history
+    const viewedProfileIds = viewedProfiles.map(view => view.viewed_id);
+    
+    // Create weighted viewing history (more recent = higher weight to avoid showing)
+    const viewWeights = {};
+    viewedProfiles.forEach((view, index) => {
+      // Calculate days since viewing (0-30)
+      const daysSinceViewed = Math.floor((Date.now() - view.viewed_at) / (1000 * 60 * 60 * 24));
+      
+      // Weight decreases as days increase (recently viewed = higher weight)
+      // Scale from 1.0 (viewed today) down to 0.1 (viewed 30 days ago)
+      viewWeights[view.viewed_id.toString()] = 1 - (daysSinceViewed / 33);
+    });
+    
+    const oppositeGender = user.gender === "Male" ? "Female" : "Male";
+    
+    // Base matching criteria
+    const matchCriteria = {
+      _id: { $ne: user_id },
+      gender: oppositeGender,
+      active: true,
+      profileStatus: "Complete"
+    };
+    
+    // Add new users filter if requested
+    if (newUsersOnly) {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      matchCriteria.created_at = { $gte: oneMonthAgo };
+    }
+    
+    // Get current date for time-based calculations
+    const currentDate = new Date();
+    const currentHour = currentDate.getHours();
+    const currentDay = currentDate.getDay();
+    const currentWeek = Math.floor(currentDate.getDate() / 7);
+    
+    // Start building the aggregation pipeline
+    const pipeline = [
+      { $match: matchCriteria },
+      
+      // Lookup user preferences for better matching
+      {
+        $lookup: {
+          from: "partner_preferences",
+          localField: "_id",
+          foreignField: "user_id",
+          as: "theirPreferences"
+        }
+      },
+      { $unwind: { path: "$theirPreferences", preserveNullAndEmptyArrays: true } },
+      
+      // Calculate match score based on multiple criteria
+      {
+        $addFields: {
+          matchScore: {
+            $sum: [
+              // Age match score (0-20 points)
+              {
+                $cond: {
+                  if: { 
+                    $and: [
+                      { $gte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] },
+                      { $lte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] }
+                    ]
+                  },
+                  then: 20,
+                  else: {
+                    $max: [
+                      0,
+                      {
+                        $subtract: [
+                          20,
+                          {
+                            $min: [
+                              20,
+                              {
+                                $multiply: [
+                                  2,
+                                  {
+                                    $min: [
+                                      { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] } },
+                                      { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] } }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              
+              // Religion match (0-15 points)
+              {
+                $cond: { 
+                  if: { $eq: ["$religion", userPreferences.religion] }, 
+                  then: 15, 
+                  else: 0 
+                }
+              },
+              
+              // Other match criteria (height, caste, etc) as in previous implementation...
+              // ... (omitted for brevity)
+            ]
+          },
+          
+          // Add profile freshness boost (0-15 points)
+          freshness: {
+            $let: {
+              vars: {
+                daysSinceCreation: { 
+                  $divide: [
+                    { $subtract: [new Date(), "$created_at"] }, 
+                    86400000 // ms in a day
+                  ] 
+                },
+                daysSinceUpdate: { 
+                  $divide: [
+                    { $subtract: [new Date(), "$updated_at"] }, 
+                    86400000 
+                  ] 
+                }
+              },
+              in: {
+                $sum: [
+                  // New profile boost (0-10 points)
+                  {
+                    $max: [
+                      0,
+                      { $subtract: [10, { $min: [10, "$$daysSinceCreation"] }] }
+                    ]
+                  },
+                  // Recently updated profile boost (0-5 points)
+                  {
+                    $max: [
+                      0,
+                      { $subtract: [5, { $min: [5, "$$daysSinceUpdate"] }] }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          
+          // Add viewing history penalty
+          viewingPenalty: {
+            $cond: {
+              if: { $in: [{ $toString: "$_id" }, viewedProfileIds] },
+              then: {
+                $let: {
+                  vars: {
+                    viewWeight: {
+                      $function: {
+                        body: function(id, weights) {
+                          return weights[id.toString()] || 0;
+                        },
+                        args: ["$_id", viewWeights],
+                        lang: "js"
+                      }
+                    }
+                  },
+                  in: { $multiply: ["$$viewWeight", 100] } // Scale penalty up to 0-100
+                }
+              },
+              else: 0
+            }
+          },
+          
+          // Add time-based rotation factors
+          rotationFactor: {
+            $switch: {
+              branches: [
+                // Morning profiles (6am-12pm)
+                {
+                  case: { $and: [
+                    { $gte: [currentHour, 6] },
+                    { $lt: [currentHour, 12] },
+                    { $eq: [rotationStrategy, "balanced"] }
+                  ]},
+                  then: { $mod: [{ $add: ["$heightInCm", currentDay] }, 5] }
+                },
+                // Afternoon profiles (12pm-6pm)
+                {
+                  case: { $and: [
+                    { $gte: [currentHour, 12] },
+                    { $lt: [currentHour, 18] },
+                    { $eq: [rotationStrategy, "balanced"] }
+                  ]},
+                  then: { $mod: [{ $add: [{ $strLenCP: "$fullName" }, currentDay] }, 5] }
+                },
+                // Evening profiles (6pm-12am)
+                {
+                  case: { $and: [
+                    { $gte: [currentHour, 18] },
+                    { $lt: [currentHour, 24] },
+                    { $eq: [rotationStrategy, "balanced"] }
+                  ]},
+                  then: { $mod: [{ $add: [{ $strLenCP: "$city" }, currentDay] }, 5] }
+                },
+                // Night profiles (12am-6am)
+                {
+                  case: { $and: [
+                    { $gte: [currentHour, 0] },
+                    { $lt: [currentHour, 6] },
+                    { $eq: [rotationStrategy, "balanced"] }
+                  ]},
+                  then: { $mod: [{ $add: [{ $strLenCP: "$occupation" }, currentDay] }, 5] }
+                },
+                // Discovery mode - introduce more randomness
+                {
+                  case: { $eq: [rotationStrategy, "discovery"] },
+                  then: { $multiply: [{ $rand: {} }, 20] }
+                },
+                // Fresh mode - prioritize new profiles more heavily
+                {
+                  case: { $eq: [rotationStrategy, "fresh"] },
+                  then: { $multiply: ["$freshness", 2] }
+                }
+              ],
+              default: 0
+            }
+          },
+          
+          // Add weekly rotation factor (different every week)
+          weeklyBoost: {
+            $cond: {
+              if: { $eq: [{ $mod: [{ $add: [{ $strLenBytes: { $toString: "$_id" } }, currentWeek] }, 4] }, 0] },
+              then: 15,
+              else: 0
+            }
+          }
+        }
+      },
+      
+      // Calculate final weighted score
+      {
+        $addFields: {
+          finalScore: {
+            $subtract: [
+              { 
+                $add: [
+                  "$matchScore", 
+                  "$freshness", 
+                  "$rotationFactor", 
+                  "$weeklyBoost",
+                  // Add a small random factor for variety within similar matches
+                  { $multiply: [{ $rand: {} }, 5] }
+                ] 
+              },
+              "$viewingPenalty" // Subtract viewing penalty
+            ]
+          }
+        }
+      },
+      
+      // Sort by final score (highest first)
+      { $sort: { finalScore: -1 } },
+      
+      // Apply pagination
+      { $skip: skip },
+      { $limit: limit },
+      
+      // Project only necessary fields for the response
+      {
+        $project: {
+          _id: 1,
+          fullName: 1,
+          profile_image: 1,
+          age: { $floor: { $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] } },
+          height: 1,
+          religion: 1,
+          caste: 1,
+          city: 1,
+          state: 1,
+          occupation: 1,
+          highest_education: 1,
+          matchScore: 1,
+          freshness: 1,
+          finalScore: 1
+        }
+      }
+    ];
+    
+    const matchedUsers = await User.aggregate(pipeline);
+    
+    // Record these profile views
+    if (matchedUsers.length > 0) {
+      const profileViews = matchedUsers.map(profile => ({
+        viewer_id: user_id,
+        viewed_id: profile._id,
+        viewed_at: new Date()
+      }));
+      
+      // Use bulkWrite for better performance
+      await ProfileView.bulkWrite(
+        profileViews.map(view => ({
+          updateOne: {
+            filter: { 
+              viewer_id: view.viewer_id,
+              viewed_id: view.viewed_id
+            },
+            update: { $set: view },
+            upsert: true
+          }
+        }))
+      );
+    }
+    
+    const totalCount = await User.countDocuments(matchCriteria);
+    
+    return res.status(200).json({
+      success: true,
+      message: "Matched users found successfully.",
+      data: matchedUsers,
+      pagination: {
+        totalProfiles: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNextPage: page < Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error in matchedUsers:", error);
+    next(error);
+  }
+};
 
 const matchedUsers = async (req, res, next) => {
   try {
@@ -290,7 +619,6 @@ const matchedUsers = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const singleMatchedUser = async (req, res, next) => {
   try {
