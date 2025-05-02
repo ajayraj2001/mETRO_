@@ -61,11 +61,17 @@ const {
 } = require("../controllers/admin/roleController");
 
 const { chatList, getChatMessages } = require('../controllers/admin/messageController')
-const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requestedUserController')
+// const { sentRequestTo, gotRequestFrom } = require('../controllers/admin/requestedUserController')
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
 const { updateAppConfig , getAppConfig} = require('../controllers/admin/appconfigContoller')
+
+const {
+  sentRequestTo,
+  gotRequestFrom,
+  getUserConnections
+} = require("../controllers/admin/connectionController");
 
 const adminRoute = require("express").Router();
 
@@ -95,8 +101,13 @@ adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
 adminRoute.get("/userchatList/:userId", authenticateAdmin, chatList);
 adminRoute.get("/getChatMessages", authenticateAdmin,getChatMessages);
 
+// adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
+// adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
+
 adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
+adminRoute.get("/connections/:user", authenticateAdmin, getUserConnections);
+
 
 // ------------- Subscription Plan --------------
 adminRoute.post("/create_subscription_plan", createSubscriptionPlan);

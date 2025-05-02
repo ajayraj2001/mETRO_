@@ -8,7 +8,7 @@ const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 
 
-const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
+const send_Or_UpdateRequest = asyncHandler(async (req, res, next) => {
   const { userRequestedTo, status } = req.body;
   const user = req.user._id;
   const {fullName, deviceToken, profile_image } = req.user;
@@ -122,27 +122,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   }
 });
 
-// const sentRequestTo = asyncHandler(async (req, res, next) => {
-//   const user = req.user._id;
-
-//   const requestedTo = await RequestedUser.find({ user, status : "Requested" })
-//     .sort({ createdAt: -1 })
-//     .populate({
-//       path: "userRequestedTo",
-//       select: "fullName height city profile_image",
-//     });
-
-//   // if (!requestedTo || requestedTo.length === 0)
-//   //   return next(new ApiError("You have not requested to anyone so far.", 404));
-
-//   return res.status(200).json({
-//     success: true,
-//     message: "Data fetched successfully.",
-//     data: requestedTo,
-//   });
-// });
-
-const sentRequestTo = asyncHandler(async (req, res, next) => {
+const sent_Request_To = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   let { page = 1, limit = 10 } = req.query;
 
@@ -176,7 +156,7 @@ const sentRequestTo = asyncHandler(async (req, res, next) => {
   });
 });
 
-const gotRequestFrom = asyncHandler(async (req, res, next) => {
+const got_Request_From = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   let { page = 1, limit = 10 } = req.query;
 
@@ -211,7 +191,7 @@ const gotRequestFrom = asyncHandler(async (req, res, next) => {
 });
 
 
-const unsendRequest = asyncHandler(async (req, res, next) => {
+const unsend_Request = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   const { id: userRequestedTo } = req.params;
 
@@ -230,7 +210,7 @@ const unsendRequest = asyncHandler(async (req, res, next) => {
 });
 
 //main
-const getFollowData = asyncHandler(async (req, res, next) => {
+const get_Follow_Data = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { type = "", page = 1, limit = 10 } = req.query;
 
@@ -299,28 +279,7 @@ const getFollowData = asyncHandler(async (req, res, next) => {
 });
 
 
-// const gotRequestFrom = asyncHandler(async (req, res, next) => {
-//   const user = req.user._id;
-
-//   const requestedBy = await RequestedUser.find({
-//     userRequestedTo: user,
-//     status: "Requested",
-//   })
-//     .sort({ createdAt: -1 })
-//     .populate({
-//       path: "user",
-//       select: "fullName height city profile_image",
-//     });
-
-//   return res.status(200).json({
-//     success: true,
-//     message: "Data fetched successfully.",
-//     data: requestedBy,
-//   });
-// });
-
-
-const checkStatusForChatting = asyncHandler(async (req, res, next) => {
+const check_Status_For_Chatting = asyncHandler(async (req, res, next) => {
   const user = req.user._id;
   const otherUser = req.params.id;
 
@@ -354,10 +313,5 @@ const checkStatusForChatting = asyncHandler(async (req, res, next) => {
 });
 
 module.exports = {
-  sendOrUpdateRequest,
-  sentRequestTo,
-  unsendRequest,
-  gotRequestFrom,
-  checkStatusForChatting,
-  getFollowData
+  get_Follow_Data, send_Or_UpdateRequest, sent_Request_To, unsend_Request, got_Request_From, check_Status_For_Chatting
 };

@@ -4,7 +4,7 @@ const authenticateUser = require("../middlewares/authenticateUser");
 const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
 const { partnerPreferences, getPreference, matchedUsers, singleMatchedUser, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
-const { getFollowData, sendOrUpdateRequest, sentRequestTo, unsendRequest, gotRequestFrom, checkStatusForChatting } = require("../controllers/user/requestedUserController");
+
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
@@ -27,6 +27,15 @@ const {
 const {
   getAppConfig
 } = require("../controllers/user/appConfigContoller.js");
+
+const {
+  sendOrUpdateRequest,
+  getSentRequests,
+  getReceivedRequests,
+  cancelRequest,
+  getConnections,
+  canMessage
+} = require("../controllers/user/connectionController");
 
 const {getLanguages} = require("../controllers/user/languageController.js")
 
@@ -90,12 +99,23 @@ userRoute.get("/get_liked_users", authenticateUser, getLikedUsers);
 userRoute.get("/unlike_user/:id", authenticateUser, unlikeUserProfile);
 
 // request user
-userRoute.post("/send_request", authenticateUser, sendOrUpdateRequest);
-userRoute.get("/getFollowData", authenticateUser, getFollowData);
-userRoute.get("/requested_to", authenticateUser, sentRequestTo);
-userRoute.get("/unsend_request/:id", authenticateUser, unsendRequest);
-userRoute.get("/requested_by", authenticateUser, gotRequestFrom);
-userRoute.get("/chat_eligibility/:id", authenticateUser, checkStatusForChatting);
+const { get_Follow_Data, send_Or_UpdateRequest, sent_Request_To, unsend_Request, got_Request_From, check_Status_For_Chatting } = require("../controllers/user/requestedUserController");
+userRoute.post("/send_request", authenticateUser, send_Or_UpdateRequest);
+userRoute.get("/getFollowData", authenticateUser, get_Follow_Data);
+userRoute.get("/requested_to", authenticateUser, sent_Request_To);
+userRoute.get("/unsend_request/:id", authenticateUser, unsend_Request);
+userRoute.get("/requested_by", authenticateUser, got_Request_From);
+userRoute.get("/chat_eligibility/:id", authenticateUser, check_Status_For_Chatting);
+
+
+// Routes for connection management
+userRoute.post("/connection", authenticateUser, sendOrUpdateRequest);
+userRoute.get("/connections", authenticateUser, getConnections);
+userRoute.get("/connections/sent", authenticateUser, getSentRequests);
+userRoute.get("/connections/received", authenticateUser, getReceivedRequests);
+userRoute.delete("/connections/:connectionId", authenticateUser, cancelRequest);
+userRoute.get("/connections/can-message/:otherUserId", authenticateUser, canMessage);
+
 
 // Subscription Plans
 userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);

@@ -2,6 +2,7 @@ const Admin = require("./admin");
 const User = require("./user");
 const PartnerPreferences = require("./partnerPreference");
 const RequestedUser = require("./requestedUser");
+const Connection = require("./connection");
 const Message = require("./message");
 const SubscriptionPlan = require("./subscriptionPlan");
 const {Religion, Sect, Jammat, Caste}  = require('./caste')
@@ -21,6 +22,7 @@ module.exports = {
   User,
   PartnerPreferences,
   RequestedUser,
+  Connection,
   Message,
   SubscriptionPlan,
   Caste,
