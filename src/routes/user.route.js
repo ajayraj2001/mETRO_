@@ -90,7 +90,7 @@ userRoute.get('/payment_history', authenticateUser, subscriptionController.getPa
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
 userRoute.get("/yourPreference", authenticateUser, getPreference);
 userRoute.post("/all_match", authenticateUser, matchedUsers);
-userRoute.post("/matchedProfiles", authenticateUser, matchedProfiles);
+userRoute.get("/matchedProfiles", authenticateUser, matchedProfiles);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 
