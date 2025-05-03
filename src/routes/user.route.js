@@ -3,7 +3,7 @@ const authenticateUser = require("../middlewares/authenticateUser");
 
 const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
-const { partnerPreferences, getPreference, matchedUsers, singleMatchedUser, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
+const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
 
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
@@ -90,6 +90,7 @@ userRoute.get('/payment_history', authenticateUser, subscriptionController.getPa
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
 userRoute.get("/yourPreference", authenticateUser, getPreference);
 userRoute.post("/all_match", authenticateUser, matchedUsers);
+userRoute.post("/matchedProfiles", authenticateUser, matchedProfiles);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 

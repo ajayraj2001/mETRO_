@@ -16,6 +16,7 @@ const UserSubscription = require('./userSubscription')
 const { CourseCategory, Course} = require("./course");
 const { OccupationCategory, Occupation } = require("./occupation");
 const Language = require("./language");
+const ProfileView = require("./profileViewSchema");
 
 module.exports = {
   Admin,
@@ -37,4 +38,5 @@ module.exports = {
   CourseCategory, Course,
   OccupationCategory, Occupation,
   Language,
+  ProfileView
 };
