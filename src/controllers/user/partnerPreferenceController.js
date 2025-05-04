@@ -942,8 +942,6 @@ const matchedProfiles = async (req, res, next) => {
               "$heightMatchScore",
               "$religionMatchScore",
               "$motherTongueMatchScore",
-              "$annual_income",
-              "$marital_status",
               "$maritalStatusMatchScore", 
               "$educationMatchScore",
               "$employmentMatchScore",
