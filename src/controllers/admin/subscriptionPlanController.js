@@ -11,6 +11,14 @@ const createSubscriptionPlan = asyncHandler(async (req, res, next) => {
     return next(new ApiError('Duration and pricing details are required', 400));
   }
 
+
+  // Check for duplicate displayOrder
+  const existingOrder = await SubscriptionPlan.findOne({ displayOrder });
+  if (existingOrder) {
+    return next(new ApiError('Display order already exists. Please choose a different value.', 400));
+  }
+
+
   const subscriptionPlan = await SubscriptionPlan.create({
     planName,
     durationInMonths,
@@ -49,9 +57,20 @@ const updateSubscriptionPlan = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const updates = req.body;
 
-  // Prevent changing planName after creation
+  // Check for duplicate planName (if it's being updated)
   if (updates.planName) {
-    return next(new ApiError('Plan name cannot be modified', 400));
+    const existingPlan = await SubscriptionPlan.findOne({ planName: updates.planName, _id: { $ne: id } });
+    if (existingPlan) {
+      return next(new ApiError('Plan name already exists. Please choose a different name.', 400));
+    }
+  }
+
+  // Check for duplicate displayOrder (if it's being updated)
+  if (updates.displayOrder !== undefined) {
+    const existingOrder = await SubscriptionPlan.findOne({ displayOrder: updates.displayOrder, _id: { $ne: id } });
+    if (existingOrder) {
+      return next(new ApiError('Display order already exists. Please choose a different value.', 400));
+    }
   }
 
   const subscriptionPlan = await SubscriptionPlan.findByIdAndUpdate(

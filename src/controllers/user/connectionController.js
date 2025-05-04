@@ -208,7 +208,7 @@ const getSentRequests = asyncHandler(async (req, res, next) => {
   page = parseInt(page);
   limit = parseInt(limit);
   const skip = (page - 1) * limit;
-console.log('sender',userId)
+  
   // Get requests sent by the user with pagination
   const [sentRequests, total] = await Promise.all([
     Connection.find({ sender: userId, status: "Pending" })
