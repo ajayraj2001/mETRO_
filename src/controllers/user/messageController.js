@@ -29,189 +29,189 @@ const { ApiError } = require("../../errorHandler");
 
 
 
-const chatList = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id;
-
-  const recentChats = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { sender: new mongoose.Types.ObjectId(userId) },
-          { recipient: new mongoose.Types.ObjectId(userId) }
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: {
-          $cond: {
-            if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-            then: '$recipient',
-            else: '$sender'
-          }
-        },
-        lastMessage: { $last: '$message' },
-        lastMessageTime: { $last: '$timestamp' },
-        unreadCountForRecipient: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-              1,
-              0
-            ]
-          }
-        },
-        unreadCountForSender: {
-          $sum: {
-            $cond: [
-              { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-              1,
-              0
-            ]
-          }
-        }
-      }
-    },
-    {
-      $sort: { lastMessageTime: -1 }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'user'
-      }
-    },
-    {
-      $unwind: '$user'
-    },
-    {
-      $project: {
-        _id: 0,
-        userId: '$_id',
-        userName: '$user.fullName',
-        userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
-        lastMessage: 1,
-        lastMessageTime: 1,
-        unreadCount: {
-          $cond: {
-            if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
-            then: '$unreadCountForSender',
-            else: '$unreadCountForRecipient'
-          }
-        }
-      }
-    }
-  ]);
-
-  res.status(200).json({
-    success: true,
-    message: "Chats fetched successfully",
-    data: recentChats,
-  });
-});
-
 // const chatList = asyncHandler(async (req, res, next) => {
 //   const userId = req.user._id;
-//   let { page = 1, limit = 10 } = req.query;
 
-//   page = parseInt(page);
-//   limit = parseInt(limit);
-//   const skip = (page - 1) * limit;
-
-//   const [recentChats, total] = await Promise.all([
-//     Message.aggregate([
-//       {
-//         $match: {
-//           $or: [
-//             { sender: new mongoose.Types.ObjectId(userId) },
-//             { recipient: new mongoose.Types.ObjectId(userId) }
-//           ]
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             $cond: {
-//               if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-//               then: '$recipient',
-//               else: '$sender'
-//             }
-//           },
-//           lastMessage: { $last: '$message' },
-//           lastMessageTime: { $last: '$timestamp' },
-//           unreadCountForRecipient: {
-//             $sum: {
-//               $cond: [
-//                 { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-//                 1,
-//                 0
-//               ]
-//             }
-//           },
-//           unreadCountForSender: {
-//             $sum: {
-//               $cond: [
-//                 { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-//                 1,
-//                 0
-//               ]
-//             }
+//   const recentChats = await Message.aggregate([
+//     {
+//       $match: {
+//         $or: [
+//           { sender: new mongoose.Types.ObjectId(userId) },
+//           { recipient: new mongoose.Types.ObjectId(userId) }
+//         ]
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: {
+//           $cond: {
+//             if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//             then: '$recipient',
+//             else: '$sender'
+//           }
+//         },
+//         lastMessage: { $last: '$message' },
+//         lastMessageTime: { $last: '$timestamp' },
+//         unreadCountForRecipient: {
+//           $sum: {
+//             $cond: [
+//               { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+//               1,
+//               0
+//             ]
+//           }
+//         },
+//         unreadCountForSender: {
+//           $sum: {
+//             $cond: [
+//               { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+//               1,
+//               0
+//             ]
 //           }
 //         }
-//       },
-//       { $sort: { lastMessageTime: -1 } },
-//       {
-//         $lookup: {
-//           from: 'users',
-//           localField: '_id',
-//           foreignField: '_id',
-//           as: 'user'
-//         }
-//       },
-//       { $unwind: '$user' },
-//       {
-//         $project: {
-//           _id: 0,
-//           userId: '$_id',
-//           userName: '$user.fullName',
-//           userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
-//           lastMessage: 1,
-//           lastMessageTime: 1,
-//           unreadCount: {
-//             $cond: {
-//               if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
-//               then: '$unreadCountForSender',
-//               else: '$unreadCountForRecipient'
-//             }
+//       }
+//     },
+//     {
+//       $sort: { lastMessageTime: -1 }
+//     },
+//     {
+//       $lookup: {
+//         from: 'users',
+//         localField: '_id',
+//         foreignField: '_id',
+//         as: 'user'
+//       }
+//     },
+//     {
+//       $unwind: '$user'
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         userId: '$_id',
+//         userName: '$user.fullName',
+//         userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+//         lastMessage: 1,
+//         lastMessageTime: 1,
+//         unreadCount: {
+//           $cond: {
+//             if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
+//             then: '$unreadCountForSender',
+//             else: '$unreadCountForRecipient'
 //           }
 //         }
-//       },
-//       { $skip: skip },
-//       { $limit: limit }
-//     ]),
-    
-//     Message.countDocuments({
-//       $or: [
-//         { sender: new mongoose.Types.ObjectId(userId) },
-//         { recipient: new mongoose.Types.ObjectId(userId) }
-//       ]
-//     })
+//       }
+//     }
 //   ]);
 
 //   res.status(200).json({
 //     success: true,
 //     message: "Chats fetched successfully",
 //     data: recentChats,
-//     pagination: {
-//       totalRecords: total,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       perPage: limit,
-//     },
 //   });
 // });
+
+const chatList = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  let { page = 1, limit = 10 } = req.query;
+
+  page = parseInt(page);
+  limit = parseInt(limit);
+  const skip = (page - 1) * limit;
+
+  const [recentChats, total] = await Promise.all([
+    Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: new mongoose.Types.ObjectId(userId) },
+            { recipient: new mongoose.Types.ObjectId(userId) }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: {
+              if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+              then: '$recipient',
+              else: '$sender'
+            }
+          },
+          lastMessage: { $last: '$message' },
+          lastMessageTime: { $last: '$timestamp' },
+          unreadCountForRecipient: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                1,
+                0
+              ]
+            }
+          },
+          unreadCountForSender: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      },
+      { $sort: { lastMessageTime: -1 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          userName: '$user.fullName',
+          userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+          lastMessage: 1,
+          lastMessageTime: 1,
+          unreadCount: {
+            $cond: {
+              if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
+              then: '$unreadCountForSender',
+              else: '$unreadCountForRecipient'
+            }
+          }
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]),
+    
+    Message.countDocuments({
+      $or: [
+        { sender: new mongoose.Types.ObjectId(userId) },
+        { recipient: new mongoose.Types.ObjectId(userId) }
+      ]
+    })
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Chats fetched successfully",
+    data: recentChats,
+    pagination: {
+      totalRecords: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      perPage: limit,
+    },
+  });
+});
 
 
 // Modified getChatMessages API endpoint to handle message reading properly
@@ -315,7 +315,7 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
     {
       sender: receiverId,
       recipient: senderId,
-      status: 'read'
+      status: 'read',
       isRead: false, // Only update unread messages
     },
     { isRead: true } // Set isRead to true
