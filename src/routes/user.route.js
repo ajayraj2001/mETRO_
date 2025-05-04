@@ -111,6 +111,7 @@ userRoute.get("/chat_eligibility/:id", authenticateUser, check_Status_For_Chatti
 
 // Routes for connection management
 userRoute.post("/connection", authenticateUser, sendOrUpdateRequest);
+// userRoute.get("/connections", authenticateUser, getConnectionsUnified);
 userRoute.get("/connections", authenticateUser, getConnections);
 userRoute.get("/connections/sent", authenticateUser, getSentRequests);
 userRoute.get("/connections/received", authenticateUser, getReceivedRequests);

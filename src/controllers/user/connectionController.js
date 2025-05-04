@@ -115,6 +115,89 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   }
 });
 
+
+//combined one - for three
+// const getConnections = asyncHandler(async (req, res) => {
+//   const userId = req.user._id;
+//   const type = req.query.type || "all";
+//   const { page = 1, limit = 10 } = req.query;
+
+//   let query;
+
+//   if (type === "sent") {
+//     query = { sender: userId };
+//   } else if (type === "received") {
+//     query = { receiver: userId };
+//   } else {
+//     // type === "all"
+//     query = {
+//       $or: [
+//         { sender: userId, status: { $ne: "Cancelled" } },
+//         { receiver: userId, status: { $ne: "Cancelled" } }
+//       ]
+//     };
+//   }
+
+//   const totalRecords = await Connection.countDocuments(query);
+//   const connections = await Connection.find(query)
+//     .sort({ createdAt: -1 })
+//     .skip((page - 1) * limit)
+//     .limit(Number(limit))
+//     .populate([
+//       {
+//         path: "sender",
+//         select: "fullName profile_image city height"
+//       },
+//       {
+//         path: "receiver",
+//         select: "fullName profile_image city height"
+//       }
+//     ]);
+
+//   let data;
+
+//   if (type === "sent") {
+//     data = connections.map(conn => ({
+//       ...conn.toObject(),
+//       receiver: conn.receiver
+//     }));
+//   } else if (type === "received") {
+//     data = connections.map(conn => ({
+//       ...conn.toObject(),
+//       sender: conn.sender
+//     }));
+//   } else {
+//     // type === "all" → return other user's info
+//     data = connections.map(conn => {
+//       const otherUser =
+//         conn.sender._id.toString() === userId.toString()
+//           ? conn.receiver
+//           : conn.sender;
+
+//       return {
+//         connectionId: conn._id,
+//         user: otherUser,
+//         status: conn.status,
+//         createdAt: conn.createdAt,
+//         updatedAt: conn.updatedAt
+//       };
+//     });
+//   }
+
+//   return res.status(200).json({
+//     success: true,
+//     message: `Connections (${type}) fetched successfully`,
+//     data,
+//     pagination: {
+//       totalRecords,
+//       currentPage: Number(page),
+//       totalPages: Math.ceil(totalRecords / limit),
+//       perPage: Number(limit)
+//     }
+//   });
+// });
+
+
 /**
  * Get all requests sent by the current user
  */
@@ -125,7 +208,7 @@ const getSentRequests = asyncHandler(async (req, res, next) => {
   page = parseInt(page);
   limit = parseInt(limit);
   const skip = (page - 1) * limit;
-
+console.log('sender',userId)
   // Get requests sent by the user with pagination
   const [sentRequests, total] = await Promise.all([
     Connection.find({ sender: userId, status: "Pending" })
@@ -202,11 +285,12 @@ const cancelRequest = asyncHandler(async (req, res, next) => {
   }
 
   // Find and delete the connection
-  const connection = await Connection.findOneAndDelete({
-    _id: connectionId,
-    sender: userId,
-    status: "Pending"
-  });
+  // const connection = await Connection.findOneAndDelete({
+  //   _id: connectionId,
+  //   sender: userId,
+  //   status: "Pending"
+  // });
+  const connection = await Connection.findByIdAndDelete(connectionId);
 
   if (!connection) {
     return next(new ApiError("Connection request not found or cannot be cancelled", 404));
