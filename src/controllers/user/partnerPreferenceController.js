@@ -6,7 +6,7 @@ const PartnerPreferences = require("../../models/partnerPreference");
 const User = require("../../models/user");
 const { UserSubscription } = require("../../models")
 const ProfileVisit = require("../../models/profileVisit");
-const {ProfileView, Connection, Like} = require("../../models");
+const { ProfileView, Connection, Like } = require("../../models");
 const SeenContact = require("../../models/seenContact");
 const calculateAge = require("../../utils/calculateAge");
 const parseDate = require("../../utils/parseDate");
@@ -263,8 +263,8 @@ const matchedProfiles = async (req, res, next) => {
     };
 
     if (newUsersOnly) {
-      matchCriteria.created_at = { 
-        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
+      matchCriteria.created_at = {
+        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       };
     }
 
@@ -359,8 +359,8 @@ const matchedProfiles = async (req, res, next) => {
           city: 1,
           state: 1,
           occupation: 1,
-          annual_income:1,
-          marital_status:1,
+          annual_income: 1,
+          marital_status: 1,
           highest_education: 1,
           initialScore: 1,
           freshness: 1,
@@ -371,7 +371,7 @@ const matchedProfiles = async (req, res, next) => {
         }
       }
     ];
-    
+
 
     // Get potential matches
     let potentialMatches = await User.aggregate(pipeline);
@@ -387,7 +387,7 @@ const matchedProfiles = async (req, res, next) => {
 
     // Sort by final score
     potentialMatches.sort((a, b) => b.finalScore - a.finalScore);
-    
+
     // Paginate results
     const matchedUsers = potentialMatches.slice(skip, skip + limit);
 
@@ -434,11 +434,18 @@ const matchedProfiles = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: finalResults,
+      // pagination: {
+      //   total,
+      //   page,
+      //   pages: Math.ceil(total / limit),
+      //   hasMore: page < Math.ceil(total / limit)
+      // }
       pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / limit),
-        hasMore: page < Math.ceil(total / limit)
+        totalProfiles: totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNextPages: page < Math.ceil(totalCount / limit),
+        ProfilePerPage: limit
       }
     });
 
@@ -455,39 +462,39 @@ const matchedProfiles = async (req, res, next) => {
 //     const skip = (page - 1) * limit;
 //     const newUsersOnly = req.query.newUsersOnly === 'true';
 //     const rotationStrategy = req.query.rotationStrategy || 'balanced';
-    
+
 //     // Get user and their preferences
 //     const user = await User.findById(user_id);
 //     if (!user) {
 //       return next(new ApiError("User not found.", 404));
 //     }
-    
+
 //     const userPreferences = await PartnerPreferences.findOne({ user_id });
 //     if (!userPreferences) {
 //       return next(new ApiError("Partner preferences not found. Please complete your preferences.", 404));
 //     }
-    
+
 //     // Get viewed profiles history (last 30 days)
 //     const thirtyDaysAgo = new Date();
 //     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
 //     const viewedProfiles = await ProfileView.find({
 //       viewer_id: user_id,
 //       viewed_at: { $gte: thirtyDaysAgo }
 //     }).sort({ viewed_at: -1 });
-    
+
 //     // Extract viewed profile IDs
 //     const viewedProfileIds = viewedProfiles.map(view => view.viewed_id.toString());
-    
+
 //     // Create weighted viewing history (more recent = higher weight to avoid showing)
 //     const viewWeights = {};
 //     viewedProfiles.forEach((view) => {
 //       const daysSinceViewed = Math.floor((Date.now() - view.viewed_at) / (1000 * 60 * 60 * 24));
 //       viewWeights[view.viewed_id.toString()] = 1 - (daysSinceViewed / 33);
 //     });
-    
+
 //     const oppositeGender = user.gender === "Male" ? "Female" : "Male";
-    
+
 //     // Get all connections involving this user (both sent and received)
 //     const connections = await Connection.find({
 //       $or: [
@@ -495,7 +502,7 @@ const matchedProfiles = async (req, res, next) => {
 //         { receiver: user_id }
 //       ]
 //     });
-    
+
 //     // Create maps for quick lookups of connection status
 //     const connectionMap = {};
 //     connections.forEach(conn => {
@@ -513,15 +520,15 @@ const matchedProfiles = async (req, res, next) => {
 //         };
 //       }
 //     });
-    
+
 //     // Get all likes by this user
 //     const likes = await Like.find({ user: user_id });
 //     const likedProfileIds = likes.map(like => like.userLikedTo.toString());
-    
+
 //     // Get all profiles that liked this user
 //     const likedByProfiles = await Like.find({ userLikedTo: user_id });
 //     const likedByProfileIds = likedByProfiles.map(like => like.user.toString());
-    
+
 //     // Create list of blocked profiles (to exclude from results)
 //     const blockedProfileIds = [];
 //     for (const [profileId, connInfo] of Object.entries(connectionMap)) {
@@ -529,7 +536,7 @@ const matchedProfiles = async (req, res, next) => {
 //         blockedProfileIds.push(mongoose.Types.ObjectId(profileId));
 //       }
 //     }
-    
+
 //     // Base matching criteria
 //     const matchCriteria = {
 //       _id: { 
@@ -540,327 +547,327 @@ const matchedProfiles = async (req, res, next) => {
 //       active: true,
 //       profileStatus: "Complete"
 //     };
-    
+
 //     // Add new users filter if requested
 //     if (newUsersOnly) {
 //       const oneMonthAgo = new Date();
 //       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 //       matchCriteria.created_at = { $gte: oneMonthAgo };
 //     }
-    
+
 //     // Get current date for time-based calculations
 //     const currentDate = new Date();
 //     const currentHour = currentDate.getHours();
 //     const currentDay = currentDate.getDay();
 //     const currentWeek = Math.floor(currentDate.getDate() / 7);
-    
+
 //     // Start building the aggregation pipeline
-    // const pipeline = [
-    //   { $match: matchCriteria },
-      
-    //   // Lookup user preferences for better matching
-    //   {
-    //     $lookup: {
-    //       from: "partner_preferences",
-    //       localField: "_id",
-    //       foreignField: "user_id",
-    //       as: "theirPreferences"
-    //     }
-    //   },
-    //   { $unwind: { path: "$theirPreferences", preserveNullAndEmptyArrays: true } },
-      
-    //   // Calculate match score based on multiple criteria
-    //   {
-    //     $addFields: {
-    //       ageInYears: { 
-    //         $floor: { 
-    //           $divide: [
-    //             { $subtract: [new Date(), "$dob"] }, 
-    //             31536000000 // ms in a year
-    //           ] 
-    //         } 
-    //       },
-          
-    //       // Base match score calculations
-    //       ageMatchScore: {
-    //         $cond: {
-    //           if: { 
-    //             $and: [
-    //               { $gte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] },
-    //               { $lte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] }
-    //             ]
-    //           },
-    //           then: 20,
-    //           else: {
-    //             $max: [
-    //               0,
-    //               {
-    //                 $subtract: [
-    //                   20,
-    //                   {
-    //                     $min: [
-    //                       20,
-    //                       {
-    //                         $multiply: [
-    //                           2,
-    //                           {
-    //                             $min: [
-    //                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] } },
-    //                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] } }
-    //                             ]
-    //                           }
-    //                         ]
-    //                       }
-    //                     ]
-    //                   }
-    //                 ]
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       },
-          
-    //       // Height match score
-    //       heightMatchScore: {
-    //         $cond: {
-    //           if: { 
-    //             $and: [
-    //               { $gte: ["$heightInCm", userPreferences.min_height_in_cm] },
-    //               { $lte: ["$heightInCm", userPreferences.max_height_in_cm] }
-    //             ]
-    //           },
-    //           then: 15,
-    //           else: {
-    //             $max: [
-    //               0,
-    //               {
-    //                 $subtract: [
-    //                   15,
-    //                   {
-    //                     $min: [
-    //                       15,
-    //                       {
-    //                         $divide: [
-    //                           {
-    //                             $min: [
-    //                               { $abs: { $subtract: ["$heightInCm", userPreferences.min_height_in_cm] } },
-    //                               { $abs: { $subtract: ["$heightInCm", userPreferences.max_height_in_cm] } }
-    //                             ]
-    //                           },
-    //                           5
-    //                         ]
-    //                       }
-    //                     ]
-    //                   }
-    //                 ]
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       },
-          
-    //       // Religion match
-    //       religionMatchScore: {
-    //         $cond: { 
-    //           if: { $eq: ["$religion", userPreferences.religion] }, 
-    //           then: 15, 
-    //           else: 0 
-    //         }
-    //       },
-          
-    //       // Mother tongue match
-    //       motherTongueMatchScore: {
-    //         $cond: { 
-    //           if: { $eq: ["$mother_tongue", userPreferences.mother_tongue] }, 
-    //           then: 10, 
-    //           else: 0 
-    //         }
-    //       },
-          
-    //       // Marital status match
-    //       maritalStatusMatchScore: {
-    //         $cond: { 
-    //           if: { $eq: ["$marital_status", userPreferences.marital_status] }, 
-    //           then: 10, 
-    //           else: 0 
-    //         }
-    //       },
-          
-    //       // Education match
-    //       educationMatchScore: {
-    //         $cond: { 
-    //           if: { $eq: ["$highest_education", userPreferences.highest_education] }, 
-    //           then: 10, 
-    //           else: 0 
-    //         }
-    //       },
-          
-    //       // Employment match
-    //       employmentMatchScore: {
-    //         $cond: { 
-    //           if: { $eq: ["$employed_in", userPreferences.employed_in] }, 
-    //           then: 5, 
-    //           else: 0 
-    //         }
-    //       },
-          
-    //       // Add profile freshness boost
-    //       freshness: {
-    //         $let: {
-    //           vars: {
-    //             daysSinceCreation: { 
-    //               $divide: [
-    //                 { $subtract: [new Date(), "$created_at"] }, 
-    //                 86400000 // ms in a day
-    //               ] 
-    //             },
-    //             daysSinceUpdate: { 
-    //               $divide: [
-    //                 { $subtract: [new Date(), "$updated_at"] }, 
-    //                 86400000 
-    //               ] 
-    //             }
-    //           },
-    //           in: {
-    //             $sum: [
-    //               // New profile boost (0-10 points)
-    //               {
-    //                 $max: [
-    //                   0,
-    //                   { $subtract: [10, { $min: [10, "$$daysSinceCreation"] }] }
-    //                 ]
-    //               },
-    //               // Recently updated profile boost (0-5 points)
-    //               {
-    //                 $max: [
-    //                   0,
-    //                   { $subtract: [5, { $min: [5, "$$daysSinceUpdate"] }] }
-    //                 ]
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       },
-          
-    //       // Add time-based rotation factor
-    //       rotationFactor: {
-    //         $switch: {
-    //           branches: [
-    //             // Morning profiles (6am-12pm)
-    //             {
-    //               case: { $and: [
-    //                 { $gte: [currentHour, 6] },
-    //                 { $lt: [currentHour, 12] }
-    //               ]},
-    //               then: { $mod: [{ $add: ["$heightInCm", currentDay] }, 5] }
-    //             },
-    //             // Afternoon profiles (12pm-6pm)
-    //             {
-    //               case: { $and: [
-    //                 { $gte: [currentHour, 12] },
-    //                 { $lt: [currentHour, 18] }
-    //               ]},
-    //               then: { $mod: [{ $add: [{ $strLenCP: "$fullName" }, currentDay] }, 5] }
-    //             },
-    //             // Evening profiles (6pm-12am)
-    //             {
-    //               case: { $and: [
-    //                 { $gte: [currentHour, 18] },
-    //                 { $lt: [currentHour, 24] }
-    //               ]},
-    //               then: { $mod: [{ $add: [{ $strLenCP: "$city" }, currentDay] }, 5] }
-    //             },
-    //             // Night profiles (12am-6am)
-    //             {
-    //               case: { $and: [
-    //                 { $gte: [currentHour, 0] },
-    //                 { $lt: [currentHour, 6] }
-    //               ]},
-    //               then: { $mod: [{ $add: [{ $strLenCP: "$occupation" }, currentDay] }, 5] }
-    //             }
-    //           ],
-    //           default: 0
-    //         }
-    //       },
-          
-    //       // Add weekly rotation factor
-    //       weeklyBoost: {
-    //         $cond: {
-    //           if: { $eq: [{ $mod: [{ $add: [{ $strLenBytes: { $toString: "$_id" } }, currentWeek] }, 4] }, 0] },
-    //           then: 15,
-    //           else: 0
-    //         }
-    //       },
-          
-    //       // Add random factor for variety
-    //       randomBoost: { $multiply: [{ $rand: {} }, 5] }
-    //     }
-    //   },
-      
-    //   // Calculate initial score (without the function-based components)
-    //   {
-    //     $addFields: {
-    //       initialScore: {
-    //         $add: [
-    //           "$ageMatchScore",
-    //           "$heightMatchScore",
-    //           "$religionMatchScore",
-    //           "$motherTongueMatchScore",
-    //           "$maritalStatusMatchScore", 
-    //           "$educationMatchScore",
-    //           "$employmentMatchScore",
-    //           "$freshness",
-    //           "$rotationFactor",
-    //           "$weeklyBoost",
-    //           "$randomBoost"
-    //         ]
-    //       }
-    //     }
-    //   },
-      
-    //   // Sort by initial score (this will be refined in JavaScript)
-    //   { $sort: { initialScore: -1 } },
-      
-    //   // Get a larger batch than needed to allow for JavaScript post-processing
-    //   { $limit: limit * 3 },
-      
-    //   // Project only necessary fields for the response
-    //   {
-    //     $project: {
-    //       _id: 1,
-    //       fullName: 1,
-    //       profile_image: 1,
-    //       age: "$ageInYears",
-    //       height: 1,
-    //       religion: 1,
-    //       caste: 1,
-    //       city: 1,
-    //       state: 1,
-    //       occupation: 1,
-    //       annual_income:1,
-    //       marital_status:1,
-    //       highest_education: 1,
-    //       initialScore: 1,
-    //       freshness: 1,
-    //       created_at: 1,
-    //       updated_at: 1
-    //     }
-    //   }
-    // ];
-    
+// const pipeline = [
+//   { $match: matchCriteria },
+
+//   // Lookup user preferences for better matching
+//   {
+//     $lookup: {
+//       from: "partner_preferences",
+//       localField: "_id",
+//       foreignField: "user_id",
+//       as: "theirPreferences"
+//     }
+//   },
+//   { $unwind: { path: "$theirPreferences", preserveNullAndEmptyArrays: true } },
+
+//   // Calculate match score based on multiple criteria
+//   {
+//     $addFields: {
+//       ageInYears: { 
+//         $floor: { 
+//           $divide: [
+//             { $subtract: [new Date(), "$dob"] }, 
+//             31536000000 // ms in a year
+//           ] 
+//         } 
+//       },
+
+//       // Base match score calculations
+//       ageMatchScore: {
+//         $cond: {
+//           if: { 
+//             $and: [
+//               { $gte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] },
+//               { $lte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] }
+//             ]
+//           },
+//           then: 20,
+//           else: {
+//             $max: [
+//               0,
+//               {
+//                 $subtract: [
+//                   20,
+//                   {
+//                     $min: [
+//                       20,
+//                       {
+//                         $multiply: [
+//                           2,
+//                           {
+//                             $min: [
+//                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] } },
+//                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] } }
+//                             ]
+//                           }
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 ]
+//               }
+//             ]
+//           }
+//         }
+//       },
+
+//       // Height match score
+//       heightMatchScore: {
+//         $cond: {
+//           if: { 
+//             $and: [
+//               { $gte: ["$heightInCm", userPreferences.min_height_in_cm] },
+//               { $lte: ["$heightInCm", userPreferences.max_height_in_cm] }
+//             ]
+//           },
+//           then: 15,
+//           else: {
+//             $max: [
+//               0,
+//               {
+//                 $subtract: [
+//                   15,
+//                   {
+//                     $min: [
+//                       15,
+//                       {
+//                         $divide: [
+//                           {
+//                             $min: [
+//                               { $abs: { $subtract: ["$heightInCm", userPreferences.min_height_in_cm] } },
+//                               { $abs: { $subtract: ["$heightInCm", userPreferences.max_height_in_cm] } }
+//                             ]
+//                           },
+//                           5
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 ]
+//               }
+//             ]
+//           }
+//         }
+//       },
+
+//       // Religion match
+//       religionMatchScore: {
+//         $cond: { 
+//           if: { $eq: ["$religion", userPreferences.religion] }, 
+//           then: 15, 
+//           else: 0 
+//         }
+//       },
+
+//       // Mother tongue match
+//       motherTongueMatchScore: {
+//         $cond: { 
+//           if: { $eq: ["$mother_tongue", userPreferences.mother_tongue] }, 
+//           then: 10, 
+//           else: 0 
+//         }
+//       },
+
+//       // Marital status match
+//       maritalStatusMatchScore: {
+//         $cond: { 
+//           if: { $eq: ["$marital_status", userPreferences.marital_status] }, 
+//           then: 10, 
+//           else: 0 
+//         }
+//       },
+
+//       // Education match
+//       educationMatchScore: {
+//         $cond: { 
+//           if: { $eq: ["$highest_education", userPreferences.highest_education] }, 
+//           then: 10, 
+//           else: 0 
+//         }
+//       },
+
+//       // Employment match
+//       employmentMatchScore: {
+//         $cond: { 
+//           if: { $eq: ["$employed_in", userPreferences.employed_in] }, 
+//           then: 5, 
+//           else: 0 
+//         }
+//       },
+
+//       // Add profile freshness boost
+//       freshness: {
+//         $let: {
+//           vars: {
+//             daysSinceCreation: { 
+//               $divide: [
+//                 { $subtract: [new Date(), "$created_at"] }, 
+//                 86400000 // ms in a day
+//               ] 
+//             },
+//             daysSinceUpdate: { 
+//               $divide: [
+//                 { $subtract: [new Date(), "$updated_at"] }, 
+//                 86400000 
+//               ] 
+//             }
+//           },
+//           in: {
+//             $sum: [
+//               // New profile boost (0-10 points)
+//               {
+//                 $max: [
+//                   0,
+//                   { $subtract: [10, { $min: [10, "$$daysSinceCreation"] }] }
+//                 ]
+//               },
+//               // Recently updated profile boost (0-5 points)
+//               {
+//                 $max: [
+//                   0,
+//                   { $subtract: [5, { $min: [5, "$$daysSinceUpdate"] }] }
+//                 ]
+//               }
+//             ]
+//           }
+//         }
+//       },
+
+//       // Add time-based rotation factor
+//       rotationFactor: {
+//         $switch: {
+//           branches: [
+//             // Morning profiles (6am-12pm)
+//             {
+//               case: { $and: [
+//                 { $gte: [currentHour, 6] },
+//                 { $lt: [currentHour, 12] }
+//               ]},
+//               then: { $mod: [{ $add: ["$heightInCm", currentDay] }, 5] }
+//             },
+//             // Afternoon profiles (12pm-6pm)
+//             {
+//               case: { $and: [
+//                 { $gte: [currentHour, 12] },
+//                 { $lt: [currentHour, 18] }
+//               ]},
+//               then: { $mod: [{ $add: [{ $strLenCP: "$fullName" }, currentDay] }, 5] }
+//             },
+//             // Evening profiles (6pm-12am)
+//             {
+//               case: { $and: [
+//                 { $gte: [currentHour, 18] },
+//                 { $lt: [currentHour, 24] }
+//               ]},
+//               then: { $mod: [{ $add: [{ $strLenCP: "$city" }, currentDay] }, 5] }
+//             },
+//             // Night profiles (12am-6am)
+//             {
+//               case: { $and: [
+//                 { $gte: [currentHour, 0] },
+//                 { $lt: [currentHour, 6] }
+//               ]},
+//               then: { $mod: [{ $add: [{ $strLenCP: "$occupation" }, currentDay] }, 5] }
+//             }
+//           ],
+//           default: 0
+//         }
+//       },
+
+//       // Add weekly rotation factor
+//       weeklyBoost: {
+//         $cond: {
+//           if: { $eq: [{ $mod: [{ $add: [{ $strLenBytes: { $toString: "$_id" } }, currentWeek] }, 4] }, 0] },
+//           then: 15,
+//           else: 0
+//         }
+//       },
+
+//       // Add random factor for variety
+//       randomBoost: { $multiply: [{ $rand: {} }, 5] }
+//     }
+//   },
+
+//   // Calculate initial score (without the function-based components)
+//   {
+//     $addFields: {
+//       initialScore: {
+//         $add: [
+//           "$ageMatchScore",
+//           "$heightMatchScore",
+//           "$religionMatchScore",
+//           "$motherTongueMatchScore",
+//           "$maritalStatusMatchScore", 
+//           "$educationMatchScore",
+//           "$employmentMatchScore",
+//           "$freshness",
+//           "$rotationFactor",
+//           "$weeklyBoost",
+//           "$randomBoost"
+//         ]
+//       }
+//     }
+//   },
+
+//   // Sort by initial score (this will be refined in JavaScript)
+//   { $sort: { initialScore: -1 } },
+
+//   // Get a larger batch than needed to allow for JavaScript post-processing
+//   { $limit: limit * 3 },
+
+//   // Project only necessary fields for the response
+//   {
+//     $project: {
+//       _id: 1,
+//       fullName: 1,
+//       profile_image: 1,
+//       age: "$ageInYears",
+//       height: 1,
+//       religion: 1,
+//       caste: 1,
+//       city: 1,
+//       state: 1,
+//       occupation: 1,
+//       annual_income:1,
+//       marital_status:1,
+//       highest_education: 1,
+//       initialScore: 1,
+//       freshness: 1,
+//       created_at: 1,
+//       updated_at: 1
+//     }
+//   }
+// ];
+
 //     // Execute aggregation
 //     let potentialMatches = await User.aggregate(pipeline);
-    
+
 //     // Post-process in JavaScript to apply connection status, likes, and viewing history
 //     potentialMatches = potentialMatches.map(profile => {
 //       const profileId = profile._id.toString();
 //       let finalScore = profile.initialScore;
-      
+
 //       // Add connection status
 //       if (connectionMap[profileId]) {
 //         profile.connectionStatus = connectionMap[profileId].status;
 //         profile.connectionDirection = connectionMap[profileId].direction;
-        
+
 //         // Add boost for mutual connections
 //         if (profile.connectionStatus === 'Accepted') {
 //           finalScore += 15;
@@ -871,32 +878,32 @@ const matchedProfiles = async (req, res, next) => {
 //         profile.connectionStatus = 'None';
 //         profile.connectionDirection = 'None';
 //       }
-      
+
 //       // Add like status
 //       profile.isLiked = likedProfileIds.includes(profileId);
 //       profile.isLikedBy = likedByProfileIds.includes(profileId);
-      
+
 //       // Add boost for mutual interest
 //       if (profile.isLikedBy) {
 //         finalScore += 20; // Boost profiles that liked the user
 //       }
-      
+
 //       // Apply viewing penalty
 //       if (viewedProfileIds.includes(profileId)) {
 //         const viewPenalty = viewWeights[profileId] * 100;
 //         finalScore -= viewPenalty;
 //       }
-      
+
 //       profile.finalScore = finalScore;
 //       return profile;
 //     });
-    
+
 //     // Sort again by the final score after JavaScript processing
 //     potentialMatches.sort((a, b) => b.finalScore - a.finalScore);
-    
+
 //     // Apply pagination in JavaScript after complete processing
 //     const matchedUsers = potentialMatches.slice(0, limit);
-    
+
 //     // Record these profile views
 //     if (matchedUsers.length > 0) {
 //       const profileViews = matchedUsers.map(profile => ({
@@ -904,7 +911,7 @@ const matchedProfiles = async (req, res, next) => {
 //         viewed_id: profile._id,
 //         viewed_at: new Date()
 //       }));
-      
+
 //       // Use bulkWrite for better performance
 //       await ProfileView.bulkWrite(
 //         profileViews.map(view => ({
@@ -919,10 +926,10 @@ const matchedProfiles = async (req, res, next) => {
 //         }))
 //       );
 //     }
-    
+
 //     // Get total count for pagination
 //     const totalCount = await User.countDocuments(matchCriteria);
-    
+
 //     return res.status(200).json({
 //       success: true,
 //       message: "Matched users found successfully.",

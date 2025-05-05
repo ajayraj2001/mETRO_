@@ -11,8 +11,8 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
  */
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const { receiverId, status } = req.body;
-  // const senderId = req.user._id;
-  const senderId = "67fcb57a240b92d1cbd38bd2";
+  const senderId = req.user._id;
+  // const senderId = "67fcb57a240b92d1cbd38bd2";
   const { fullName, deviceToken, profile_image } = req.user;
   
   // Validation
