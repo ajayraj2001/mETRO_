@@ -167,6 +167,7 @@ const subscriptionController = {
       // Create a pending payment transaction
       const transaction = new PaymentTransaction({
         userId,
+        // subscriptionId: activeSubscription._id,
         type: activeSubscription ? 'subscription_upgrade' : 'subscription_purchase',
         orderAmount: orderAmount,
         gstAmount: gstAmount,
