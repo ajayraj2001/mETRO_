@@ -441,10 +441,10 @@ const matchedProfiles = async (req, res, next) => {
       //   hasMore: page < Math.ceil(total / limit)
       // }
       pagination: {
-        totalProfiles: totalCount,
+        totalProfiles: total,
         currentPage: page,
-        totalPages: Math.ceil(totalCount / limit),
-        hasNextPages: page < Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(total / limit),
+        hasNextPages: page < Math.ceil(total / limit),
         ProfilePerPage: limit
       }
     });
