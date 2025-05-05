@@ -9,12 +9,118 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 /**
  * Send a connection request or update an existing one
  */
+// const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
+//   const { receiverId, status } = req.body;
+//   const senderId = req.user._id;
+//   // const senderId = "67fcb57a240b92d1cbd38bd2";
+//   const { fullName, deviceToken, profile_image } = req.user;
+  
+//   // Validation
+//   if (!receiverId) {
+//     return next(new ApiError("Receiver ID is required", 400));
+//   }
+
+//   if (senderId.toString() === receiverId.toString()) {
+//     return next(new ApiError("You cannot send a request to yourself", 403));
+//   }
+
+//   // Check if the receiver exists
+//   const receiver = await User.findById(receiverId);
+//   if (!receiver) {
+//     return next(new ApiError("Receiver not found", 404));
+//   }
+
+//   // Find existing connection between these users (in either direction)
+//   const existingConnection = await Connection.findOne({
+//     $or: [
+//       { sender: senderId, receiver: receiverId },
+//       { sender: receiverId, receiver: senderId }
+//     ]
+//   });
+
+//   // If updating an existing connection
+//   if (existingConnection) {
+//     // Only receiver can accept/decline a request
+//     if (status && existingConnection.sender.toString() !== senderId.toString()) {
+//       if (status === "Declined") {
+//         await Connection.findByIdAndDelete(existingConnection._id);
+//         return res.status(200).json({
+//           success: true,
+//           message: "Connection request declined",
+//         });
+//       } else if (status === "Accepted") {
+//         existingConnection.status = status;
+//         existingConnection.updatedAt = Date.now();
+//         await existingConnection.save();
+        
+//         // Create notification for the original sender
+//         await Notification.create({
+//           user: existingConnection.sender,
+//           title: "Connection Request Accepted",
+//           message: `${fullName} has accepted your connection request`,
+//           pic: profile_image,
+//         });
+
+//         // Send push notification
+//         await sendFirebaseNotification(
+//           receiver.deviceToken,
+//           "Connection Request Accepted",
+//           `${fullName} has accepted your connection request`
+//         );
+
+//         return res.status(200).json({
+//           success: true,
+//           message: "Connection request accepted",
+//         });
+//       }
+//     } else if (existingConnection.sender.toString() === senderId.toString() && 
+//               existingConnection.status === "Pending") {
+//       // Sender can cancel their own pending request
+//       await Connection.findByIdAndDelete(existingConnection._id);
+//       return res.status(200).json({
+//         success: true,
+//         message: "Connection request cancelled",
+//       });
+//     } else {
+//       return next(new ApiError("You cannot modify this connection", 403));
+//     }
+//   } else {
+//     // Create new connection request
+//     const newConnection = new Connection({ 
+//       sender: senderId, 
+//       receiver: receiverId,
+//       status: "Pending" 
+//     });
+
+//     await newConnection.save();
+
+//     // Create notification
+//     await Notification.create({
+//       user: receiverId,
+//       title: "New Connection Request",
+//       message: `${fullName} has sent you a connection request`,
+//       pic: profile_image
+//     });
+
+//     // Send push notification
+//     await sendFirebaseNotification(
+//       receiver.deviceToken,
+//       "New Connection Request",
+//       `${fullName} has sent you a connection request`
+//     );
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Connection request sent successfully",
+//     });
+//   }
+// });
+
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const { receiverId, status } = req.body;
   const senderId = req.user._id;
-  // const senderId = "67fcb57a240b92d1cbd38bd2";
   const { fullName, deviceToken, profile_image } = req.user;
-  
+
   // Validation
   if (!receiverId) {
     return next(new ApiError("Receiver ID is required", 400));
@@ -38,22 +144,64 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     ]
   });
 
-  // If updating an existing connection
+  // If existing connection found
   if (existingConnection) {
-    // Only receiver can accept/decline a request
-    if (status && existingConnection.sender.toString() !== senderId.toString()) {
-      if (status === "Declined") {
-        await Connection.findByIdAndDelete(existingConnection._id);
-        return res.status(200).json({
-          success: true,
-          message: "Connection request declined",
-        });
-      } else if (status === "Accepted") {
-        existingConnection.status = status;
+    // Check if already connected
+    if (existingConnection.status === "Accepted") {
+      return next(new ApiError("You are already connected", 400));
+    }
+
+    // Existing connection is Pending
+    if (existingConnection.sender.toString() === senderId.toString()) {
+      // Current user is the sender of the pending request
+      return next(new ApiError("You already have a pending request", 400));
+    } else {
+      // Current user is the receiver of the pending request
+      if (status) {
+        // Handle accept/decline using status parameter
+        if (status === "Declined") {
+          await Connection.findByIdAndDelete(existingConnection._id);
+          return res.status(200).json({
+            success: true,
+            message: "Connection request declined",
+          });
+        } else if (status === "Accepted") {
+          existingConnection.status = "Accepted";
+          existingConnection.updatedAt = Date.now();
+          await existingConnection.save();
+
+          // Notify original sender
+          await Notification.create({
+            user: existingConnection.sender,
+            title: "Connection Request Accepted",
+            message: `${fullName} has accepted your connection request`,
+            pic: profile_image,
+          });
+
+          // Send push notification to original sender
+          const senderUser = await User.findById(existingConnection.sender);
+          if (senderUser?.deviceToken) {
+            await sendFirebaseNotification(
+              senderUser.deviceToken,
+              "Connection Request Accepted",
+              `${fullName} has accepted your connection request`
+            );
+          }
+
+          return res.status(200).json({
+            success: true,
+            message: "Connection request accepted",
+          });
+        } else {
+          return next(new ApiError("Invalid status value", 400));
+        }
+      } else {
+        // No status provided: Auto-accept the pending request
+        existingConnection.status = "Accepted";
         existingConnection.updatedAt = Date.now();
         await existingConnection.save();
-        
-        // Create notification for the original sender
+
+        // Notify original sender
         await Notification.create({
           user: existingConnection.sender,
           title: "Connection Request Accepted",
@@ -61,31 +209,24 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
           pic: profile_image,
         });
 
-        // Send push notification
-        await sendFirebaseNotification(
-          receiver.deviceToken,
-          "Connection Request Accepted",
-          `${fullName} has accepted your connection request`
-        );
+        // Send push notification to original sender
+        const senderUser = await User.findById(existingConnection.sender);
+        if (senderUser?.deviceToken) {
+          await sendFirebaseNotification(
+            senderUser.deviceToken,
+            "Connection Request Accepted",
+            `${fullName} has accepted your connection request`
+          );
+        }
 
         return res.status(200).json({
           success: true,
           message: "Connection request accepted",
         });
       }
-    } else if (existingConnection.sender.toString() === senderId.toString() && 
-              existingConnection.status === "Pending") {
-      // Sender can cancel their own pending request
-      await Connection.findByIdAndDelete(existingConnection._id);
-      return res.status(200).json({
-        success: true,
-        message: "Connection request cancelled",
-      });
-    } else {
-      return next(new ApiError("You cannot modify this connection", 403));
     }
   } else {
-    // Create new connection request
+    // No existing connection: Create new request
     const newConnection = new Connection({ 
       sender: senderId, 
       receiver: receiverId,
@@ -94,7 +235,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
 
     await newConnection.save();
 
-    // Create notification
+    // Create notification for receiver
     await Notification.create({
       user: receiverId,
       title: "New Connection Request",
@@ -102,12 +243,14 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       pic: profile_image
     });
 
-    // Send push notification
-    await sendFirebaseNotification(
-      receiver.deviceToken,
-      "New Connection Request",
-      `${fullName} has sent you a connection request`
-    );
+    // Send push notification to receiver
+    if (receiver.deviceToken) {
+      await sendFirebaseNotification(
+        receiver.deviceToken,
+        "New Connection Request",
+        `${fullName} has sent you a connection request`
+      );
+    }
 
     return res.status(201).json({
       success: true,
@@ -115,88 +258,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     });
   }
 });
-
-
-//combined one - for three
-// const getConnections = asyncHandler(async (req, res) => {
-//   const userId = req.user._id;
-//   const type = req.query.type || "all";
-//   const { page = 1, limit = 10 } = req.query;
-
-//   let query;
-
-//   if (type === "sent") {
-//     query = { sender: userId };
-//   } else if (type === "received") {
-//     query = { receiver: userId };
-//   } else {
-//     // type === "all"
-//     query = {
-//       $or: [
-//         { sender: userId, status: { $ne: "Cancelled" } },
-//         { receiver: userId, status: { $ne: "Cancelled" } }
-//       ]
-//     };
-//   }
-
-//   const totalRecords = await Connection.countDocuments(query);
-//   const connections = await Connection.find(query)
-//     .sort({ createdAt: -1 })
-//     .skip((page - 1) * limit)
-//     .limit(Number(limit))
-//     .populate([
-//       {
-//         path: "sender",
-//         select: "fullName profile_image city height"
-//       },
-//       {
-//         path: "receiver",
-//         select: "fullName profile_image city height"
-//       }
-//     ]);
-
-//   let data;
-
-//   if (type === "sent") {
-//     data = connections.map(conn => ({
-//       ...conn.toObject(),
-//       receiver: conn.receiver
-//     }));
-//   } else if (type === "received") {
-//     data = connections.map(conn => ({
-//       ...conn.toObject(),
-//       sender: conn.sender
-//     }));
-//   } else {
-//     // type === "all" → return other user's info
-//     data = connections.map(conn => {
-//       const otherUser =
-//         conn.sender._id.toString() === userId.toString()
-//           ? conn.receiver
-//           : conn.sender;
-
-//       return {
-//         connectionId: conn._id,
-//         user: otherUser,
-//         status: conn.status,
-//         createdAt: conn.createdAt,
-//         updatedAt: conn.updatedAt
-//       };
-//     });
-//   }
-
-//   return res.status(200).json({
-//     success: true,
-//     message: `Connections (${type}) fetched successfully`,
-//     data,
-//     pagination: {
-//       totalRecords,
-//       currentPage: Number(page),
-//       totalPages: Math.ceil(totalRecords / limit),
-//       perPage: Number(limit)
-//     }
-//   });
-// });
 
 
 /**
