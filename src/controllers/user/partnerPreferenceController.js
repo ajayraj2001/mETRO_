@@ -555,298 +555,298 @@ const matchedProfiles = async (req, res, next) => {
 //     const currentWeek = Math.floor(currentDate.getDate() / 7);
     
 //     // Start building the aggregation pipeline
-    const pipeline = [
-      { $match: matchCriteria },
+    // const pipeline = [
+    //   { $match: matchCriteria },
       
-      // Lookup user preferences for better matching
-      {
-        $lookup: {
-          from: "partner_preferences",
-          localField: "_id",
-          foreignField: "user_id",
-          as: "theirPreferences"
-        }
-      },
-      { $unwind: { path: "$theirPreferences", preserveNullAndEmptyArrays: true } },
+    //   // Lookup user preferences for better matching
+    //   {
+    //     $lookup: {
+    //       from: "partner_preferences",
+    //       localField: "_id",
+    //       foreignField: "user_id",
+    //       as: "theirPreferences"
+    //     }
+    //   },
+    //   { $unwind: { path: "$theirPreferences", preserveNullAndEmptyArrays: true } },
       
-      // Calculate match score based on multiple criteria
-      {
-        $addFields: {
-          ageInYears: { 
-            $floor: { 
-              $divide: [
-                { $subtract: [new Date(), "$dob"] }, 
-                31536000000 // ms in a year
-              ] 
-            } 
-          },
+    //   // Calculate match score based on multiple criteria
+    //   {
+    //     $addFields: {
+    //       ageInYears: { 
+    //         $floor: { 
+    //           $divide: [
+    //             { $subtract: [new Date(), "$dob"] }, 
+    //             31536000000 // ms in a year
+    //           ] 
+    //         } 
+    //       },
           
-          // Base match score calculations
-          ageMatchScore: {
-            $cond: {
-              if: { 
-                $and: [
-                  { $gte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] },
-                  { $lte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] }
-                ]
-              },
-              then: 20,
-              else: {
-                $max: [
-                  0,
-                  {
-                    $subtract: [
-                      20,
-                      {
-                        $min: [
-                          20,
-                          {
-                            $multiply: [
-                              2,
-                              {
-                                $min: [
-                                  { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] } },
-                                  { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] } }
-                                ]
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          },
+    //       // Base match score calculations
+    //       ageMatchScore: {
+    //         $cond: {
+    //           if: { 
+    //             $and: [
+    //               { $gte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] },
+    //               { $lte: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] }
+    //             ]
+    //           },
+    //           then: 20,
+    //           else: {
+    //             $max: [
+    //               0,
+    //               {
+    //                 $subtract: [
+    //                   20,
+    //                   {
+    //                     $min: [
+    //                       20,
+    //                       {
+    //                         $multiply: [
+    //                           2,
+    //                           {
+    //                             $min: [
+    //                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.min_age] } },
+    //                               { $abs: { $subtract: [{ $divide: [{ $subtract: [new Date(), "$dob"] }, 31536000000] }, userPreferences.max_age] } }
+    //                             ]
+    //                           }
+    //                         ]
+    //                       }
+    //                     ]
+    //                   }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       },
           
-          // Height match score
-          heightMatchScore: {
-            $cond: {
-              if: { 
-                $and: [
-                  { $gte: ["$heightInCm", userPreferences.min_height_in_cm] },
-                  { $lte: ["$heightInCm", userPreferences.max_height_in_cm] }
-                ]
-              },
-              then: 15,
-              else: {
-                $max: [
-                  0,
-                  {
-                    $subtract: [
-                      15,
-                      {
-                        $min: [
-                          15,
-                          {
-                            $divide: [
-                              {
-                                $min: [
-                                  { $abs: { $subtract: ["$heightInCm", userPreferences.min_height_in_cm] } },
-                                  { $abs: { $subtract: ["$heightInCm", userPreferences.max_height_in_cm] } }
-                                ]
-                              },
-                              5
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          },
+    //       // Height match score
+    //       heightMatchScore: {
+    //         $cond: {
+    //           if: { 
+    //             $and: [
+    //               { $gte: ["$heightInCm", userPreferences.min_height_in_cm] },
+    //               { $lte: ["$heightInCm", userPreferences.max_height_in_cm] }
+    //             ]
+    //           },
+    //           then: 15,
+    //           else: {
+    //             $max: [
+    //               0,
+    //               {
+    //                 $subtract: [
+    //                   15,
+    //                   {
+    //                     $min: [
+    //                       15,
+    //                       {
+    //                         $divide: [
+    //                           {
+    //                             $min: [
+    //                               { $abs: { $subtract: ["$heightInCm", userPreferences.min_height_in_cm] } },
+    //                               { $abs: { $subtract: ["$heightInCm", userPreferences.max_height_in_cm] } }
+    //                             ]
+    //                           },
+    //                           5
+    //                         ]
+    //                       }
+    //                     ]
+    //                   }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       },
           
-          // Religion match
-          religionMatchScore: {
-            $cond: { 
-              if: { $eq: ["$religion", userPreferences.religion] }, 
-              then: 15, 
-              else: 0 
-            }
-          },
+    //       // Religion match
+    //       religionMatchScore: {
+    //         $cond: { 
+    //           if: { $eq: ["$religion", userPreferences.religion] }, 
+    //           then: 15, 
+    //           else: 0 
+    //         }
+    //       },
           
-          // Mother tongue match
-          motherTongueMatchScore: {
-            $cond: { 
-              if: { $eq: ["$mother_tongue", userPreferences.mother_tongue] }, 
-              then: 10, 
-              else: 0 
-            }
-          },
+    //       // Mother tongue match
+    //       motherTongueMatchScore: {
+    //         $cond: { 
+    //           if: { $eq: ["$mother_tongue", userPreferences.mother_tongue] }, 
+    //           then: 10, 
+    //           else: 0 
+    //         }
+    //       },
           
-          // Marital status match
-          maritalStatusMatchScore: {
-            $cond: { 
-              if: { $eq: ["$marital_status", userPreferences.marital_status] }, 
-              then: 10, 
-              else: 0 
-            }
-          },
+    //       // Marital status match
+    //       maritalStatusMatchScore: {
+    //         $cond: { 
+    //           if: { $eq: ["$marital_status", userPreferences.marital_status] }, 
+    //           then: 10, 
+    //           else: 0 
+    //         }
+    //       },
           
-          // Education match
-          educationMatchScore: {
-            $cond: { 
-              if: { $eq: ["$highest_education", userPreferences.highest_education] }, 
-              then: 10, 
-              else: 0 
-            }
-          },
+    //       // Education match
+    //       educationMatchScore: {
+    //         $cond: { 
+    //           if: { $eq: ["$highest_education", userPreferences.highest_education] }, 
+    //           then: 10, 
+    //           else: 0 
+    //         }
+    //       },
           
-          // Employment match
-          employmentMatchScore: {
-            $cond: { 
-              if: { $eq: ["$employed_in", userPreferences.employed_in] }, 
-              then: 5, 
-              else: 0 
-            }
-          },
+    //       // Employment match
+    //       employmentMatchScore: {
+    //         $cond: { 
+    //           if: { $eq: ["$employed_in", userPreferences.employed_in] }, 
+    //           then: 5, 
+    //           else: 0 
+    //         }
+    //       },
           
-          // Add profile freshness boost
-          freshness: {
-            $let: {
-              vars: {
-                daysSinceCreation: { 
-                  $divide: [
-                    { $subtract: [new Date(), "$created_at"] }, 
-                    86400000 // ms in a day
-                  ] 
-                },
-                daysSinceUpdate: { 
-                  $divide: [
-                    { $subtract: [new Date(), "$updated_at"] }, 
-                    86400000 
-                  ] 
-                }
-              },
-              in: {
-                $sum: [
-                  // New profile boost (0-10 points)
-                  {
-                    $max: [
-                      0,
-                      { $subtract: [10, { $min: [10, "$$daysSinceCreation"] }] }
-                    ]
-                  },
-                  // Recently updated profile boost (0-5 points)
-                  {
-                    $max: [
-                      0,
-                      { $subtract: [5, { $min: [5, "$$daysSinceUpdate"] }] }
-                    ]
-                  }
-                ]
-              }
-            }
-          },
+    //       // Add profile freshness boost
+    //       freshness: {
+    //         $let: {
+    //           vars: {
+    //             daysSinceCreation: { 
+    //               $divide: [
+    //                 { $subtract: [new Date(), "$created_at"] }, 
+    //                 86400000 // ms in a day
+    //               ] 
+    //             },
+    //             daysSinceUpdate: { 
+    //               $divide: [
+    //                 { $subtract: [new Date(), "$updated_at"] }, 
+    //                 86400000 
+    //               ] 
+    //             }
+    //           },
+    //           in: {
+    //             $sum: [
+    //               // New profile boost (0-10 points)
+    //               {
+    //                 $max: [
+    //                   0,
+    //                   { $subtract: [10, { $min: [10, "$$daysSinceCreation"] }] }
+    //                 ]
+    //               },
+    //               // Recently updated profile boost (0-5 points)
+    //               {
+    //                 $max: [
+    //                   0,
+    //                   { $subtract: [5, { $min: [5, "$$daysSinceUpdate"] }] }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       },
           
-          // Add time-based rotation factor
-          rotationFactor: {
-            $switch: {
-              branches: [
-                // Morning profiles (6am-12pm)
-                {
-                  case: { $and: [
-                    { $gte: [currentHour, 6] },
-                    { $lt: [currentHour, 12] }
-                  ]},
-                  then: { $mod: [{ $add: ["$heightInCm", currentDay] }, 5] }
-                },
-                // Afternoon profiles (12pm-6pm)
-                {
-                  case: { $and: [
-                    { $gte: [currentHour, 12] },
-                    { $lt: [currentHour, 18] }
-                  ]},
-                  then: { $mod: [{ $add: [{ $strLenCP: "$fullName" }, currentDay] }, 5] }
-                },
-                // Evening profiles (6pm-12am)
-                {
-                  case: { $and: [
-                    { $gte: [currentHour, 18] },
-                    { $lt: [currentHour, 24] }
-                  ]},
-                  then: { $mod: [{ $add: [{ $strLenCP: "$city" }, currentDay] }, 5] }
-                },
-                // Night profiles (12am-6am)
-                {
-                  case: { $and: [
-                    { $gte: [currentHour, 0] },
-                    { $lt: [currentHour, 6] }
-                  ]},
-                  then: { $mod: [{ $add: [{ $strLenCP: "$occupation" }, currentDay] }, 5] }
-                }
-              ],
-              default: 0
-            }
-          },
+    //       // Add time-based rotation factor
+    //       rotationFactor: {
+    //         $switch: {
+    //           branches: [
+    //             // Morning profiles (6am-12pm)
+    //             {
+    //               case: { $and: [
+    //                 { $gte: [currentHour, 6] },
+    //                 { $lt: [currentHour, 12] }
+    //               ]},
+    //               then: { $mod: [{ $add: ["$heightInCm", currentDay] }, 5] }
+    //             },
+    //             // Afternoon profiles (12pm-6pm)
+    //             {
+    //               case: { $and: [
+    //                 { $gte: [currentHour, 12] },
+    //                 { $lt: [currentHour, 18] }
+    //               ]},
+    //               then: { $mod: [{ $add: [{ $strLenCP: "$fullName" }, currentDay] }, 5] }
+    //             },
+    //             // Evening profiles (6pm-12am)
+    //             {
+    //               case: { $and: [
+    //                 { $gte: [currentHour, 18] },
+    //                 { $lt: [currentHour, 24] }
+    //               ]},
+    //               then: { $mod: [{ $add: [{ $strLenCP: "$city" }, currentDay] }, 5] }
+    //             },
+    //             // Night profiles (12am-6am)
+    //             {
+    //               case: { $and: [
+    //                 { $gte: [currentHour, 0] },
+    //                 { $lt: [currentHour, 6] }
+    //               ]},
+    //               then: { $mod: [{ $add: [{ $strLenCP: "$occupation" }, currentDay] }, 5] }
+    //             }
+    //           ],
+    //           default: 0
+    //         }
+    //       },
           
-          // Add weekly rotation factor
-          weeklyBoost: {
-            $cond: {
-              if: { $eq: [{ $mod: [{ $add: [{ $strLenBytes: { $toString: "$_id" } }, currentWeek] }, 4] }, 0] },
-              then: 15,
-              else: 0
-            }
-          },
+    //       // Add weekly rotation factor
+    //       weeklyBoost: {
+    //         $cond: {
+    //           if: { $eq: [{ $mod: [{ $add: [{ $strLenBytes: { $toString: "$_id" } }, currentWeek] }, 4] }, 0] },
+    //           then: 15,
+    //           else: 0
+    //         }
+    //       },
           
-          // Add random factor for variety
-          randomBoost: { $multiply: [{ $rand: {} }, 5] }
-        }
-      },
+    //       // Add random factor for variety
+    //       randomBoost: { $multiply: [{ $rand: {} }, 5] }
+    //     }
+    //   },
       
-      // Calculate initial score (without the function-based components)
-      {
-        $addFields: {
-          initialScore: {
-            $add: [
-              "$ageMatchScore",
-              "$heightMatchScore",
-              "$religionMatchScore",
-              "$motherTongueMatchScore",
-              "$maritalStatusMatchScore", 
-              "$educationMatchScore",
-              "$employmentMatchScore",
-              "$freshness",
-              "$rotationFactor",
-              "$weeklyBoost",
-              "$randomBoost"
-            ]
-          }
-        }
-      },
+    //   // Calculate initial score (without the function-based components)
+    //   {
+    //     $addFields: {
+    //       initialScore: {
+    //         $add: [
+    //           "$ageMatchScore",
+    //           "$heightMatchScore",
+    //           "$religionMatchScore",
+    //           "$motherTongueMatchScore",
+    //           "$maritalStatusMatchScore", 
+    //           "$educationMatchScore",
+    //           "$employmentMatchScore",
+    //           "$freshness",
+    //           "$rotationFactor",
+    //           "$weeklyBoost",
+    //           "$randomBoost"
+    //         ]
+    //       }
+    //     }
+    //   },
       
-      // Sort by initial score (this will be refined in JavaScript)
-      { $sort: { initialScore: -1 } },
+    //   // Sort by initial score (this will be refined in JavaScript)
+    //   { $sort: { initialScore: -1 } },
       
-      // Get a larger batch than needed to allow for JavaScript post-processing
-      { $limit: limit * 3 },
+    //   // Get a larger batch than needed to allow for JavaScript post-processing
+    //   { $limit: limit * 3 },
       
-      // Project only necessary fields for the response
-      {
-        $project: {
-          _id: 1,
-          fullName: 1,
-          profile_image: 1,
-          age: "$ageInYears",
-          height: 1,
-          religion: 1,
-          caste: 1,
-          city: 1,
-          state: 1,
-          occupation: 1,
-          annual_income:1,
-          marital_status:1,
-          highest_education: 1,
-          initialScore: 1,
-          freshness: 1,
-          created_at: 1,
-          updated_at: 1
-        }
-      }
-    ];
+    //   // Project only necessary fields for the response
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       fullName: 1,
+    //       profile_image: 1,
+    //       age: "$ageInYears",
+    //       height: 1,
+    //       religion: 1,
+    //       caste: 1,
+    //       city: 1,
+    //       state: 1,
+    //       occupation: 1,
+    //       annual_income:1,
+    //       marital_status:1,
+    //       highest_education: 1,
+    //       initialScore: 1,
+    //       freshness: 1,
+    //       created_at: 1,
+    //       updated_at: 1
+    //     }
+    //   }
+    // ];
     
 //     // Execute aggregation
 //     let potentialMatches = await User.aggregate(pipeline);
