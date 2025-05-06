@@ -283,6 +283,17 @@ const matchedProfiles = async (req, res, next) => {
       { $unwind: { path: "$prefs", preserveNullAndEmptyArrays: true } },
       {
         $addFields: {
+          age: {
+            $dateDiff: {
+              startDate: "$dob",
+              endDate: "$$NOW",
+              unit: "year"
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
           ageScore: {
             $cond: {
               if: {
