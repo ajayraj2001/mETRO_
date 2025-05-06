@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { isValidObjectId } = mongoose;
 const { ApiError } = require("../../errorHandler");
 const asyncHandler = require("../../utils/asyncHandler");
-const {Connection , User} = require("../../models"); // Renamed model
+const { Connection, User } = require("../../models"); // Renamed model
 const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 
@@ -14,7 +14,7 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 //   const senderId = req.user._id;
 //   // const senderId = "67fcb57a240b92d1cbd38bd2";
 //   const { fullName, deviceToken, profile_image } = req.user;
-  
+
 //   // Validation
 //   if (!receiverId) {
 //     return next(new ApiError("Receiver ID is required", 400));
@@ -52,7 +52,7 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 //         existingConnection.status = status;
 //         existingConnection.updatedAt = Date.now();
 //         await existingConnection.save();
-        
+
 //         // Create notification for the original sender
 //         await Notification.create({
 //           user: existingConnection.sender,
@@ -227,10 +227,10 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     }
   } else {
     // No existing connection: Create new request
-    const newConnection = new Connection({ 
-      sender: senderId, 
+    const newConnection = new Connection({
+      sender: senderId,
       receiver: receiverId,
-      status: "Pending" 
+      status: "Pending"
     });
 
     await newConnection.save();
@@ -270,7 +270,7 @@ const getSentRequests = asyncHandler(async (req, res, next) => {
   page = parseInt(page);
   limit = parseInt(limit);
   const skip = (page - 1) * limit;
-  
+
   // Get requests sent by the user with pagination
   const [sentRequests, total] = await Promise.all([
     Connection.find({ sender: userId, status: "Pending" })

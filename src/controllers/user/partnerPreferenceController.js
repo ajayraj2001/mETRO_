@@ -352,6 +352,7 @@ const matchedProfiles = async (req, res, next) => {
           fullName: 1,
           profile_image: 1,
           age: 1,
+          dob: 1,
           totalScore: 1,
           height: 1,
           religion: 1,
@@ -434,12 +435,6 @@ const matchedProfiles = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: finalResults,
-      // pagination: {
-      //   total,
-      //   page,
-      //   pages: Math.ceil(total / limit),
-      //   hasMore: page < Math.ceil(total / limit)
-      // }
       pagination: {
         totalProfiles: total,
         currentPage: page,
