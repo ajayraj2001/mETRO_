@@ -148,13 +148,19 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   if (existingConnection) {
     // Check if already connected
     if (existingConnection.status === "Accepted") {
-      return next(new ApiError("You are already connected", 200));
+      return res.status(200).json({
+        success: true,
+        message: "You are already connected",
+      });
     }
 
     // Existing connection is Pending
     if (existingConnection.sender.toString() === senderId.toString()) {
       // Current user is the sender of the pending request
-      return next(new ApiError("You already have a pending request", 200));
+      return res.status(200).json({
+        success: true,
+        message: "You already have a pending request",
+      });
     } else {
       // Current user is the receiver of the pending request
       if (status) {
