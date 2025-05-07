@@ -37,7 +37,7 @@ const {
   canMessage
 } = require("../controllers/user/connectionController");
 
-const {getLanguages} = require("../controllers/user/languageController.js")
+const { getLanguages } = require("../controllers/user/languageController.js")
 
 const userRoute = require("express").Router();
 
@@ -65,7 +65,7 @@ userRoute.post("/country", getCountries);
 userRoute.post("/states", getStates);
 userRoute.post("/cities", getCities);
 
-userRoute.get("/profile", authenticateUser,  getProfile);   
+userRoute.get("/profile", authenticateUser, getProfile);
 userRoute.put("/profile", authenticateUser, updateProfile);
 
 userRoute.post("/deleteProfileImage", authenticateUser, deleteProfileImage);
@@ -96,8 +96,8 @@ userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility)
 
 // Liked User Profile
 userRoute.get("/like_user/:id", authenticateUser, likeUserProfile);
-userRoute.get("/get_liked_users", authenticateUser, getLikedUsers);
 userRoute.get("/unlike_user/:id", authenticateUser, unlikeUserProfile);
+userRoute.get("/get_liked_users", authenticateUser, getLikedUsers);
 
 // request user
 const { get_Follow_Data, send_Or_UpdateRequest, sent_Request_To, unsend_Request, got_Request_From, check_Status_For_Chatting } = require("../controllers/user/requestedUserController");
