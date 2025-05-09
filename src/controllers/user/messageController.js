@@ -16,7 +16,7 @@ const { ApiError } = require("../../errorHandler");
 //   // Check if the user has a valid subscription
 //   if (user.subscriptionExpiryDate && user.subscriptionExpiryDate > currentDate) obj.isSubscribed = true;
 //   else obj.isSubscribed = false;
-    
+
 //   obj.noOfFreeMessages = user.freeMessages;
 
 //   res.status(200).json({
@@ -191,7 +191,7 @@ const chatList = asyncHandler(async (req, res, next) => {
       { $skip: skip },
       { $limit: limit }
     ]),
-    
+
     Message.countDocuments({
       $or: [
         { sender: new mongoose.Types.ObjectId(userId) },
@@ -244,23 +244,23 @@ const chatList = asyncHandler(async (req, res, next) => {
 //     // If there are unread messages, mark them as read
 //     if (unreadMessageIds.length > 0) {
 //       console.log(`Marking ${unreadMessageIds.length} messages as read`);
-      
+
 //       // Update the messages in the database
 //       await Message.updateMany(
 //         { _id: { $in: unreadMessageIds } },
 //         { isRead: true, status: 'read' }
 //       );
-      
+
 //       // Also emit a socket event to notify the sender
 //       // This will be handled if you have socket.io available in this context
 //       // If not, you'll need to adjust your server architecture
 //       try {
 //         const io = req.app.get('socketio');
-        
+
 //         // Get the sender's socket ID from your users object
 //         const users = req.app.get('users') || {};
 //         const senderSocketId = users[receiverId]?.socketId;
-        
+
 //         if (io && senderSocketId) {
 //           io.to(senderSocketId).emit('messagesRead', {
 //             messageIds: unreadMessageIds,
@@ -302,9 +302,9 @@ const chatList = asyncHandler(async (req, res, next) => {
 // });
 
 
-const getChatMessages  = asyncHandler(async (req, res, next) => {
+const getChatMessages = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
-  const { id : receiverId } = req.params;
+  const { id: receiverId } = req.params;
   const { page = 1, limit = 15 } = req.query
 
   const pageNum = parseInt(page) || 1;
@@ -315,10 +315,9 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
     {
       sender: receiverId,
       recipient: senderId,
-      status: 'read',
       isRead: false, // Only update unread messages
     },
-    { isRead: true } // Set isRead to true
+    { isRead: true, status: 'read' }
   );
 
   const messages = await Message.find({
@@ -327,8 +326,8 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
       { sender: receiverId, recipient: senderId },
     ],
   })
-    .sort({ timestamp: -1 }) 
-    .skip((pageNum - 1) * limitNum) 
+    .sort({ timestamp: -1 })
+    .skip((pageNum - 1) * limitNum)
     .limit(limitNum)
     .exec();
 

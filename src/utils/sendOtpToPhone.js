@@ -24,7 +24,6 @@
 // module.exports = sendOTP;
 
 
-
 const axios = require("axios");
 
 const sendOTP = async (phone, otp) => {
