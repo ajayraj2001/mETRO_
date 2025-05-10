@@ -317,7 +317,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
       recipient: senderId,
       isRead: false, // Only update unread messages
     },
-    { isRead: true, status: 'read' }
+    { isRead: true }
   );
 
   const messages = await Message.find({
