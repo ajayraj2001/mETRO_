@@ -120,34 +120,65 @@ io.on("connection", (socket) => {
   });
 
   // When a user joins
-  socket.on("join", (userId) => {
-    if (userId) {
-      const isNewUser = !users[userId];
-      
-      // Store user's socket ID and status
-      users[userId] = { socketId: socket.id, status: "online" };
-      console.log(`User with ID ${userId} joined`);
+    // socket.on("join", (userId) => {
+    //   console.log("HIIII BABU")
+    //   if (userId) {
+    //     const isNewUser = !users[userId];
+        
+    //     // Store user's socket ID and status
+    //     users[userId] = { socketId: socket.id, status: "online" };
+    //     console.log(`User with ID ${userId} joined`);
 
-      // Notify others about the user's online status
-      socket.broadcast.emit("userStatus", { userId, status: "online" });
+    //     // Notify others about the user's online status
+    //     socket.broadcast.emit("userStatus", { userId, status: "online" });
 
-      // Send the new user the status of all currently online users
-      const onlineUsers = [];
-      for (const [id, user] of Object.entries(users)) {
-        if (id !== userId) { // Don't include the user themselves
-          onlineUsers.push({ userId: id, status: user.status });
-        }
+    //     // Send the new user the status of all currently online users
+    //     const onlineUsers = [];
+    //     console.log(users,"chke users ------")
+    //     for (const [id, user] of Object.entries(users)) {
+    //       if (id !== userId) { // Don't include the user themselves
+    //         onlineUsers.push({ userId: id, status: user.status });
+    //       }
+    //     }
+        
+    //     console.log("chle the users lenght", onlineUsers.length >0 , onlineUsers)
+    //     if (onlineUsers.length > 0) {
+    //       socket.emit("usersStatus", onlineUsers);
+    //       console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
+    //     }
+
+    //     // Check if there are any pending read receipts for this user
+    //     checkPendingReadReceipts(userId, socket.id, io);
+    //   }
+    // });
+
+    socket.on("join", (userId) => {
+  if (userId) {
+    // Store user's socket ID and status
+    users[userId] = { socketId: socket.id, status: "online" };
+    console.log(`User with ID ${userId} joined`);
+    
+    // IMPORTANT: Tell EVERYONE (including the new user) about this user's status
+    // This replaces socket.broadcast.emit with io.emit to include the sender
+    io.emit("userStatus", { userId, status: "online" });
+    
+    // Send the new user the status of ALL other online users
+    const onlineUsers = [];
+    for (const [id, user] of Object.entries(users)) {
+      if (id !== userId) {
+        onlineUsers.push({ userId: id, status: user.status });
       }
-      
-      if (onlineUsers.length > 0) {
-        socket.emit("usersStatus", onlineUsers);
-        console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
-      }
-
-      // Check if there are any pending read receipts for this user
-      checkPendingReadReceipts(userId, socket.id, io);
     }
-  });
+    
+    if (onlineUsers.length > 0) {
+      socket.emit("usersStatus", onlineUsers);
+      console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
+    }
+    
+    // Check pending read receipts as before
+    checkPendingReadReceipts(userId, socket.id, io);
+  }
+});
 
   // Handle individual user status check requests
   socket.on("checkUserStatus", (data) => {
