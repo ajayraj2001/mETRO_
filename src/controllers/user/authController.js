@@ -194,10 +194,14 @@ const login = async (req, res, next) => {
       if (!phone) return next(new ApiError("Phone is required.", 400));
 
       // Find the user by phone
-      const user = await User.findOne({ phone, active: true });
-      console.log('user', user)
+      const user = await User.findOne({ phone });
+
       if (user.permanentlyDeleted) {
         return next(new ApiError("This account has been permanently deleted. Please contact support.", 403));
+      }
+
+      if (!user || !user.active) {
+        return next(new ApiError("User not found with this number.", 403));
       }
 
       if (!user) return next(new ApiError("User not found with this number.", 403));
