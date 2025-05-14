@@ -195,7 +195,7 @@ const login = async (req, res, next) => {
 
       // Find the user by phone
       const user = await User.findOne({ phone, active: true });
-
+      console.log('user', user)
       if (user.permanentlyDeleted) {
         return next(new ApiError("This account has been permanently deleted. Please contact support.", 403));
       }
