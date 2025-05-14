@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     profile_for: { type: String, default: '' },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
+    permanentlyDeleted: { type: Boolean, default: false },
     living_with_family: {
       type: String,
       enum: ['Yes', 'No', ''],

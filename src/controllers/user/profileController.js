@@ -393,12 +393,13 @@ const deleteProfile = async (req, res, next) => {
     // Mark user as inactive and clear the profile_image array
     await User.findByIdAndUpdate(userId, {
       active: false,
+      permanentlyDeleted: true,
       profile_image: [],
     });
 
     return res.status(200).json({
       success: true,
-      message: "You have successfully deleted your profile and images.",
+      message: "You have successfully deleted your account",
     });
   } catch (error) {
     next(error);

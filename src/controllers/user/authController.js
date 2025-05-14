@@ -11,7 +11,6 @@ const signup = async (req, res, next) => {
   try {
     let { email, fullName, phone, profile_for } = req.body;
 
-    console.log('remail', email);
     // Validate required fields
     if (!email) return next(new ApiError("Email is required.", 400));
     if (!phone) return next(new ApiError("Phone is required.", 400));
@@ -34,6 +33,10 @@ const signup = async (req, res, next) => {
 
     // Check if the user exists by phone number
     let existingUser = await User.findOne({ phone: phone });
+
+    if (existingUser?.permanentlyDeleted) {
+      return next(new ApiError("This account has been permanently deleted. Please contact support.", 400));
+    }
 
     // If user exists and is active, return an error
     if (existingUser && existingUser.active) {
@@ -80,6 +83,10 @@ const signup = async (req, res, next) => {
     // Check if the email is already in use by another user (exclude the current user by _id)
     existingUser = await User.findOne({ email: email });
 
+    if (existingUser?.permanentlyDeleted) {
+      return next(new ApiError("This account has been permanently deleted. Please contact support.", 400));
+    }
+
     // if (existingUser && !existingUser._id.equals(existingUser._id)) {
     if (existingUser) {
       return next(new ApiError("This email is already registered with another account.", 400));
@@ -117,30 +124,6 @@ const signup = async (req, res, next) => {
     });
     // }
 
-    // If we reach here, it means the email belongs to the current user, but other fields need to be updated
-    // Update other fields as needed
-    // // existingUser.fullName = fullName.trim();
-    // // existingUser.phone = phone;
-
-    // // // Generate new OTP and set expiry
-    // // const otp = getOtp();
-    // // const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-
-    // // existingUser.otp = otp;
-    // // existingUser.otp_expiry = otpExpiry;
-
-    // // // Save the updated user to the database
-    // // await existingUser.save();
-
-    // // // Resend OTP
-    // // sendOTP(existingUser.phone, otp);
-
-    // // return res.status(200).json({
-    // //   success: true,
-    // //   message: `An OTP has been sent to the mobile ****${existingUser.phone.slice(
-    // //     -4
-    // //   )}.`,
-    // });
   } catch (error) {
     console.log("error", error);
     next(error);
@@ -212,6 +195,11 @@ const login = async (req, res, next) => {
 
       // Find the user by phone
       const user = await User.findOne({ phone, active: true });
+
+      if (user.permanentlyDeleted) {
+        return next(new ApiError("This account has been permanently deleted. Please contact support.", 403));
+      }
+
       if (!user) return next(new ApiError("User not found with this number.", 403));
 
       const otp = getOtp();
