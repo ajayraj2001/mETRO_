@@ -176,7 +176,13 @@ const chatList = asyncHandler(async (req, res, next) => {
           _id: 0,
           userId: '$_id',
           userName: '$user.fullName',
-          userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+          // userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+          userProfilePic: {
+            $ifNull: [
+              { $arrayElemAt: ['$user.profile_image', 0] },
+              ''
+            ]
+          },
           lastMessage: 1,
           lastMessageTime: 1,
           unreadCount: {
