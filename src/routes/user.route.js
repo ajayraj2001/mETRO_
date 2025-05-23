@@ -94,6 +94,18 @@ userRoute.get("/matchedProfiles", authenticateUser, matchedProfiles);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 
+const matchesController = require('../controllers/user/matchingController.js')
+
+// Home page data (combined data for all tabs)
+userRoute.get('/home', authenticateUser, matchesController.getHomePageData);
+
+// Individual tab APIs
+userRoute.get('/new-matches', authenticateUser, matchesController.getNewMatches);
+userRoute.get('/todays-matches', authenticateUser, matchesController.getTodaysMatches);
+userRoute.get('/my-matches', authenticateUser, matchesController.getMyMatches);
+userRoute.get('/near-me', authenticateUser, matchesController.getNearMeMatches);
+userRoute.get('/discovery', authenticateUser, matchesController.getDiscoveryMatches);
+
 // Liked User Profile
 userRoute.get("/like_user/:id", authenticateUser, likeUserProfile);
 userRoute.get("/unlike_user/:id", authenticateUser, unlikeUserProfile);
