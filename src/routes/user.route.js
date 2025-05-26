@@ -100,7 +100,7 @@ const matchesController = require('../controllers/user/matchingController.js')
 userRoute.get('/home', authenticateUser, matchesController.getHomePageData);
 
 // Individual tab APIs
-userRoute.get('/new-matches', authenticateUser, matchesController.getNewMatches);
+userRoute.get('/new_matches', authenticateUser, matchesController.getNewMatches);
 userRoute.get('/todays-matches', authenticateUser, matchesController.getTodaysMatches);
 userRoute.get('/my-matches', authenticateUser, matchesController.getMyMatches);
 userRoute.get('/near-me', authenticateUser, matchesController.getNearMeMatches);

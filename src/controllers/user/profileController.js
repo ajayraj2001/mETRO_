@@ -407,7 +407,6 @@ const deleteProfile = async (req, res, next) => {
   }
 };
 
-
 module.exports = {
   getCountries,
   getStates,
