@@ -258,8 +258,9 @@ const getTodaysMatches = async (req, res) => {
   try {
     const userId = req.user._id;
     const limit = parseInt(req.query.limit) || 15;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
 
-    // Fetch current user and preferences
     const [currentUser, userPreferences] = await Promise.all([
       User.findById(userId),
       PartnerPreferences.findOne({ user_id: userId }),
@@ -278,7 +279,6 @@ const getTodaysMatches = async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const dateSeed = today.toISOString().split('T')[0] + userId.toString();
 
-    // Hash generator for consistent daily score
     const createHash = (str) => {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -289,16 +289,13 @@ const getTodaysMatches = async (req, res) => {
       return Math.abs(hash);
     };
 
-    // Build initial strict query
+    // Initial Query
     let query = {
       _id: { $ne: userId },
       gender: genderFilter,
       profileStatus: 'Complete',
     };
 
-    // if (userPreferences.religion) query.religion = userPreferences.religion;
-    // if (!userPreferences.any_caste && currentUser.caste) query.caste = currentUser.caste;
-    // if (userPreferences.mother_tongue) query.mother_tongue = userPreferences.mother_tongue;
     if (userPreferences.marital_status) query.marital_status = userPreferences.marital_status;
 
     if (userPreferences.min_age && userPreferences.max_age) {
@@ -309,7 +306,7 @@ const getTodaysMatches = async (req, res) => {
       query.dob = { $gte: minDOB, $lte: maxDOB };
     }
 
-    // Relax criteria if not enough results
+    // Relaxation logic
     const relaxationSteps = [
       { criteria: 'mother_tongue', action: 'remove' },
       { criteria: 'caste', action: 'remove' },
@@ -338,15 +335,9 @@ const getTodaysMatches = async (req, res) => {
       relaxationIndex++;
     }
 
-    // Get liked users from Like model
-    const likedDocs = await Like.find({ sender: userId }).select('receiver');
-    const likedUserIds = likedDocs.map(doc => doc.receiver.toString());
-
-    // Fetch potential matches
-    let potentialMatches = await User.find(currentQuery)
-      // .select('_id fullName gender dob height heightInCm religion caste mother_tongue city state profile_image description occupation highest_education employed_in annual_income manglik profileStatus verifiedBadge subscriptionStatus')
+    // Get ALL matches first to sort and score
+    let allMatches = await User.find(currentQuery)
       .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
-      .limit(Math.min(200, matchCount))
       .lean();
 
     const specialTags = [
@@ -354,9 +345,8 @@ const getTodaysMatches = async (req, res) => {
       "Selected for you", "Great personality match", "Similar interests", "Compatible background"
     ];
 
-    // Enhance with age, daily score, liked status
-    potentialMatches = potentialMatches.map(match => {
-      // Age
+    // Add age, score, tag
+    let processedMatches = allMatches.map(match => {
       if (match.dob) {
         const birth = new Date(match.dob);
         let age = today.getFullYear() - birth.getFullYear();
@@ -376,15 +366,30 @@ const getTodaysMatches = async (req, res) => {
         match.specialTag = specialTags[tagIndex];
       }
 
-      match.liked = likedUserIds.includes(match._id.toString());
       return match;
     });
 
-    // Sort by finalScore and slice to limit
-    potentialMatches.sort((a, b) => b.finalScore - a.finalScore);
-    const todaysTopMatches = potentialMatches.slice(0, limit);
+    // Sort and paginate
+    processedMatches.sort((a, b) => b.finalScore - a.finalScore);
+    const totalCount = processedMatches.length;
+    const paginatedMatches = processedMatches.slice(skip, skip + limit);
 
-    // Midnight refresh countdown
+    // Get only LIKEs for shown users
+    const matchIds = paginatedMatches.map(u => u._id);
+    const likedDocs = await Like.find({
+      sender: userId,
+      receiver: { $in: matchIds }
+    }).select('receiver');
+
+    const likedUserIds = likedDocs.map(doc => doc.receiver.toString());
+
+    // Append liked status
+    const finalMatches = paginatedMatches.map(match => ({
+      ...match,
+      liked: likedUserIds.includes(match._id.toString())
+    }));
+
+    // Refresh time
     const now = new Date();
     const midnight = new Date(now);
     midnight.setDate(midnight.getDate() + 1);
@@ -397,7 +402,13 @@ const getTodaysMatches = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        matches: todaysTopMatches,
+        matches: finalMatches,
+        pagination: {
+          total: totalCount,
+          page,
+          pages: Math.ceil(totalCount / limit),
+          limit
+        },
         refreshBehavior: {
           refreshType: "daily",
           refreshInfo: "New selection every day at midnight"
@@ -420,6 +431,7 @@ const getTodaysMatches = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Get My Matches - Most compatible profiles with rotation strategy
@@ -990,6 +1002,7 @@ const getNearMeMatches = async (req, res) => {
         pagination: {
           total: results.length,
           page,
+          pages: Math.ceil(results.length / limit),
           limit,
           expandedRadiusInKm: expandedDistance / 1000,
           expansionLevel: expansionCount
