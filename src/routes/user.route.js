@@ -101,9 +101,9 @@ userRoute.get('/home', authenticateUser, matchesController.getHomePageData);
 
 // Individual tab APIs
 userRoute.get('/new_matches', authenticateUser, matchesController.getNewMatches);
-userRoute.get('/todays-matches', authenticateUser, matchesController.getTodaysMatches);
-userRoute.get('/my-matches', authenticateUser, matchesController.getMyMatches);
-userRoute.get('/near-me', authenticateUser, matchesController.getNearMeMatches);
+userRoute.get('/today_matches', authenticateUser, matchesController.getTodaysMatches);
+userRoute.get('/my_matches', authenticateUser, matchesController.getMyMatches);
+userRoute.get('/near_me', authenticateUser, matchesController.getNearMeMatches);
 userRoute.get('/discovery', authenticateUser, matchesController.getDiscoveryMatches);
 
 // Liked User Profile

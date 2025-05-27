@@ -107,6 +107,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
+userSchema.index({ location: '2dsphere' });
 
 //for subscription
 // userSchema.index({ verifiedBadge: -1, created_at: -1 });
