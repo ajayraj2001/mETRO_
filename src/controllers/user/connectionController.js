@@ -2,119 +2,10 @@ const mongoose = require("mongoose");
 const { isValidObjectId } = mongoose;
 const { ApiError } = require("../../errorHandler");
 const asyncHandler = require("../../utils/asyncHandler");
-const { Connection, User } = require("../../models"); // Renamed model
+const { Connection, User, Report } = require("../../models"); // Renamed model
 const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
-
-/**
- * Send a connection request or update an existing one
- */
-// const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
-//   const { receiverId, status } = req.body;
-//   const senderId = req.user._id;
-//   // const senderId = "67fcb57a240b92d1cbd38bd2";
-//   const { fullName, deviceToken, profile_image } = req.user;
-
-//   // Validation
-//   if (!receiverId) {
-//     return next(new ApiError("Receiver ID is required", 400));
-//   }
-
-//   if (senderId.toString() === receiverId.toString()) {
-//     return next(new ApiError("You cannot send a request to yourself", 403));
-//   }
-
-//   // Check if the receiver exists
-//   const receiver = await User.findById(receiverId);
-//   if (!receiver) {
-//     return next(new ApiError("Receiver not found", 404));
-//   }
-
-//   // Find existing connection between these users (in either direction)
-//   const existingConnection = await Connection.findOne({
-//     $or: [
-//       { sender: senderId, receiver: receiverId },
-//       { sender: receiverId, receiver: senderId }
-//     ]
-//   });
-
-//   // If updating an existing connection
-//   if (existingConnection) {
-//     // Only receiver can accept/decline a request
-//     if (status && existingConnection.sender.toString() !== senderId.toString()) {
-//       if (status === "Declined") {
-//         await Connection.findByIdAndDelete(existingConnection._id);
-//         return res.status(200).json({
-//           success: true,
-//           message: "Connection request declined",
-//         });
-//       } else if (status === "Accepted") {
-//         existingConnection.status = status;
-//         existingConnection.updatedAt = Date.now();
-//         await existingConnection.save();
-
-//         // Create notification for the original sender
-//         await Notification.create({
-//           user: existingConnection.sender,
-//           title: "Connection Request Accepted",
-//           message: `${fullName} has accepted your connection request`,
-//           pic: profile_image,
-//         });
-
-//         // Send push notification
-//         await sendFirebaseNotification(
-//           receiver.deviceToken,
-//           "Connection Request Accepted",
-//           `${fullName} has accepted your connection request`
-//         );
-
-//         return res.status(200).json({
-//           success: true,
-//           message: "Connection request accepted",
-//         });
-//       }
-//     } else if (existingConnection.sender.toString() === senderId.toString() && 
-//               existingConnection.status === "Pending") {
-//       // Sender can cancel their own pending request
-//       await Connection.findByIdAndDelete(existingConnection._id);
-//       return res.status(200).json({
-//         success: true,
-//         message: "Connection request cancelled",
-//       });
-//     } else {
-//       return next(new ApiError("You cannot modify this connection", 403));
-//     }
-//   } else {
-//     // Create new connection request
-//     const newConnection = new Connection({ 
-//       sender: senderId, 
-//       receiver: receiverId,
-//       status: "Pending" 
-//     });
-
-//     await newConnection.save();
-
-//     // Create notification
-//     await Notification.create({
-//       user: receiverId,
-//       title: "New Connection Request",
-//       message: `${fullName} has sent you a connection request`,
-//       pic: profile_image
-//     });
-
-//     // Send push notification
-//     await sendFirebaseNotification(
-//       receiver.deviceToken,
-//       "New Connection Request",
-//       `${fullName} has sent you a connection request`
-//     );
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Connection request sent successfully",
-//     });
-//   }
-// });
+const { getFileUploader } = require("../../middlewares/fileUpload")
 
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const { receiverId, status } = req.body;
@@ -131,10 +22,27 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   }
 
   // Check if the receiver exists
-  const receiver = await User.findById(receiverId);
-  if (!receiver) {
-    return next(new ApiError("Receiver not found", 404));
+  // const receiver = await User.findById(receiverId);
+  // if (!receiver) {
+  //   return next(new ApiError("Receiver not found", 404));
+  // }
+
+
+  // 🔒 Check if either user has blocked the other
+  const blockedConnection = await Connection.findOne({
+    $or: [
+      { sender: senderId, receiver: receiverId, status: "Blocked" },
+      { sender: receiverId, receiver: senderId, status: "Blocked" }
+    ]
+  });
+
+  if (blockedConnection) {
+    return res.status(403).json({
+      success: false,
+      message: "Connection request not allowed. One of the users has blocked the other.",
+    });
   }
+
 
   // Find existing connection between these users (in either direction)
   const existingConnection = await Connection.findOne({
@@ -459,11 +367,82 @@ const canMessage = asyncHandler(async (req, res, next) => {
   });
 });
 
+const blockUser = asyncHandler(async (req, res, next) => {
+  const senderId = req.user._id;
+  const { receiverId } = req.body;
+
+  if (!receiverId || senderId.toString() === receiverId) {
+    return next(new ApiError("Invalid receiver ID", 400));
+  }
+
+  // Remove any existing connections
+  await Connection.deleteMany({
+    $or: [
+      { sender: senderId, receiver: receiverId },
+      { sender: receiverId, receiver: senderId }
+    ]
+  });
+
+  // Add block record
+  const block = new Connection({
+    sender: senderId,
+    receiver: receiverId,
+    status: "Blocked"
+  });
+  await block.save();
+
+  res.status(200).json({ success: true, message: "User blocked successfully" });
+});
+
+
+const reportUpload = getFileUploader("evidence", "reports");
+
+const reportUser = (req, res, next) => {
+  reportUpload(req, res, async (err) => {
+    try {
+      if (err) throw new ApiError(err.message, 400);
+
+      const reporter = req.user._id;
+      const { reportedUser, reason } = req.body;
+
+      if (!reportedUser || !reason) {
+        return next(new ApiError("Reported user and reason are required", 400));
+      }
+
+      let imgPath = ''
+
+      if (req.file) {
+        imgPath = `/reports/${req.file.filename}`;
+      }
+
+      const report = new Report({
+        reporter,
+        reportedUser,
+        reason,
+        evidence: imgPath,
+      });
+
+      await report.save();
+
+      return res.status(201).json({
+        success: true,
+        message: "User reported successfully",
+        data: report
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+};
+
+
 module.exports = {
   sendOrUpdateRequest,
   getSentRequests,
   getReceivedRequests,
   cancelRequest,
   getConnections,
-  canMessage
+  canMessage,
+  blockUser,
+  reportUser
 };

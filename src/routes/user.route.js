@@ -34,7 +34,9 @@ const {
   getReceivedRequests,
   cancelRequest,
   getConnections,
-  canMessage
+  canMessage,
+  blockUser,
+  reportUser,
 } = require("../controllers/user/connectionController");
 
 const { getLanguages } = require("../controllers/user/languageController.js")
@@ -128,7 +130,9 @@ userRoute.get("/connections", authenticateUser, getConnections);
 userRoute.get("/connections/sent", authenticateUser, getSentRequests);
 userRoute.get("/connections/received", authenticateUser, getReceivedRequests);
 userRoute.delete("/connections/:connectionId", authenticateUser, cancelRequest);
-userRoute.get("/connections/can-message/:otherUserId", authenticateUser, canMessage);
+userRoute.get("/connections/can_message/:otherUserId", authenticateUser, canMessage);
+userRoute.post("/connections/block", authenticateUser, blockUser);
+userRoute.post("/connections/report", authenticateUser, reportUser);
 
 
 // Subscription Plans

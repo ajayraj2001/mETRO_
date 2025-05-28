@@ -136,7 +136,6 @@ const partnerPreferences = async (req, res, next) => {
       });
     } else {
       // Create a new document
-      console.log('req/nodfu ', req.body)
       if (
         !min_age ||
         !max_age ||
