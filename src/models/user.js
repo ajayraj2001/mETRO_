@@ -79,10 +79,23 @@ const userSchema = new mongoose.Schema(
     preferenceStatus: { type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
     deviceId: { type: String, default: '' },
     deviceToken: { type: String, default: '' },
+    // location: {
+    //   type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
+    //   coordinates: { type: [Number] } // , required: true
+    // },
+
     location: {
-      type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
-      coordinates: { type: [Number] } // , required: true
-    },
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0], // Safe placeholder to prevent MongoDB error
+      },
+    }
+
 
     // Add these fields to the User schema  -- suscription purpose
     verifiedBadge: { type: Boolean, default: false },
