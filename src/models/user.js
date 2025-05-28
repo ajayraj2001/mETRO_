@@ -94,7 +94,7 @@ const userSchema = new mongoose.Schema(
         type: [Number],
         default: [0, 0], // Safe placeholder to prevent MongoDB error
       },
-    }
+    },
 
 
     // Add these fields to the User schema  -- suscription purpose
