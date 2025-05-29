@@ -422,10 +422,10 @@ const reportUser = (req, res, next) => {
       });
 
       await report.save();
-      console.log('hey buddy yehs kuar m jnjkhjvj')
-      return res.status(200).json({
-        khan: true,
-        message: "User reported successfully by ajay raja ",
+
+      return res.status(201).json({
+        success: true,
+        message: "User reported successfully",
         data: report
       });
     } catch (error) {
