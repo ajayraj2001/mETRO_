@@ -173,7 +173,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 /**
  * Get all requests sent by the current user
  */
@@ -423,7 +422,7 @@ const reportUser = (req, res, next) => {
       });
 
       await report.save();
-
+      console.log('hey buddy yehs kuar m jnjkhjvj')
       return res.status(201).json({
         success: true,
         message: "User reported successfully",
@@ -434,7 +433,6 @@ const reportUser = (req, res, next) => {
     }
   });
 };
-
 
 module.exports = {
   sendOrUpdateRequest,
