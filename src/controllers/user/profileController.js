@@ -82,9 +82,6 @@ const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id)
       .select("-password")
-    // .populate("mother_tongue", "name")
-    // .populate("highest_education", "name")
-    // .populate("occupation", "name")
 
     if (!user) {
       return res.status(404).json({
@@ -139,7 +136,6 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       console.log('Update Profile Request Body:', req.body);
-      console.log('Update Profile Files:', req.files);
 
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, country, state, stateCode, city, longitude, latitude, heightInCm,
@@ -148,11 +144,10 @@ const updateProfile = async (req, res, next) => {
       let min_salary, max_salary
       if (annual_income) {
         [min_salary, max_salary] = parseAnnualIncome(annual_income);
-        console.log('Calculated Salary Range:', { min_salary, max_salary });
       }
 
       const user = await User.findById(userId).select("-password");
-      console.log('Found User:', user ? 'Yes' : 'No');
+
 
       if (!user) {
         return res.status(404).json({
@@ -334,7 +329,6 @@ const deleteProfileImage = async (req, res, next) => {
     const userId = req.user._id;
     const { imageIndex } = req.body;
 
-    console.log('req.body', imageIndex)
     const user = await User.findById(userId).select("id  profile_image");
 
     if (!user) {
@@ -374,7 +368,6 @@ const deleteProfile = async (req, res, next) => {
   const userId = req.user._id;
 
   try {
-    console.log('hey uddy mdeete acoacunt')
     const user = await User.findById(userId).select("profile_image");
 
     if (!user) {
