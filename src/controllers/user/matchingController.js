@@ -174,6 +174,23 @@ const getNewMatches = async (req, res) => {
       }
     }
 
+
+    // ==== ✨ CHANGE: Added Age calculation logic ====
+    const today = new Date();
+    matches = matches.map(match => {
+      if (match.dob) {
+        const birthDate = new Date(match.dob);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        match.age = age; // ✅ Add age field
+      }
+      return match;
+    });
+    // ==== ✅ END of Age block ====
+
     // Calculate match percentage and process matches
     // const processedMatches = matches.map(match => {
     //   // Calculate match percentage
