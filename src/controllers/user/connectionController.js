@@ -399,7 +399,7 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
   const blockedConnections = await Connection.find({
     sender: userId,
     status: "Blocked"
-  }).populate("receiver", "fullName profilePhoto _id"); // Adjust fields as needed
+  }).populate("receiver", "fullName profile_image"); // Adjust fields as needed
 
   const blockedUsers = blockedConnections.map(conn => conn.receiver);
 
