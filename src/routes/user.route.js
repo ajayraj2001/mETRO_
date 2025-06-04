@@ -136,7 +136,7 @@ userRoute.get("/connections/can_message/:otherUserId", authenticateUser, canMess
 userRoute.post("/connections/block", authenticateUser, blockUser);
 userRoute.post("/connections/report", authenticateUser, reportUser);
 userRoute.post("/connections/unblock", authenticateUser, unblockUser);
-userRoute.post("/connections/getBlockedUsers", authenticateUser, getBlockedUsers);
+userRoute.get("/connections/getBlockedUsers", authenticateUser, getBlockedUsers);
 
 
 // Subscription Plans
