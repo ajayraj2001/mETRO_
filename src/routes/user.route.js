@@ -82,7 +82,7 @@ const subscriptionController = require('../controllers/user/purchaseSubscription
 // Public routes
 userRoute.post('/webhook', subscriptionController.webhookHandler);
 
-userRoute.get('/vedic_match/:matchUserId', matchWithVedicAstro);
+userRoute.get('/vedic_match/:matchUserId', authenticateUser, matchWithVedicAstro);
 
 // Protected routes (require authentication)
 userRoute.get('/plans', subscriptionController.getSubscriptionPlans);

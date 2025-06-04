@@ -3,7 +3,7 @@ const User = require("../../models/user");
 const asyncHandler = require('express-async-handler');
 
 const matchWithVedicAstro = asyncHandler(async (req, res, next) => {
-    const loggedInUserId = "684014b36744f3d2a66f736d";
+    const loggedInUserId = req.user._id;
     const { matchUserId } = req.params;
 
     if (!matchUserId) {
