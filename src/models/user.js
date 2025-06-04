@@ -79,10 +79,10 @@ const userSchema = new mongoose.Schema(
     preferenceStatus: { type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
     deviceId: { type: String, default: '' },
     deviceToken: { type: String, default: '' },
-    // location: {
-    //   type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
-    //   coordinates: { type: [Number] } // , required: true
-    // },
+    birthplace: { type: String, default: '' },
+    birth_long: { type: String, default: '' },
+    birth_lat: { type: String, default: '' },
+    birth_time: { type: String, default: '' },
 
     location: {
       type: {
