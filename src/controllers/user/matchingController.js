@@ -99,7 +99,7 @@ const getNewMatches = async (req, res) => {
   try {
     const userId = req.user._id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
 
     // Get current user and preferences
@@ -257,7 +257,7 @@ const getNewMatches = async (req, res) => {
 const getTodaysMatches = async (req, res) => {
   try {
     const userId = req.user._id;
-    const limit = parseInt(req.query.limit) || 15;
+    const limit = parseInt(req.query.limit) || 9;
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * limit;
 
@@ -446,7 +446,7 @@ const getMyMatches = async (req, res) => {
   try {
     const userId = req.user._id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
     const sortBy = req.query.sortBy || 'relevance';
 
@@ -862,7 +862,7 @@ const getNearMeMatches = async (req, res) => {
   try {
     const userId = req.user._id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
     let maxDistance = parseInt(req.query.distance) || 100; // in km
 
@@ -1041,7 +1041,7 @@ const getDiscoveryMatches = async (req, res) => {
   try {
     const userId = req.user._id;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
 
     // Generate a session seed for consistent yet varied results

@@ -393,6 +393,48 @@ const blockUser = asyncHandler(async (req, res, next) => {
   res.status(200).json({ success: true, message: "User blocked successfully" });
 });
 
+const getBlockedUsers = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+
+  const blockedConnections = await Connection.find({
+    sender: userId,
+    status: "Blocked"
+  }).populate("receiver", "fullName profilePhoto _id"); // Adjust fields as needed
+
+  const blockedUsers = blockedConnections.map(conn => conn.receiver);
+
+  res.status(200).json({
+    success: true,
+    data: blockedUsers
+  });
+});
+
+
+const unblockUser = asyncHandler(async (req, res, next) => {
+  const senderId = req.user._id;
+  const { receiverId } = req.body;
+
+  if (!receiverId) {
+    return next(new ApiError("Receiver ID is required", 400));
+  }
+
+  const deleted = await Connection.findOneAndDelete({
+    sender: senderId,
+    receiver: receiverId,
+    status: "Blocked"
+  });
+
+  if (!deleted) {
+    return next(new ApiError("No block found for this user", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User unblocked successfully"
+  });
+});
+
+
 
 const reportUpload = getFileUploader("evidence", "reports");
 
@@ -442,5 +484,7 @@ module.exports = {
   getConnections,
   canMessage,
   blockUser,
-  reportUser
+  reportUser,
+  getBlockedUsers,
+  unblockUser
 };

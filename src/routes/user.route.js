@@ -37,6 +37,8 @@ const {
   canMessage,
   blockUser,
   reportUser,
+  getBlockedUsers,
+  unblockUser
 } = require("../controllers/user/connectionController");
 
 const { getLanguages } = require("../controllers/user/languageController.js")
@@ -133,6 +135,8 @@ userRoute.delete("/connections/:connectionId", authenticateUser, cancelRequest);
 userRoute.get("/connections/can_message/:otherUserId", authenticateUser, canMessage);
 userRoute.post("/connections/block", authenticateUser, blockUser);
 userRoute.post("/connections/report", authenticateUser, reportUser);
+userRoute.post("/connections/unblock", authenticateUser, unblockUser);
+userRoute.post("/connections/getBlockedUsers", authenticateUser, getBlockedUsers);
 
 
 // Subscription Plans
