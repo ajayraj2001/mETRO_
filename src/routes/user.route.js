@@ -41,6 +41,7 @@ const {
   unblockUser
 } = require("../controllers/user/connectionController");
 
+const { matchWithVedicAstro } = require('../controllers/user/vedhicController.js')
 const { getLanguages } = require("../controllers/user/languageController.js")
 
 const userRoute = require("express").Router();
@@ -80,6 +81,8 @@ const subscriptionController = require('../controllers/user/purchaseSubscription
 
 // Public routes
 userRoute.post('/webhook', subscriptionController.webhookHandler);
+
+userRoute.get('/vedic_match/:matchUserId', matchWithVedicAstro);
 
 // Protected routes (require authentication)
 userRoute.get('/plans', subscriptionController.getSubscriptionPlans);
