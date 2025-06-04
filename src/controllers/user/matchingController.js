@@ -230,6 +230,7 @@ const getNewMatches = async (req, res) => {
         pagination: {
           total: totalCount,
           page,
+          hasNextPages: page < Math.ceil(totalCount / limit),
           pages: Math.ceil(totalCount / limit),
           limit
         },
@@ -406,6 +407,7 @@ const getTodaysMatches = async (req, res) => {
         pagination: {
           total: totalCount,
           page,
+          hasNextPages: page < Math.ceil(totalCount / limit),
           pages: Math.ceil(totalCount / limit),
           limit
         },
@@ -643,6 +645,7 @@ const getMyMatches = async (req, res) => {
           total: totalCount,
           page,
           pages: Math.ceil(totalCount / limit),
+          hasNextPages: page < Math.ceil(totalCount / limit),
           limit
         },
         sessionId: sessionId,
@@ -1002,6 +1005,7 @@ const getNearMeMatches = async (req, res) => {
         pagination: {
           total: results.length,
           page,
+          hasNextPages: page < Math.ceil(results / limit),
           pages: Math.ceil(results.length / limit),
           limit,
           expandedRadiusInKm: expandedDistance / 1000,
@@ -1213,6 +1217,7 @@ const getDiscoveryMatches = async (req, res) => {
           total: totalCount,
           premiumTotal: premiumCount,
           page,
+          hasNextPages: page < Math.ceil(totalCount / limit),
           pages: Math.ceil(totalCount / limit),
           limit
         },
