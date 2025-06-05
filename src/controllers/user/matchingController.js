@@ -395,8 +395,8 @@ const getTodaysMatches = async (req, res) => {
     // Get only LIKEs for shown users
     const matchIds = paginatedMatches.map(u => u._id);
     const likedDocs = await Like.find({
-      sender: userId,
-      receiver: { $in: matchIds }
+      user: userId,
+      userLikedTo: { $in: matchIds }
     }).select('receiver');
 
     const likedUserIds = likedDocs.map(doc => doc.receiver.toString());
@@ -640,10 +640,12 @@ const getMyMatches = async (req, res) => {
     const paginatedMatches = matchesWithMeta.slice(skip, skip + limit);
     const matchIds = paginatedMatches.map(m => m._id);
 
+    console.log('matchIds', matchIds)
+
     // Fetch liked info only for visible matches
     const likedDocs = await Like.find({
-      sender: userId,
-      receiver: { $in: matchIds }
+      user: userId,
+      userLikedTo: { $in: matchIds }
     }).select('receiver');
 
     const likedIds = likedDocs.map(like => like.receiver.toString());
@@ -971,8 +973,8 @@ const getNearMeMatches = async (req, res) => {
 
     const matchIds = results.map(match => match._id);
     const likedDocs = await Like.find({
-      sender: userId,
-      receiver: { $in: matchIds }
+      user: userId,
+      userLikedTo: { $in: matchIds }
     }).select('receiver');
     const likedUserIds = new Set(likedDocs.map(doc => doc.receiver.toString()));
 
