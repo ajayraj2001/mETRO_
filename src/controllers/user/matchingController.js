@@ -399,7 +399,7 @@ const getTodaysMatches = async (req, res) => {
       userLikedTo: { $in: matchIds }
     }).select('receiver');
 
-    const likedUserIds = likedDocs.map(doc => doc.receiver.toString());
+    const likedUserIds = likedDocs.map(doc => doc.userLikedTo.toString());
 
     // Append liked status
     const finalMatches = paginatedMatches.map(match => ({
@@ -640,15 +640,13 @@ const getMyMatches = async (req, res) => {
     const paginatedMatches = matchesWithMeta.slice(skip, skip + limit);
     const matchIds = paginatedMatches.map(m => m._id);
 
-    console.log('matchIds', matchIds)
-
     // Fetch liked info only for visible matches
     const likedDocs = await Like.find({
       user: userId,
       userLikedTo: { $in: matchIds }
     }).select('receiver');
 
-    const likedIds = likedDocs.map(like => like.receiver.toString());
+    const likedIds = likedDocs.map(like => like.userLikedTo.toString());
 
     // Add `liked` flag
     paginatedMatches.forEach(match => {
@@ -976,7 +974,7 @@ const getNearMeMatches = async (req, res) => {
       user: userId,
       userLikedTo: { $in: matchIds }
     }).select('receiver');
-    const likedUserIds = new Set(likedDocs.map(doc => doc.receiver.toString()));
+    const likedUserIds = new Set(likedDocs.map(doc => doc.userLikedTo.toString()));
 
     const matchesWithDetails = results.map(match => {
       // Age
