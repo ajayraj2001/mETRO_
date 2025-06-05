@@ -327,5 +327,5 @@ const getChatThread = asyncHandler(async (req, res, next) => {
 
 module.exports = {
   chatList,
-  getChatMessages
+  getChatThread
 };

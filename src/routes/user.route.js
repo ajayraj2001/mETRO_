@@ -10,7 +10,7 @@ const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPla
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
 // const { createTransaction, transactionWebhook } = require("../controllers/user/purchaseSubscriptionController");
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
-const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
+const { chatList, getChatThread } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
@@ -156,7 +156,7 @@ userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 // chat message
 //userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
 userRoute.get("/chat_list", authenticateUser, chatList);
-userRoute.get("/get_messages/:id", authenticateUser, getChatMessages);
+userRoute.get("/get_messages/:id", authenticateUser, getChatThread);
 
 // Faqs
 userRoute.get("/get_faqs", authenticateUser, getFaqs);
