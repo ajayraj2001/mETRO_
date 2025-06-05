@@ -396,18 +396,44 @@ const blockUser = asyncHandler(async (req, res, next) => {
 const getBlockedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
+  // Pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get total count of blocked users
+  const totalBlocked = await Connection.countDocuments({
+    sender: userId,
+    status: "Blocked"
+  });
+
+  // Get paginated blocked users sorted by most recent
   const blockedConnections = await Connection.find({
     sender: userId,
     status: "Blocked"
-  }).populate("receiver", "fullName profile_image"); // Adjust fields as needed
+  })
+    .populate("receiver", "fullName profile_image") // Add more fields if needed
+    .sort({ createdAt: -1 }) // 🔄 Most recently blocked users first
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
+  // Extract user info
   const blockedUsers = blockedConnections.map(conn => conn.receiver);
 
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
-    data: blockedUsers
+    data: blockedUsers,
+    pagination: {
+      total: totalBlocked,
+      page,
+      pages: Math.ceil(totalBlocked / limit),
+      limit,
+      hasNextPages: page < Math.ceil(totalBlocked / limit),
+    }
   });
 });
+
 
 
 const unblockUser = asyncHandler(async (req, res, next) => {
