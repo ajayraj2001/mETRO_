@@ -13,11 +13,10 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
   // Create a new like
   const like = new Like({ user, userLikedTo });
   await like.save();
-  console.log('get liked user api ', like)
 
   await Notification.create({
-    user : userLikedTo, 
-    title : "Profile Liked",
+    user: userLikedTo,
+    title: "Profile Liked",
     message: `${fullName} has liked your profile.`,
     pic: profile_image
   });
@@ -32,14 +31,22 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 
 // Get all users that a specific user has liked
 const getLikedUsers = asyncHandler(async (req, res, next) => {
-  console.log('get like user APi')
-  const user = req.user._id;
-  console.log('get like user APi---------user', user)
+  const userId = req.user._id;
+  const { page = 1, limit = 20 } = req.query;
 
-  const likedUsers = await Like.find({ user })
-  .sort({ _id: -1 }) // Sort by newest first using indexed _id field
-  .populate("userLikedTo", "fullName profile_image");
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
 
+  const [likedUsers, totalCount] = await Promise.all([
+    Like.find({ user: userId })
+      .sort({ createdAt: -1 }) // latest first
+      .skip(skip)
+      .limit(limitNum)
+      .populate("userLikedTo", "fullName profile_image"),
+
+    Like.countDocuments({ user: userId })
+  ]);
 
   if (!likedUsers || likedUsers.length === 0) {
     return next(new ApiError("No liked users found for this user.", 404));
@@ -49,8 +56,15 @@ const getLikedUsers = asyncHandler(async (req, res, next) => {
     success: true,
     message: "Liked users fetched successfully.",
     data: likedUsers,
+    pagination: {
+      total: totalCount,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalCount / limitNum),
+      perPage: limitNum,
+    },
   });
 });
+
 
 // const getLikedUsers = asyncHandler(async (req, res, next) => {
 //   const user = req.user._id;
@@ -88,7 +102,7 @@ const getLikedUsers = asyncHandler(async (req, res, next) => {
 // const unlikeUserProfile = asyncHandler(async (req, res, next) => {
 //   const { id: userLikedTo } = req.params;
 //   const user = req.user._id;
-  
+
 
 //   const like = await Like.findOneAndDelete({ user, userLikedTo });
 
