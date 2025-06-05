@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { User, Message } = require("../../models");
+const { User, Message, Connection } = require("../../models");
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 

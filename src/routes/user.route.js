@@ -156,7 +156,7 @@ userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 // chat message
 //userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
 userRoute.get("/chat_list", authenticateUser, chatList);
-userRoute.get("/get_messages/:id", authenticateUser, getChatThread);
+userRoute.get("/get_messages/:otherUserId", authenticateUser, getChatThread);
 
 // Faqs
 userRoute.get("/get_faqs", authenticateUser, getFaqs);
