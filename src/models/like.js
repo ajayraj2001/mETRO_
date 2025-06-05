@@ -7,5 +7,7 @@ const LikeSchema = new Schema({
   createdAt: { type: Date, default: () => new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000) }
 });
 
+LikeSchema.index({ user: 1, userLikedTo: 1 }, { unique: true });
+
 const Like = mongoose.model('Like', LikeSchema);
 module.exports = Like;

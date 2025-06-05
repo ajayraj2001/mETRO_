@@ -3,31 +3,65 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 
+// const likeUserProfile = asyncHandler(async (req, res, next) => {
+//   const { id: userLikedTo } = req.params;
+//   const user = req.user._id;
+//   const { fullName, profile_image } = req.user;
+
+//   // const likedUser = await User.findById(userLikedTo);
+
+//   // Create a new like
+//   const like = new Like({ user, userLikedTo });
+//   await like.save();
+
+//   await Notification.create({
+//     user: userLikedTo,
+//     title: "Profile Liked",
+//     message: `${fullName} has liked your profile.`,
+//     pic: profile_image
+//   });
+
+//   // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
+
+//   return res.status(201).json({
+//     success: true,
+//     message: "User profile liked successfully.",
+//   });
+// });
+
 const likeUserProfile = asyncHandler(async (req, res, next) => {
   const { id: userLikedTo } = req.params;
   const user = req.user._id;
   const { fullName, profile_image } = req.user;
 
-  const likedUser = await User.findById(userLikedTo);
+  try {
+    await Like.create({ user, userLikedTo });
 
-  // Create a new like
-  const like = new Like({ user, userLikedTo });
-  await like.save();
+    await Notification.create({
+      user: userLikedTo,
+      title: "Profile Liked",
+      message: `${fullName} has liked your profile.`,
+      pic: profile_image
+    });
 
-  await Notification.create({
-    user: userLikedTo,
-    title: "Profile Liked",
-    message: `${fullName} has liked your profile.`,
-    pic: profile_image
-  });
+    // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
 
-  // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
-
-  return res.status(201).json({
-    success: true,
-    message: "User profile liked successfully.",
-  });
+    return res.status(201).json({
+      success: true,
+      message: "User profile liked successfully.",
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      // Duplicate key error (user already liked this profile)
+      return res.status(200).json({
+        success: true,
+        message: "You have already liked this profile.",
+      });
+    }
+    return next(err); // Forward any other errors
+  }
 });
+
 
 // Get all users that a specific user has liked
 const getLikedUsers = asyncHandler(async (req, res, next) => {

@@ -6,14 +6,14 @@ const appRoutes = require('./routes');
 const app = express();
 
 const allowedOrigins = process.env.CORS_ORIGINS.split(',');
-console.log('allowedor',allowedOrigins)
+console.log('allowedor', allowedOrigins)
 const corsOptions = {
     // origin: true,
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true 
-};  
+    credentials: true
+};
 
 
 
