@@ -343,11 +343,50 @@ const getConnections = asyncHandler(async (req, res, next) => {
 /**
  * Check if users can message each other
  */
+// const canMessage = asyncHandler(async (req, res, next) => {
+//   const userId = req.user._id;
+//   const { otherUserId } = req.params;
+
+//   // Check if connection exists and is accepted
+//   const connection = await Connection.findOne({
+//     $or: [
+//       { sender: userId, receiver: otherUserId, status: "Accepted" },
+//       { sender: otherUserId, receiver: userId, status: "Accepted" }
+//     ]
+//   });
+
+//   if (!connection) {
+//     return next(new ApiError("You are not connected with this user", 403));
+//   }
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "You can message this user",
+//     canMessage: true
+//   });
+// });
+
 const canMessage = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { otherUserId } = req.params;
 
-  // Check if connection exists and is accepted
+  // 1. Check if either user has blocked the other
+  const blocked = await Connection.findOne({
+    $or: [
+      { sender: userId, receiver: otherUserId, status: "Blocked" },
+      { sender: otherUserId, receiver: userId, status: "Blocked" }
+    ]
+  });
+
+  if (blocked) {
+    return res.status(403).json({
+      success: false,
+      message: "You are blocked by this user or you have blocked them.",
+      canMessage: false
+    });
+  }
+
+  // 2. Check if there is an accepted connection
   const connection = await Connection.findOne({
     $or: [
       { sender: userId, receiver: otherUserId, status: "Accepted" },
@@ -355,16 +394,38 @@ const canMessage = asyncHandler(async (req, res, next) => {
     ]
   });
 
-  if (!connection) {
-    return next(new ApiError("You are not connected with this user", 403));
+  if (connection) {
+    return res.status(200).json({
+      success: true,
+      message: "You can message this user.",
+      canMessage: true
+    });
   }
 
-  return res.status(200).json({
-    success: true,
-    message: "You can message this user",
-    canMessage: true
+  // 3. Check message count if no accepted connection
+  const messageCount = await Message.countDocuments({
+    sender: userId,
+    recipient: otherUserId
+  });
+
+  if (messageCount < 2) {
+    return res.status(200).json({
+      success: true,
+      messageCount,
+      message: `You can send ${2 - messageCount} more message(s) until connection is accepted.`,
+      canMessage: true,
+      isLimited: true
+    });
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: "You can no longer message this user until they accept your request.",
+    canMessage: false,
+    isLimited: true
   });
 });
+
 
 const blockUser = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
