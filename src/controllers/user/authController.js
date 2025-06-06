@@ -7,6 +7,28 @@ const { STATIC_OTP, ACCESS_TOKEN_SECRET } = process.env;
 const sendOtpEmail = require("../../utils/sendOtpToEmail"); // Assuming you have a function to send SMS as well
 const sendOTP = require("../../utils/sendOtpToPhone"); // Assuming you have a function to send SMS as well
 
+
+// Helper function to generate unique profileId
+const generateProfileId = async () => {
+  const prefix = 'JD'; // JODI4EVER prefix
+  let isUnique = false;
+  let profileId = '';
+
+  while (!isUnique) {
+    // Generate random 8-digit number
+    const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+    profileId = `${prefix}${randomNumber}`;
+
+    // Check if this profileId already exists
+    const existingUser = await User.findOne({ profileId });
+    if (!existingUser) {
+      isUnique = true;
+    }
+  }
+
+  return profileId;
+};
+
 const signup = async (req, res, next) => {
   try {
     let { email, fullName, phone, profile_for } = req.body;
@@ -134,7 +156,6 @@ const verifyOtpSignUp = async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
 
-    console.log('req.nody_forsignUpVerifyOtp', req.body)
 
     // Validate input
     if (!phone) return next(new ApiError("Phone is required.", 400));
@@ -162,6 +183,11 @@ const verifyOtpSignUp = async (req, res, next) => {
       }
     }
 
+    // Generate profileId only if user doesn't have one (first-time verification)
+    if (!user.profileId) {
+      user.profileId = await generateProfileId();
+    }
+
     user.active = true;
 
     user.save();
@@ -180,6 +206,10 @@ const verifyOtpSignUp = async (req, res, next) => {
       message: "OTP verified successfully",
       token,
       user
+      //       user: {
+      // ...user.toObject(),
+      // profileId: user.profileId // Ensure profileId is included in response
+      // }
     });
   } catch (error) {
     next(error);

@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
+    // Add Profile ID field
+    profileId: {
+      type: String,
+      unique: true,
+      sparse: true // Only enforce uniqueness for non-null values
+    },
     profile_for: { type: String, default: '' },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
