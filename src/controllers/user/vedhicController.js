@@ -5,6 +5,7 @@ const asyncHandler = require('express-async-handler');
 const matchWithVedicAstro = asyncHandler(async (req, res, next) => {
     const loggedInUserId = req.user._id;
     const { matchUserId } = req.params;
+    const { lang = 'en' } = req.query
 
     if (!matchUserId) {
         return res.status(400).json({
@@ -55,7 +56,7 @@ const matchWithVedicAstro = asyncHandler(async (req, res, next) => {
         girl_lat: parseFloat(female.birth_lat),
         girl_lon: parseFloat(female.birth_long),
 
-        lang: 'en',
+        lang: lang,
     };
 
     try {
