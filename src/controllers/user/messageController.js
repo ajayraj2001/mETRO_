@@ -229,19 +229,24 @@ const chatList = asyncHandler(async (req, res, next) => {
           },
           lastMessage: { $last: '$message' },
           lastMessageTime: { $last: '$timestamp' },
-          unreadCountForRecipient: {
+          totalSentByUser: {
             $sum: {
               $cond: [
-                { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
                 1,
                 0
               ]
             }
           },
-          unreadCountForSender: {
+          unreadCount: {
             $sum: {
               $cond: [
-                { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                {
+                  $and: [
+                    { $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] },
+                    { $eq: ['$isRead', false] }
+                  ]
+                },
                 1,
                 0
               ]
@@ -251,7 +256,7 @@ const chatList = asyncHandler(async (req, res, next) => {
       },
       { $sort: { lastMessageTime: -1 } },
 
-      // Join user info
+      // Lookup user info
       {
         $lookup: {
           from: 'users',
@@ -262,7 +267,7 @@ const chatList = asyncHandler(async (req, res, next) => {
       },
       { $unwind: '$user' },
 
-      // Join connection info to check if THEY blocked ME
+      // Lookup block connection where THEY blocked ME
       {
         $lookup: {
           from: 'connections',
@@ -280,36 +285,86 @@ const chatList = asyncHandler(async (req, res, next) => {
               }
             }
           ],
-          as: 'blockStatus'
+          as: 'blockedByOther'
         }
       },
 
-      // Apply conditional projection
+      // Lookup connection where YOU blocked THEM
+      {
+        $lookup: {
+          from: 'connections',
+          let: { chatUserId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+                    { $eq: ['$receiver', '$$chatUserId'] },
+                    { $eq: ['$status', 'Blocked'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'youBlockedOther'
+        }
+      },
+
+      // Lookup accepted connection (mutual)
+      {
+        $lookup: {
+          from: 'connections',
+          let: { chatUserId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        { $eq: ['$sender', '$$chatUserId'] },
+                        { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
+                        { $eq: ['$status', 'Accepted'] }
+                      ]
+                    },
+                    {
+                      $and: [
+                        { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+                        { $eq: ['$receiver', '$$chatUserId'] },
+                        { $eq: ['$status', 'Accepted'] }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'connectionStatus'
+        }
+      },
+
       {
         $project: {
           userId: '$_id',
           lastMessage: 1,
           lastMessageTime: 1,
-          unreadCount: {
-            $cond: {
-              if: { $eq: ['$_id', new mongoose.Types.ObjectId(userId)] },
-              then: '$unreadCountForSender',
-              else: '$unreadCountForRecipient'
-            }
-          },
-          isBlockedByOther: {
-            $gt: [{ $size: '$blockStatus' }, 0]
-          },
+          unreadCount: 1,
+          totalSentByUser: 1,
+          isBlockedByOther: { $gt: [{ $size: '$blockedByOther' }, 0] },
+          youBlockedOther: { $gt: [{ $size: '$youBlockedOther' }, 0] },
+          isConnected: { $gt: [{ $size: '$connectionStatus' }, 0] },
+
           userName: {
             $cond: {
-              if: { $gt: [{ $size: '$blockStatus' }, 0] },
+              if: { $gt: [{ $size: '$blockedByOther' }, 0] },
               then: 'Blocked User',
               else: '$user.fullName'
             }
           },
           userProfilePic: {
             $cond: {
-              if: { $gt: [{ $size: '$blockStatus' }, 0] },
+              if: { $gt: [{ $size: '$blockedByOther' }, 0] },
               then: '',
               else: {
                 $ifNull: [
@@ -317,6 +372,37 @@ const chatList = asyncHandler(async (req, res, next) => {
                   ''
                 ]
               }
+            }
+          },
+
+          canMessage: {
+            $cond: {
+              if: {
+                $or: [
+                  { $gt: [{ $size: '$blockedByOther' }, 0] },
+                  { $gt: [{ $size: '$youBlockedOther' }, 0] }
+                ]
+              },
+              then: false,
+              else: true
+            }
+          },
+
+          remainingMessages: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: [{ $size: '$connectionStatus' }, 0] },
+                  {
+                    $and: [
+                      { $eq: [{ $size: '$blockedByOther' }, 0] },
+                      { $eq: [{ $size: '$youBlockedOther' }, 0] }
+                    ]
+                  }
+                ]
+              },
+              then: { $subtract: [2, '$totalSentByUser'] },
+              else: null
             }
           }
         }
@@ -326,28 +412,43 @@ const chatList = asyncHandler(async (req, res, next) => {
       { $limit: limit }
     ]),
 
-    // Count total messages (can also optimize later)
-    Message.countDocuments({
-      $or: [
-        { sender: new mongoose.Types.ObjectId(userId) },
-        { recipient: new mongoose.Types.ObjectId(userId) }
-      ]
-    })
+    // Count total chat threads
+    Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: new mongoose.Types.ObjectId(userId) },
+            { recipient: new mongoose.Types.ObjectId(userId) }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: {
+              if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+              then: '$recipient',
+              else: '$sender'
+            }
+          }
+        }
+      },
+      { $count: "total" }
+    ]).then(res => res[0]?.total || 0)
   ]);
 
   res.status(200).json({
     success: true,
-    message: "Chats fetched successfully",
+    message: "Chat list fetched successfully",
     data: recentChats,
     pagination: {
       totalRecords: total,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
-      perPage: limit,
-    },
+      perPage: limit
+    }
   });
 });
-
 
 
 const getChatThread = asyncHandler(async (req, res, next) => {
@@ -475,8 +576,94 @@ const getChatThread = asyncHandler(async (req, res, next) => {
   });
 });
 
+const getChatMessages = asyncHandler(async (req, res, next) => {
+  const senderId = req.user._id;
+  const { id: receiverId } = req.params;
+  const { page = 1, limit = 15 } = req.query;
+
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 30;
+
+  try {
+    // Find all messages between the two users (without updating anything)
+    const messages = await Message.find({
+      $or: [
+        { sender: senderId, recipient: receiverId },
+        { sender: receiverId, recipient: senderId },
+      ],
+    })
+      .sort({ timestamp: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .exec();
+
+    // Find unread messages from the recipient to mark as read
+    const unreadMessageIds = messages
+      .filter(msg => msg.sender.toString() === receiverId && !msg.isRead)
+      .map(msg => msg._id);
+
+    // If there are unread messages, mark them as read
+    if (unreadMessageIds.length > 0) {
+      console.log(`Marking ${unreadMessageIds.length} messages as read`);
+
+      // Update the messages in the database
+      await Message.updateMany(
+        { _id: { $in: unreadMessageIds } },
+        { isRead: true, status: 'read' }
+      );
+
+      // Also emit a socket event to notify the sender
+      // This will be handled if you have socket.io available in this context
+      // If not, you'll need to adjust your server architecture
+      try {
+        const io = req.app.get('socketio');
+
+        // Get the sender's socket ID from your users object
+        const users = req.app.get('users') || {};
+        const senderSocketId = users[receiverId]?.socketId;
+
+        if (io && senderSocketId) {
+          io.to(senderSocketId).emit('messagesRead', {
+            messageIds: unreadMessageIds,
+            recipientId: senderId
+          });
+          console.log(`Emitted messagesRead event to socket ${senderSocketId}`);
+        } else {
+          console.log('Could not emit socket event: socketio or user not found');
+        }
+      } catch (error) {
+        console.error('Error emitting socket event:', error);
+      }
+    }
+
+    // Get the total number of messages for pagination info
+    const totalMessages = await Message.countDocuments({
+      $or: [
+        { sender: senderId, recipient: receiverId },
+        { sender: receiverId, recipient: senderId },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Messages retrieved successfully",
+      data: messages,
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalMessages / limitNum),
+      totalMessages
+    });
+  } catch (error) {
+    console.error('Error in getChatMessages:', error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving messages",
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = {
   chatList,
-  getChatThread
+  getChatMessages
 };

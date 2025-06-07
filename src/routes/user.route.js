@@ -3,14 +3,14 @@ const authenticateUser = require("../middlewares/authenticateUser");
 
 const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
-const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
+const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, getProfileById, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
 
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
 const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
 // const { createTransaction, transactionWebhook } = require("../controllers/user/purchaseSubscriptionController");
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
-const { chatList, getChatThread } = require("../controllers/user/messageController.js");
+const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
@@ -99,6 +99,7 @@ userRoute.get("/yourPreference", authenticateUser, getPreference);
 userRoute.post("/all_match", authenticateUser, matchedUsers);
 userRoute.get("/matchedProfiles", authenticateUser, matchedProfiles);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
+userRoute.get("/getProfile/:profileId", authenticateUser, getProfileById);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 
 const matchesController = require('../controllers/user/matchingController.js')
@@ -156,7 +157,7 @@ userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 // chat message
 //userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
 userRoute.get("/chat_list", authenticateUser, chatList);
-userRoute.get("/get_messages/:otherUserId", authenticateUser, getChatThread);
+userRoute.get("/get_messages/:otherUserId", authenticateUser, getChatMessages);
 
 // Faqs
 userRoute.get("/get_faqs", authenticateUser, getFaqs);
