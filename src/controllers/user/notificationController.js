@@ -19,9 +19,24 @@ const getNotification = asyncHandler(async (req, res, next) => {
     .skip(skip)
     .limit(limit);
 
+  // if (!data || data.length === 0) {
+  //   return next(new ApiError("No Notification found.", 404));
+  // }
+
   if (!data || data.length === 0) {
-    return next(new ApiError("No Notification found.", 404));
-  }
+  // Return empty success response instead of error
+  return res.status(200).json({
+    success: true,
+    message: "No notifications found.",
+    data: [],
+    pagination: {
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+    },
+  });
+}
 
   // Mark all unread notifications as read (only for this user)
   await Notification.updateMany(

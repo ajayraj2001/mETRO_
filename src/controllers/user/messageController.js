@@ -450,7 +450,6 @@ const chatList = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 const getChatThread = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { otherUserId } = req.params;
@@ -661,7 +660,6 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
     });
   }
 });
-
 
 module.exports = {
   chatList,
