@@ -578,7 +578,6 @@ const getChatThread = asyncHandler(async (req, res, next) => {
 const getChatMessages = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
   const { id: receiverId } = req.params;
-  console.log('rceiverID',receiverId)
   const { page = 1, limit = 15 } = req.query;
 
   const pageNum = parseInt(page) || 1;

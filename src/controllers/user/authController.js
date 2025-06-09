@@ -227,12 +227,11 @@ const login = async (req, res, next) => {
 
       // Find the user by phone
       const user = await User.findOne({ phone });
-      console.log('user1', user)
+
       if (user?.permanentlyDeleted) {
         return next(new ApiError("This account has been permanently deleted. Please contact support.", 403));
       }
 
-      console.log('user2')
       if (!user || !user.active) {
         return next(new ApiError("User not found with this number.", 403));
       }
