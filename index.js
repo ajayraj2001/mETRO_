@@ -119,39 +119,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
         }
       });
 
-      // When a user joins
-      // socket.on("join", (userId) => {
-      //   console.log("HIIII BABU")
-      //   if (userId) {
-      //     const isNewUser = !users[userId];
-
-      //     // Store user's socket ID and status
-      //     users[userId] = { socketId: socket.id, status: "online" };
-      //     console.log(`User with ID ${userId} joined`);
-
-      //     // Notify others about the user's online status
-      //     socket.broadcast.emit("userStatus", { userId, status: "online" });
-
-      //     // Send the new user the status of all currently online users
-      //     const onlineUsers = [];
-      //     console.log(users,"chke users ------")
-      //     for (const [id, user] of Object.entries(users)) {
-      //       if (id !== userId) { // Don't include the user themselves
-      //         onlineUsers.push({ userId: id, status: user.status });
-      //       }
-      //     }
-
-      //     console.log("chle the users lenght", onlineUsers.length >0 , onlineUsers)
-      //     if (onlineUsers.length > 0) {
-      //       socket.emit("usersStatus", onlineUsers);
-      //       console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
-      //     }
-
-      //     // Check if there are any pending read receipts for this user
-      //     checkPendingReadReceipts(userId, socket.id, io);
-      //   }
-      // });
-
       socket.on("join", (userId) => {
         if (userId) {
           // Store user's socket ID and status
@@ -179,36 +146,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
           checkPendingReadReceipts(userId, socket.id, io);
         }
       });
-
-      // Handle individual user status check requests
-      // socket.on("checkUserStatus", (data) => {
-      //   const { userId } = data;
-      //   console.log(`Status check requested for user ${userId}`);
-
-      //   if (users[userId]) {
-      //     // User is online, send their status to requester
-      //     socket.emit("userStatus", { userId, status: "online" });
-      //   } else {
-      //     // User is offline
-      //     socket.emit("userStatus", { userId, status: "offline" });
-      //   }
-      // });
-
-      // Handle bulk user status check requests
-      // socket.on("checkUsersStatus", (data) => {
-      //   const { userIds } = data;
-      //   console.log(`Status check requested for users: ${userIds ? userIds.join(', ') : 'all'}`);
-
-      //   // If no specific userIds provided, check all users
-      //   const idsToCheck = userIds || Object.keys(users);
-
-      //   const statusUpdates = idsToCheck.map(userId => ({
-      //     userId,
-      //     status: users[userId] ? "online" : "offline"
-      //   }));
-
-      //   socket.emit("usersStatus", statusUpdates);
-      // });
 
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {

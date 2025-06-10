@@ -34,6 +34,7 @@ const registerAdmin = asyncHandler(async (req, res, next) => {
     phone,
     email,
     password: hashedPassword,
+    role: "admin"
     //passwordChangedAt: Date.now(),
   });
 
