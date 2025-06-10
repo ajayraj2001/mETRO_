@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { getCurrentIST } = require('../utils/timeUtils');
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,6 +10,7 @@ const userSchema = new mongoose.Schema(
       sparse: true // Only enforce uniqueness for non-null values
     },
     profile_for: { type: String, default: '' },
+    source: { type: String, default: 'app', enum: ['app', 'web'] },
     email: { type: String, trim: true, required: true },
     fullName: { type: String, trim: true, default: '' },
     permanentlyDeleted: { type: Boolean, default: false },
@@ -117,6 +119,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: {
+      currentTime: () => getCurrentIST(),
       createdAt: 'created_at',
       updatedAt: 'updated_at',
     },

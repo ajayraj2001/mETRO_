@@ -31,7 +31,7 @@ const generateProfileId = async () => {
 
 const signup = async (req, res, next) => {
   try {
-    let { email, fullName, phone, profile_for } = req.body;
+    let { email, fullName, phone, profile_for, source } = req.body;
 
     // Validate required fields
     if (!email) return next(new ApiError("Email is required.", 400));
@@ -123,6 +123,7 @@ const signup = async (req, res, next) => {
       fullName: fullName.trim(),
       phone,
       active: false,
+      source
     });
 
     // Generate OTP and set expiry

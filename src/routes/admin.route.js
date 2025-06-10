@@ -5,7 +5,7 @@ const { createFaq, getFaqs, updateFaq, deleteFaq } = require("../controllers/adm
 const { createSubscriptionPlan, getAllSubscriptionPlans, updateSubscriptionPlan, deleteSubscriptionPlan, togglePlanStatus } = require("../controllers/admin/subscriptionPlanController");
 const { getAllSupportQueries, updateSupportQuery, deleteSupportQuery } = require("../controllers/admin/supportListController");
 const { createDetails, updateDetails, getPrivacyPolicy, getTermsAndCOndition } = require("../controllers/admin/termsPrivacyAboutController");
-const { getAllTransactions} = require("../controllers/admin/transactionController");
+const { getAllTransactions } = require("../controllers/admin/transactionController");
 const { updateAdmin } = require("../controllers/admin/updateAdminProfile.controller");
 const { getAllUsers, deleteUser } = require("../controllers/admin/userListController");
 const { authenticateAdmin, authorizeRoles } = require("../middlewares/authenticateAdmin");
@@ -66,7 +66,8 @@ const { chatList, getChatMessages } = require('../controllers/admin/messageContr
 
 const { getUserPreferenceByAdmin } = require('../controllers/admin/partnerPreferenceController')
 const { getUserLikedByAdmin } = require('../controllers/admin/likeController')
-const { updateAppConfig , getAppConfig} = require('../controllers/admin/appconfigContoller')
+const { updateAppConfig, getAppConfig } = require('../controllers/admin/appconfigContoller')
+const { getAdminUserDashboard } = require('../controllers/admin/dashboardController')
 
 const {
   sentRequestTo,
@@ -82,6 +83,8 @@ adminRoute.post("/login", logInAdmin);
 
 const upload = getFileUploader("profile_image", "uploads/admin"); // 
 adminRoute.patch("/profile", authenticateAdmin, upload, updateAdmin);
+
+adminRoute.get('/dashboard', getAdminUserDashboard);
 // adminRoute.post("/forget_password", forgetPassword);
 // adminRoute.post("/reset_password", resetPassword);
 // adminRoute.put("/profile", authenticateAdmin, updateProfile);
@@ -100,7 +103,7 @@ adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 adminRoute.get("/userPreference/:user_id", authenticateAdmin, getUserPreferenceByAdmin);
 adminRoute.get("/userLikes/:user_id", authenticateAdmin, getUserLikedByAdmin);
 adminRoute.get("/userchatList/:userId", authenticateAdmin, chatList);
-adminRoute.get("/getChatMessages", authenticateAdmin,getChatMessages);
+adminRoute.get("/getChatMessages", authenticateAdmin, getChatMessages);
 
 // adminRoute.get("/requested_to/:user", authenticateAdmin, sentRequestTo);
 // adminRoute.get("/requested_by/:user", authenticateAdmin, gotRequestFrom);
