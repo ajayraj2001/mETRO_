@@ -34,4 +34,23 @@ const getBlogById = async (req, res, next) => {
     }
 };
 
-module.exports = { getAllBlogs, getBlogById }
+const getActiveBlogBySlug = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+
+        const blog = await Blog.findOne({ slug, status: 'Active' });
+        if (!blog) {
+            throw new ApiError('Blog not found or not active', 404);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Active blog fetched successfully',
+            data: blog,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { getAllBlogs, getBlogById, getActiveBlogBySlug }

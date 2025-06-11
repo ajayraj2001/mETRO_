@@ -15,7 +15,7 @@ const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../contro
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
 const { getOccupationStructure } = require("../controllers/user/occupationController.js");
-const { getAllBlogs, getBlogById } = require('../controllers/user/blogController.js')
+const { getAllBlogs, getBlogById, getActiveBlogBySlug } = require('../controllers/user/blogController.js')
 
 const {
   getReligions,
@@ -39,7 +39,7 @@ const {
   blockUser,
   reportUser,
   getBlockedUsers,
-  unblockUser
+  unblockUser,
 } = require("../controllers/user/connectionController");
 
 const { matchWithVedicAstro } = require('../controllers/user/vedhicController.js')
@@ -182,7 +182,8 @@ userRoute.get("/occupation", getOccupationStructure)
 userRoute.get("/language", getLanguages)
 
 //blog 
-userRoute.get("/blogs", getAllBlogs)
-userRoute.get("/blogs/:id", getBlogById)
+userRoute.get("/blogs", authenticateUser, getAllBlogs)
+userRoute.get("/blogs/:id", authenticateUser, getBlogById)
+userRoute.get("/getBlogBySlug/:slug", authenticateUser, getActiveBlogBySlug)
 
 module.exports = userRoute;

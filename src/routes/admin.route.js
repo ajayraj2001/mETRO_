@@ -221,12 +221,12 @@ adminRoute.put('/role/status/:id', authenticateAdmin, updateSubAdminStatus);
 adminRoute.get('/blogs/active', authenticateAdmin, getActiveBlogs); // Get all active blogs for public view
 
 // Admin routes (you might want to add authentication middleware here)
-adminRoute.post('/blogs', createBlog);
-adminRoute.get('/blogs', getAllBlogs);
-adminRoute.get('/blogs/:id', getBlogById);
-adminRoute.put('/blogs/:id', updateBlog);
-adminRoute.delete('/blogs/:id', deleteBlog);
-adminRoute.patch('/blogs/:id/status', updateBlogStatus);
+adminRoute.post('/blogs', authenticateAdmin, createBlog);
+adminRoute.get('/blogs', authenticateAdmin, getAllBlogs);
+adminRoute.get('/blogs/:id', authenticateAdmin, getBlogById);
+adminRoute.put('/blogs/:id', authenticateAdmin, updateBlog);
+adminRoute.delete('/blogs/:id', authenticateAdmin, deleteBlog);
+adminRoute.patch('/blogs/:id/status', authenticateAdmin, updateBlogStatus);
 
 
 // //------getActiveUses--------

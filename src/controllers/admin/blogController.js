@@ -16,7 +16,15 @@ const createBlog = async (req, res, next) => {
         let blogImgPath = '';
 
         try {
-            const { title, excerpt, author, html, status, tags } = req.body;
+            const { title, slug, excerpt, author, html, status, tags } = req.body;
+
+            // Check if slug is provided and already exists
+            if (slug) {
+                const existingSlug = await Blog.findOne({ slug });
+                if (existingSlug) {
+                    throw new ApiError('Slug already exists. Please choose a different slug.', 400);
+                }
+            }
 
             if (req.file) {
                 blogImgPath = `/blog_images/${req.file.filename}`;
@@ -29,6 +37,7 @@ const createBlog = async (req, res, next) => {
 
             const blog = new Blog({
                 title,
+                slug, // Optional - will be auto-generated if not provided
                 excerpt,
                 author,
                 html,
@@ -66,11 +75,19 @@ const updateBlog = async (req, res, next) => {
 
         try {
             const { id } = req.params;
-            const { title, excerpt, author, html, status, tags } = req.body;
+            const { title, slug, excerpt, author, html, status, tags } = req.body;
 
             const existingBlog = await Blog.findById(id);
             if (!existingBlog) {
                 throw new ApiError('Blog not found', 404);
+            }
+
+            // Check if slug is provided and already exists (excluding current blog)
+            if (slug && slug !== existingBlog.slug) {
+                const existingSlug = await Blog.findOne({ slug, _id: { $ne: id } });
+                if (existingSlug) {
+                    throw new ApiError('Slug already exists. Please choose a different slug.', 400);
+                }
             }
 
             if (req.file) {
@@ -85,6 +102,7 @@ const updateBlog = async (req, res, next) => {
 
             const updateData = {
                 title: title || existingBlog.title,
+                slug: slug || existingBlog.slug, // Allow slug updates
                 excerpt: excerpt || existingBlog.excerpt,
                 author: author || existingBlog.author,
                 html: html || existingBlog.html,
@@ -118,6 +136,7 @@ const updateBlog = async (req, res, next) => {
         }
     });
 };
+
 
 // Delete Blog
 const deleteBlog = async (req, res, next) => {
@@ -177,6 +196,26 @@ const getBlogById = async (req, res, next) => {
     }
 };
 
+// Get Blog by Slug - NEW API
+const getBlogBySlug = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+
+        const blog = await Blog.findOne({ slug });
+        if (!blog) {
+            throw new ApiError('Blog not found', 404);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Blog fetched successfully',
+            data: blog,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Update Blog Status
 const updateBlogStatus = async (req, res, next) => {
     try {
@@ -220,12 +259,34 @@ const getActiveBlogs = async (req, res, next) => {
     }
 };
 
+// Get Active Blog by Slug (for public view) - NEW API
+const getActiveBlogBySlug = async (req, res, next) => {
+    try {
+        const { slug } = req.params;
+
+        const blog = await Blog.findOne({ slug, status: 'Active' });
+        if (!blog) {
+            throw new ApiError('Blog not found or not active', 404);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Active blog fetched successfully',
+            data: blog,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createBlog,
     updateBlog,
     deleteBlog,
     getAllBlogs,
     getBlogById,
+    getBlogBySlug, // NEW
     updateBlogStatus,
     getActiveBlogs,
+    getActiveBlogBySlug, // NEW
 };
