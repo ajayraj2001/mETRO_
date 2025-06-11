@@ -15,6 +15,7 @@ const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../contro
 const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
 const { getOccupationStructure } = require("../controllers/user/occupationController.js");
+const { getAllBlogs, getBlogById } = require('../controllers/user/blogController.js')
 
 const {
   getReligions,
@@ -179,5 +180,9 @@ userRoute.get("/occupation", getOccupationStructure)
 
 //languages
 userRoute.get("/language", getLanguages)
+
+//blog 
+userRoute.get("/blogs", getAllBlogs)
+userRoute.get("/blogs/:id", getBlogById)
 
 module.exports = userRoute;

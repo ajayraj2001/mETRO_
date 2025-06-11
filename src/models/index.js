@@ -18,6 +18,7 @@ const { OccupationCategory, Occupation } = require("./occupation");
 const Language = require("./language");
 const ProfileView = require("./profileViewSchema");
 const Report = require("./report");
+const Blog = require("./blog");
 
 module.exports = {
   Admin,
@@ -40,5 +41,6 @@ module.exports = {
   OccupationCategory, Occupation,
   Language,
   ProfileView,
-  Report
+  Report,
+  Blog
 };

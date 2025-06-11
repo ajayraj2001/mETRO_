@@ -11,6 +11,17 @@ const { getAllUsers, deleteUser } = require("../controllers/admin/userListContro
 const { authenticateAdmin, authorizeRoles } = require("../middlewares/authenticateAdmin");
 const { getFileUploader } = require("../middlewares/fileUpload");
 
+//blogs
+const {
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getAllBlogs,
+  getBlogById,
+  updateBlogStatus,
+  getActiveBlogs,
+} = require('../controllers/admin/blogController');
+
 const {
   // Religion
   createReligion, getReligions, updateReligion, deleteReligion,
@@ -205,6 +216,17 @@ adminRoute.put('/role/:id', authenticateAdmin, updateSubAdmin);
 adminRoute.delete('/role/:id', authenticateAdmin, deleteSubAdmin);
 adminRoute.get('/role', authenticateAdmin, getSubAdmins);
 adminRoute.put('/role/status/:id', authenticateAdmin, updateSubAdminStatus);
+
+// Public routes
+adminRoute.get('/blogs/active', authenticateAdmin, getActiveBlogs); // Get all active blogs for public view
+
+// Admin routes (you might want to add authentication middleware here)
+adminRoute.post('/blogs', createBlog);
+adminRoute.get('/blogs', getAllBlogs);
+adminRoute.get('/blogs/:id', getBlogById);
+adminRoute.put('/blogs/:id', updateBlog);
+adminRoute.delete('/blogs/:id', deleteBlog);
+adminRoute.patch('/blogs/:id/status', updateBlogStatus);
 
 
 // //------getActiveUses--------
