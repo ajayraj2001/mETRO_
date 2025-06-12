@@ -11,11 +11,8 @@ const getAllBlogs = async (req, res, next) => {
         const query = { status: "Active" };
 
         if (search) {
-            const regex = new RegExp(search, 'i'); // Case-insensitive
-            query.$or = [
-                { title: { $regex: regex } },
-                { tags: { $elemMatch: { $regex: regex } } }
-            ];
+            const regex = new RegExp(search, 'i');
+            query.title = { $regex: regex };
         }
 
         const [blogs, totalCount] = await Promise.all([
