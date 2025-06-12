@@ -27,7 +27,7 @@ const createBlog = async (req, res, next) => {
             }
 
             if (req.file) {
-                blogImgPath = `/blog_images/${req.file.filename}`;
+                blogImgPath = `/public/blog_images/${req.file.filename}`;
             }
 
             let parsedTags = [];
@@ -91,7 +91,7 @@ const updateBlog = async (req, res, next) => {
             }
 
             if (req.file) {
-                blogImgPath = `/blog_images/${req.file.filename}`;
+                blogImgPath = `/public/blog_images/${req.file.filename}`;
             }
 
             // Parse tags if sent as string (from form-data)
