@@ -6,13 +6,24 @@ const getAllBlogs = async (req, res, next) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 9;
         const skip = (page - 1) * limit;
+        const search = req.query.search?.trim();
+
+        const query = { status: "Active" };
+
+        if (search) {
+            const regex = new RegExp(search, 'i'); // Case-insensitive
+            query.$or = [
+                { title: { $regex: regex } },
+                { tags: { $elemMatch: { $regex: regex } } }
+            ];
+        }
 
         const [blogs, totalCount] = await Promise.all([
-            Blog.find({ status: "Active" })
+            Blog.find(query)
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
-            Blog.countDocuments()
+            Blog.countDocuments(query)
         ]);
 
         const totalPages = Math.ceil(totalCount / limit);
