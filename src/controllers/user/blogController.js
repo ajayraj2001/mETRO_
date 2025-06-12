@@ -3,12 +3,31 @@ const { Blog } = require('../../models');
 
 const getAllBlogs = async (req, res, next) => {
     try {
-        const blogs = await Blog.find().sort({ createdAt: -1 });
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const [blogs, totalCount] = await Promise.all([
+            Blog.find()
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Blog.countDocuments()
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
 
         return res.status(200).json({
             success: true,
             message: 'Blogs fetched successfully',
             data: blogs,
+            pagination: {
+                totalItems: totalCount,
+                totalPages,
+                currentPage: page,
+                pageSize: limit,
+                hasNextPage: page < totalPages,
+            }
         });
     } catch (error) {
         next(error);
