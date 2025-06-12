@@ -182,8 +182,8 @@ userRoute.get("/occupation", getOccupationStructure)
 userRoute.get("/language", getLanguages)
 
 //blog 
-userRoute.get("/blogs", authenticateUser, getAllBlogs)
-userRoute.get("/blogs/:id", authenticateUser, getBlogById)
-userRoute.get("/getBlogBySlug/:slug", authenticateUser, getActiveBlogBySlug)
+userRoute.get("/blogs", getAllBlogs)
+userRoute.get("/blogs/:id", getBlogById)
+userRoute.get("/getBlogBySlug/:slug", getActiveBlogBySlug)
 
 module.exports = userRoute;
