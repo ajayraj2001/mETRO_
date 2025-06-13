@@ -178,6 +178,7 @@ const getAllBlogs = async (req, res, next) => {
 
         const [blogs, totalCount] = await Promise.all([
             Blog.find(filter)
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .sort({ createdAt: -1 }), // Optional: latest first
