@@ -515,7 +515,9 @@ const singleMatchedUser = async (req, res, next) => {
       return next(new ApiError("Invalid userId", 400));
     }
 
-    const matchedUser = await User.findOne({ _id: matchedUserId }).exec();
+    const matchedUser = await User.findOne({ _id: matchedUserId })
+      .select('-email') // exclude email field
+      .exec();
     const preference = await PartnerPreferences.findOne(
       { user_id: matchedUserId },
       { any_caste: 1, _id: 0 } // Selecting only 'any_caste' and excluding '_id'
