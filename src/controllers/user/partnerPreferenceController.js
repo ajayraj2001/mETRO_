@@ -470,7 +470,6 @@ const matchedUsers = async (req, res, next) => {
     }
 
     const oppositeGender = user.gender === "Male" ? "Female" : "Male";
-
     const pipeline = [
       {
         $match: {
@@ -485,6 +484,11 @@ const matchedUsers = async (req, res, next) => {
       },
       {
         $sort: { randomSort: 1 }
+      },
+      {
+        $project: {
+          phone: 0 // Exclude the phone field
+        }
       }
     ];
 
@@ -566,6 +570,9 @@ const singleMatchedUser = async (req, res, next) => {
     const responseUser = matchedUser.toObject
       ? matchedUser.toObject()
       : matchedUser;
+
+    // Mask the phone before sending it in response
+    responseUser.phone = maskPhone(responseUser.phone);
 
     // Include distance and age in the response
     responseUser.distance = distance;
@@ -671,6 +678,11 @@ const getProfileById = async (req, res, next) => {
     responseUser.distance = distance;
     responseUser.connectionStatus = connectionStatus;
 
+    // Always mask the phone number (never show full)
+    if (responseUser.phone) {
+      responseUser.phone = maskPhone(responseUser.phone);
+    }
+
     // Remove sensitive fields
     delete responseUser.location;
     delete responseUser.otp_expiry;
@@ -758,6 +770,14 @@ const checkContactEligibility = async (req, res, next) => {
     next(error);
   }
 };
+
+function maskPhone(phone) {
+  if (!phone || phone.length < 4) return phone || '';
+  const visibleDigits = 4; // Show last 4 digits
+  const maskedSection = '*'.repeat(phone.length - visibleDigits);
+  return maskedSection + phone.slice(-visibleDigits);
+}
+
 
 module.exports = {
   partnerPreferences,

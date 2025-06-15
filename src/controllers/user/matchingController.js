@@ -1270,7 +1270,8 @@ const getHomePageData = async (req, res) => {
     const userId = req.user._id;
 
     // Get current user and preferences
-    const currentUser = await User.findById(userId);
+    const currentUser = await User.findById(userId).select('-phone -email');
+
     const userPreferences = await PartnerPreferences.findOne({ user_id: userId });
 
     if (!currentUser || !userPreferences) {
