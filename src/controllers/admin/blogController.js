@@ -111,6 +111,8 @@ const updateBlog = async (req, res, next) => {
             const { id } = req.params;
             const { title, slug, excerpt, author, html, status, tags } = req.body;
 
+
+            console.log('slug', slug)
             const existingBlog = await Blog.findById(id);
             if (!existingBlog) {
                 throw new ApiError('Blog not found', 404);
