@@ -2,6 +2,36 @@ const { ApiError } = require('../../errorHandler');
 const { Blog } = require('../../models');
 const { getFileUploader, deleteFile } = require('../../middlewares');
 
+const generateSlug = (title) => {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+};
+
+const ensureUniqueSlug = async (baseSlug, excludeId = null) => {
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+        const query = { slug: uniqueSlug };
+        if (excludeId) {
+            query._id = { $ne: excludeId };
+        }
+
+        const exists = await Blog.findOne(query);
+        if (!exists) break;
+
+        uniqueSlug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
+    return uniqueSlug;
+};
+
+
 // Multer setup for blog image upload
 const uploadBlogImage = getFileUploader('featuredImage', 'blog_images');
 
@@ -19,11 +49,15 @@ const createBlog = async (req, res, next) => {
             const { title, slug, excerpt, author, html, status, tags } = req.body;
 
             // Check if slug is provided and already exists
+            let finalSlug = slug;
             if (slug) {
                 const existingSlug = await Blog.findOne({ slug });
                 if (existingSlug) {
                     throw new ApiError('Slug already exists. Please choose a different slug.', 400);
                 }
+            } else {
+                const baseSlug = generateSlug(title);
+                finalSlug = await ensureUniqueSlug(baseSlug);
             }
 
             if (req.file) {
@@ -37,7 +71,7 @@ const createBlog = async (req, res, next) => {
 
             const blog = new Blog({
                 title,
-                slug, // Optional - will be auto-generated if not provided
+                slug: finalSlug,
                 excerpt,
                 author,
                 html,
@@ -82,12 +116,17 @@ const updateBlog = async (req, res, next) => {
                 throw new ApiError('Blog not found', 404);
             }
 
-            // Check if slug is provided and already exists (excluding current blog)
+            let finalSlug = existingBlog.slug;
+
             if (slug && slug !== existingBlog.slug) {
                 const existingSlug = await Blog.findOne({ slug, _id: { $ne: id } });
                 if (existingSlug) {
                     throw new ApiError('Slug already exists. Please choose a different slug.', 400);
                 }
+                finalSlug = slug;
+            } else if (!slug && title !== existingBlog.title) {
+                const baseSlug = generateSlug(title);
+                finalSlug = await ensureUniqueSlug(baseSlug, id);
             }
 
             if (req.file) {
