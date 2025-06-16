@@ -9,7 +9,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const http = require("http");
 const { connectToDatabase } = require("./config");
-const { Message } = require("./src/models");
+const { Message, Connection } = require("./src/models");
 const app = require("./src/app");
 const {
   sendMessage,
@@ -175,7 +175,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
             timestamp: savedMessage.timestamp
           });
 
-          console.log(`Message saved with ID: ${savedMessage._id}, temp ID: ${tempId}`);
 
           // Check if recipient is online
           if (users[recipientId]) {
@@ -204,6 +203,78 @@ function checkPendingReadReceipts(userId, socketId, io) {
           });
         }
       });
+
+      // When user blocks someone
+      socket.on("blockUser", async (data) => {
+        const { blockerId, blockedUserId } = data;
+
+        try {
+          const connection = await Connection.findOneAndUpdate(
+            {
+              $or: [
+                { sender: blockerId, receiver: blockedUserId },
+                { sender: blockedUserId, receiver: blockerId }
+              ]
+            },
+            {
+              $set: {
+                status: 'Blocked',
+                sender: blockerId,
+                receiver: blockedUserId
+              }
+            },
+            { new: true }
+          );
+
+          // Notify BOTH users immediately
+          // socket.emit("connectionStatusChanged", {
+          //   userId: blockedUserId,
+          //   status: 'blocked_by_you'
+          // });
+
+          if (users[blockedUserId]) {
+            io.to(users[blockedUserId].socketId).emit("connectionStatusChanged", {
+              userId: blockerId,
+              status: 'blocked_you'
+            });
+          }
+        } catch (error) {
+          console.error('Error blocking user:', error);
+        }
+      });
+
+      // When connection status changes (unfriend/unfollow)
+      socket.on("removeConnection", async (data) => {
+        const { userId, otherUserId } = data;
+
+        try {
+          await Connection.findOneAndUpdate(
+            {
+              $or: [
+                { sender: userId, receiver: otherUserId, status: 'Accepted' },
+                { sender: otherUserId, receiver: userId, status: 'Accepted' }
+              ]
+            },
+            { $set: { status: 'Declined' } }
+          );
+
+          // Notify both users
+          // socket.emit("connectionStatusChanged", {
+          //   userId: otherUserId,
+          //   status: 'not_connected'
+          // });
+
+          if (users[otherUserId]) {
+            io.to(users[otherUserId].socketId).emit("connectionStatusChanged", {
+              userId: userId,
+              status: 'not_connected'
+            });
+          }
+        } catch (error) {
+          console.error('Error removing connection:', error);
+        }
+      });
+
 
       socket.on("typing", (data) => {
         const { senderId, recipientId } = data;

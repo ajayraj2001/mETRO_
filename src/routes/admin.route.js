@@ -228,7 +228,6 @@ adminRoute.put('/blogs/:id', authenticateAdmin, updateBlog);
 adminRoute.delete('/blogs/:id', authenticateAdmin, deleteBlog);
 adminRoute.patch('/blogs/:id/status', authenticateAdmin, updateBlogStatus);
 
-
 // //------getActiveUses--------
 // adminRoute.get("/getAllUsers", authenticateAdmin, getUsers)
 // adminRoute.put("/updateUser", authenticateAdmin, updateUser)
