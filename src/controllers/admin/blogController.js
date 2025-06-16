@@ -200,7 +200,6 @@ const deleteBlog = async (req, res, next) => {
     }
 };
 
-
 const getAllBlogs = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -217,10 +216,9 @@ const getAllBlogs = async (req, res, next) => {
 
         const [blogs, totalCount] = await Promise.all([
             Blog.find(filter)
-                .sort({ createdAt: -1 })
+                .sort({ created_at: -1 })
                 .skip(skip)
-                .limit(limit)
-                .sort({ createdAt: -1 }), // Optional: latest first
+                .limit(limit),
             Blog.countDocuments(filter)
         ]);
 

@@ -17,7 +17,7 @@ const getAllBlogs = async (req, res, next) => {
 
         const [blogs, totalCount] = await Promise.all([
             Blog.find(query)
-                .sort({ createdAt: -1 })
+                .sort({ created_at: -1 })
                 .skip(skip)
                 .limit(limit),
             Blog.countDocuments(query)
