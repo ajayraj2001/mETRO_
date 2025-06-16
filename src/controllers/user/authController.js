@@ -33,6 +33,7 @@ const signup = async (req, res, next) => {
   try {
     let { email, fullName, phone, profile_for, source } = req.body;
 
+    console.log('heyudd', req.body)
     // Validate required fields
     if (!email) return next(new ApiError("Email is required.", 400));
     if (!phone) return next(new ApiError("Phone is required.", 400));
