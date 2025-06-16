@@ -375,12 +375,31 @@ const chatList = asyncHandler(async (req, res, next) => {
             }
           },
 
+          // canMessage: {
+          //   $cond: {
+          //     if: {
+          //       $or: [
+          //         { $gt: [{ $size: '$blockedByOther' }, 0] },
+          //         { $gt: [{ $size: '$youBlockedOther' }, 0] }
+          //       ]
+          //     },
+          //     then: false,
+          //     else: true
+          //   }
+          // },
+
           canMessage: {
             $cond: {
               if: {
                 $or: [
                   { $gt: [{ $size: '$blockedByOther' }, 0] },
-                  { $gt: [{ $size: '$youBlockedOther' }, 0] }
+                  { $gt: [{ $size: '$youBlockedOther' }, 0] },
+                  {
+                    $and: [
+                      { $eq: [{ $size: '$connectionStatus' }, 0] },
+                      { $lte: [{ $subtract: [2, '$totalSentByUser'] }, 0] }
+                    ]
+                  }
                 ]
               },
               then: false,
@@ -388,23 +407,39 @@ const chatList = asyncHandler(async (req, res, next) => {
             }
           },
 
+
+          // remainingMessages: {
+          //   $cond: {
+          //     if: {
+          //       $and: [
+          //         { $eq: [{ $size: '$connectionStatus' }, 0] },
+          //         {
+          //           $and: [
+          //             { $eq: [{ $size: '$blockedByOther' }, 0] },
+          //             { $eq: [{ $size: '$youBlockedOther' }, 0] }
+          //           ]
+          //         }
+          //       ]
+          //     },
+          //     then: { $subtract: [2, '$totalSentByUser'] },
+          //     else: null
+          //   }
+          // }
+
           remainingMessages: {
             $cond: {
               if: {
                 $and: [
                   { $eq: [{ $size: '$connectionStatus' }, 0] },
-                  {
-                    $and: [
-                      { $eq: [{ $size: '$blockedByOther' }, 0] },
-                      { $eq: [{ $size: '$youBlockedOther' }, 0] }
-                    ]
-                  }
+                  { $eq: [{ $size: '$blockedByOther' }, 0] },
+                  { $eq: [{ $size: '$youBlockedOther' }, 0] }
                 ]
               },
               then: { $subtract: [2, '$totalSentByUser'] },
               else: null
             }
           }
+
         }
       },
 
