@@ -12,6 +12,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
   const { fullName, deviceToken, profile_image } = req.user;
 
+  console.log('req.nody', req.body)
   // Validation
   if (!receiverId) {
     return next(new ApiError("Receiver ID is required", 400));
