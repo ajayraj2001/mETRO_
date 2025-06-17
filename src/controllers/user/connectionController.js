@@ -7,85 +7,274 @@ const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 const { getFileUploader } = require("../../middlewares/fileUpload")
 
+// const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
+//   const { receiverId, status } = req.body;
+//   const senderId = req.user._id;
+//   const { fullName, deviceToken, profile_image } = req.user;
+
+//   console.log('req.nody', req.body)
+//   // Validation
+//   if (!receiverId) {
+//     return next(new ApiError("Receiver ID is required", 400));
+//   }
+
+//   if (senderId.toString() === receiverId.toString()) {
+//     return next(new ApiError("You cannot send a request to yourself", 403));
+//   }
+
+//   // Check if the receiver exists
+//   // const receiver = await User.findById(receiverId);
+//   // if (!receiver) {
+//   //   return next(new ApiError("Receiver not found", 404));
+//   // }
+
+
+//   // 🔒 Check if either user has blocked the other
+//   const blockedConnection = await Connection.findOne({
+//     $or: [
+//       { sender: senderId, receiver: receiverId, status: "Blocked" },
+//       { sender: receiverId, receiver: senderId, status: "Blocked" }
+//     ]
+//   });
+
+//   if (blockedConnection) {
+//     return res.status(403).json({
+//       success: false,
+//       message: "Connection request not allowed. One of the users has blocked the other.",
+//     });
+//   }
+
+
+//   // Find existing connection between these users (in either direction)
+//   const existingConnection = await Connection.findOne({
+//     $or: [
+//       { sender: senderId, receiver: receiverId },
+//       { sender: receiverId, receiver: senderId }
+//     ]
+//   });
+
+//   // If existing connection found
+//   if (existingConnection) {
+//     // Check if already connected
+//     if (existingConnection.status === "Accepted") {
+//       return res.status(200).json({
+//         success: true,
+//         message: "You are already connected",
+//       });
+//     }
+
+//     // Existing connection is Pending
+//     if (existingConnection.sender.toString() === senderId.toString()) {
+//       // Current user is the sender of the pending request
+//       return res.status(200).json({
+//         success: true,
+//         message: "You already have a pending request",
+//       });
+//     } else {
+//       // Current user is the receiver of the pending request
+//       if (status) {
+//         // Handle accept/decline using status parameter
+//         if (status === "Declined") {
+//           await Connection.findByIdAndDelete(existingConnection._id);
+//           return res.status(200).json({
+//             success: true,
+//             message: "Connection request declined",
+//           });
+//         } else if (status === "Accepted") {
+//           existingConnection.status = "Accepted";
+//           existingConnection.updatedAt = Date.now();
+//           await existingConnection.save();
+
+//           // Notify original sender
+//           await Notification.create({
+//             user: existingConnection.sender,
+//             title: "Connection Request Accepted",
+//             message: `${fullName} has accepted your connection request`,
+//             pic: profile_image,
+//           });
+
+//           // Send push notification to original sender
+//           const senderUser = await User.findById(existingConnection.sender);
+//           if (senderUser?.deviceToken) {
+//             await sendFirebaseNotification(
+//               senderUser.deviceToken,
+//               "Connection Request Accepted",
+//               `${fullName} has accepted your connection request`
+//             );
+//           }
+
+//           return res.status(200).json({
+//             success: true,
+//             message: "Connection request accepted",
+//           });
+//         } else {
+//           return next(new ApiError("Invalid status value", 400));
+//         }
+//       } else {
+//         // No status provided: Auto-accept the pending request
+//         existingConnection.status = "Accepted";
+//         existingConnection.updatedAt = Date.now();
+//         await existingConnection.save();
+
+//         // Notify original sender
+//         await Notification.create({
+//           user: existingConnection.sender,
+//           title: "Connection Request Accepted",
+//           message: `${fullName} has accepted your connection request`,
+//           pic: profile_image,
+//         });
+
+//         // Send push notification to original sender
+//         const senderUser = await User.findById(existingConnection.sender);
+//         if (senderUser?.deviceToken) {
+//           await sendFirebaseNotification(
+//             senderUser.deviceToken,
+//             "Connection Request Accepted",
+//             `${fullName} has accepted your connection request`
+//           );
+//         }
+
+//         return res.status(200).json({
+//           success: true,
+//           message: "Connection request accepted",
+//         });
+//       }
+//     }
+//   } else {
+//     // No existing connection: Create new request
+//     const newConnection = new Connection({
+//       sender: senderId,
+//       receiver: receiverId,
+//       status: "Pending"
+//     });
+
+//     await newConnection.save();
+
+//     // Create notification for receiver
+//     await Notification.create({
+//       user: receiverId,
+//       title: "New Connection Request",
+//       message: `${fullName} has sent you a connection request`,
+//       pic: profile_image
+//     });
+
+//     // Send push notification to receiver
+//     if (receiver.deviceToken) {
+//       await sendFirebaseNotification(
+//         receiver.deviceToken,
+//         "New Connection Request",
+//         `${fullName} has sent you a connection request`
+//       );
+//     }
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Connection request sent successfully",
+//     });
+//   }
+// });
+
+
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
-  const { receiverId, status } = req.body;
-  const senderId = req.user._id;
-  const { fullName, deviceToken, profile_image } = req.user;
+  try {
+    const { receiverId, status } = req.body;
+    const senderId = req.user._id;
+    const { fullName, deviceToken, profile_image } = req.user;
 
-  console.log('req.nody', req.body)
-  // Validation
-  if (!receiverId) {
-    return next(new ApiError("Receiver ID is required", 400));
-  }
+    console.log('req.body', req.body);
 
-  if (senderId.toString() === receiverId.toString()) {
-    return next(new ApiError("You cannot send a request to yourself", 403));
-  }
+    if (!receiverId) {
+      return next(new ApiError("Receiver ID is required", 400));
+    }
 
-  // Check if the receiver exists
-  // const receiver = await User.findById(receiverId);
-  // if (!receiver) {
-  //   return next(new ApiError("Receiver not found", 404));
-  // }
+    if (senderId.toString() === receiverId.toString()) {
+      return next(new ApiError("You cannot send a request to yourself", 403));
+    }
 
+    // ✅ Fetch receiver user
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return next(new ApiError("Receiver not found", 404));
+    }
 
-  // 🔒 Check if either user has blocked the other
-  const blockedConnection = await Connection.findOne({
-    $or: [
-      { sender: senderId, receiver: receiverId, status: "Blocked" },
-      { sender: receiverId, receiver: senderId, status: "Blocked" }
-    ]
-  });
-
-  if (blockedConnection) {
-    return res.status(403).json({
-      success: false,
-      message: "Connection request not allowed. One of the users has blocked the other.",
+    // 🔒 Check if either user has blocked the other
+    const blockedConnection = await Connection.findOne({
+      $or: [
+        { sender: senderId, receiver: receiverId, status: "Blocked" },
+        { sender: receiverId, receiver: senderId, status: "Blocked" }
+      ]
     });
-  }
 
-
-  // Find existing connection between these users (in either direction)
-  const existingConnection = await Connection.findOne({
-    $or: [
-      { sender: senderId, receiver: receiverId },
-      { sender: receiverId, receiver: senderId }
-    ]
-  });
-
-  // If existing connection found
-  if (existingConnection) {
-    // Check if already connected
-    if (existingConnection.status === "Accepted") {
-      return res.status(200).json({
-        success: true,
-        message: "You are already connected",
+    if (blockedConnection) {
+      return res.status(403).json({
+        success: false,
+        message: "Connection request not allowed. One of the users has blocked the other.",
       });
     }
 
-    // Existing connection is Pending
-    if (existingConnection.sender.toString() === senderId.toString()) {
-      // Current user is the sender of the pending request
-      return res.status(200).json({
-        success: true,
-        message: "You already have a pending request",
-      });
-    } else {
-      // Current user is the receiver of the pending request
-      if (status) {
-        // Handle accept/decline using status parameter
-        if (status === "Declined") {
-          await Connection.findByIdAndDelete(existingConnection._id);
-          return res.status(200).json({
-            success: true,
-            message: "Connection request declined",
-          });
-        } else if (status === "Accepted") {
+    // Find existing connection
+    const existingConnection = await Connection.findOne({
+      $or: [
+        { sender: senderId, receiver: receiverId },
+        { sender: receiverId, receiver: senderId }
+      ]
+    });
+
+    if (existingConnection) {
+      if (existingConnection.status === "Accepted") {
+        return res.status(200).json({
+          success: true,
+          message: "You are already connected",
+        });
+      }
+
+      if (existingConnection.sender.toString() === senderId.toString()) {
+        return res.status(200).json({
+          success: true,
+          message: "You already have a pending request",
+        });
+      } else {
+        if (status) {
+          if (status === "Declined") {
+            await Connection.findByIdAndDelete(existingConnection._id);
+            return res.status(200).json({
+              success: true,
+              message: "Connection request declined",
+            });
+          } else if (status === "Accepted") {
+            existingConnection.status = "Accepted";
+            existingConnection.updatedAt = Date.now();
+            await existingConnection.save();
+
+            await Notification.create({
+              user: existingConnection.sender,
+              title: "Connection Request Accepted",
+              message: `${fullName} has accepted your connection request`,
+              pic: profile_image,
+            });
+
+            const senderUser = await User.findById(existingConnection.sender);
+            if (senderUser?.deviceToken) {
+              await sendFirebaseNotification(
+                senderUser.deviceToken,
+                "Connection Request Accepted",
+                `${fullName} has accepted your connection request`
+              );
+            }
+
+            return res.status(200).json({
+              success: true,
+              message: "Connection request accepted",
+            });
+          } else {
+            return next(new ApiError("Invalid status value", 400));
+          }
+        } else {
+          // Auto-accept if no status
           existingConnection.status = "Accepted";
           existingConnection.updatedAt = Date.now();
           await existingConnection.save();
 
-          // Notify original sender
           await Notification.create({
             user: existingConnection.sender,
             title: "Connection Request Accepted",
@@ -93,7 +282,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
             pic: profile_image,
           });
 
-          // Send push notification to original sender
           const senderUser = await User.findById(existingConnection.sender);
           if (senderUser?.deviceToken) {
             await sendFirebaseNotification(
@@ -107,72 +295,49 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
             success: true,
             message: "Connection request accepted",
           });
-        } else {
-          return next(new ApiError("Invalid status value", 400));
         }
-      } else {
-        // No status provided: Auto-accept the pending request
-        existingConnection.status = "Accepted";
-        existingConnection.updatedAt = Date.now();
-        await existingConnection.save();
-
-        // Notify original sender
-        await Notification.create({
-          user: existingConnection.sender,
-          title: "Connection Request Accepted",
-          message: `${fullName} has accepted your connection request`,
-          pic: profile_image,
-        });
-
-        // Send push notification to original sender
-        const senderUser = await User.findById(existingConnection.sender);
-        if (senderUser?.deviceToken) {
-          await sendFirebaseNotification(
-            senderUser.deviceToken,
-            "Connection Request Accepted",
-            `${fullName} has accepted your connection request`
-          );
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "Connection request accepted",
-        });
       }
+    } else {
+      // No existing connection
+      const newConnection = new Connection({
+        sender: senderId,
+        receiver: receiverId,
+        status: "Pending"
+      });
+
+      await newConnection.save();
+
+      await Notification.create({
+        user: receiverId,
+        title: "New Connection Request",
+        message: `${fullName} has sent you a connection request`,
+        pic: profile_image
+      });
+
+      if (receiver.deviceToken) {
+        await sendFirebaseNotification(
+          receiver.deviceToken,
+          "New Connection Request",
+          `${fullName} has sent you a connection request`
+        );
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Connection request sent successfully",
+      });
     }
-  } else {
-    // No existing connection: Create new request
-    const newConnection = new Connection({
-      sender: senderId,
-      receiver: receiverId,
-      status: "Pending"
-    });
-
-    await newConnection.save();
-
-    // Create notification for receiver
-    await Notification.create({
-      user: receiverId,
-      title: "New Connection Request",
-      message: `${fullName} has sent you a connection request`,
-      pic: profile_image
-    });
-
-    // Send push notification to receiver
-    if (receiver.deviceToken) {
-      await sendFirebaseNotification(
-        receiver.deviceToken,
-        "New Connection Request",
-        `${fullName} has sent you a connection request`
-      );
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: "Connection request sent successfully",
+  } catch (error) {
+    console.error("Error in sendOrUpdateRequest:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
     });
   }
 });
+
+
 
 /**
  * Get all requests sent by the current user
