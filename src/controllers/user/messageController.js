@@ -4,112 +4,112 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 
 
-// const chatList = asyncHandler(async (req, res, next) => {
-//   const userId = req.user._id;
-//   let { page = 1, limit = 10 } = req.query;
+const chatList = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  let { page = 1, limit = 10 } = req.query;
 
-//   page = parseInt(page);
-//   limit = parseInt(limit);
-//   const skip = (page - 1) * limit;
+  page = parseInt(page);
+  limit = parseInt(limit);
+  const skip = (page - 1) * limit;
 
-//   const [recentChats, total] = await Promise.all([
-//     Message.aggregate([
-//       {
-//         $match: {
-//           $or: [
-//             { sender: new mongoose.Types.ObjectId(userId) },
-//             { recipient: new mongoose.Types.ObjectId(userId) }
-//           ]
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: {
-//             $cond: {
-//               if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-//               then: '$recipient',
-//               else: '$sender'
-//             }
-//           },
-//           lastMessage: { $last: '$message' },
-//           lastMessageTime: { $last: '$timestamp' },
-//           unreadCountForRecipient: {
-//             $sum: {
-//               $cond: [
-//                 { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-//                 1,
-//                 0
-//               ]
-//             }
-//           },
-//           unreadCountForSender: {
-//             $sum: {
-//               $cond: [
-//                 { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
-//                 1,
-//                 0
-//               ]
-//             }
-//           }
-//         }
-//       },
-//       { $sort: { lastMessageTime: -1 } },
-//       {
-//         $lookup: {
-//           from: 'users',
-//           localField: '_id',
-//           foreignField: '_id',
-//           as: 'user'
-//         }
-//       },
-//       { $unwind: '$user' },
-//       {
-//         $project: {
-//           _id: 0,
-//           userId: '$_id',
-//           userName: '$user.fullName',
-//           // userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
-//           userProfilePic: {
-//             $ifNull: [
-//               { $arrayElemAt: ['$user.profile_image', 0] },
-//               ''
-//             ]
-//           },
-//           lastMessage: 1,
-//           lastMessageTime: 1,
-//           unreadCount: {
-//             $cond: {
-//               if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
-//               then: '$unreadCountForSender',
-//               else: '$unreadCountForRecipient'
-//             }
-//           }
-//         }
-//       },
-//       { $skip: skip },
-//       { $limit: limit }
-//     ]),
+  const [recentChats, total] = await Promise.all([
+    Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender: new mongoose.Types.ObjectId(userId) },
+            { recipient: new mongoose.Types.ObjectId(userId) }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: {
+              if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+              then: '$recipient',
+              else: '$sender'
+            }
+          },
+          lastMessage: { $last: '$message' },
+          lastMessageTime: { $last: '$timestamp' },
+          unreadCountForRecipient: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                1,
+                0
+              ]
+            }
+          },
+          unreadCountForSender: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      },
+      { $sort: { lastMessageTime: -1 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          userName: '$user.fullName',
+          // userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+          userProfilePic: {
+            $ifNull: [
+              { $arrayElemAt: ['$user.profile_image', 0] },
+              ''
+            ]
+          },
+          lastMessage: 1,
+          lastMessageTime: 1,
+          unreadCount: {
+            $cond: {
+              if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
+              then: '$unreadCountForSender',
+              else: '$unreadCountForRecipient'
+            }
+          }
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]),
 
-//     Message.countDocuments({
-//       $or: [
-//         { sender: new mongoose.Types.ObjectId(userId) },
-//         { recipient: new mongoose.Types.ObjectId(userId) }
-//       ]
-//     })
-//   ]);
+    Message.countDocuments({
+      $or: [
+        { sender: new mongoose.Types.ObjectId(userId) },
+        { recipient: new mongoose.Types.ObjectId(userId) }
+      ]
+    })
+  ]);
 
-//   res.status(200).json({
-//     success: true,
-//     message: "Chats fetched successfully",
-//     data: recentChats,
-//     pagination: {
-//       totalRecords: total,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       perPage: limit,
-//     },
-//   });
-// });
+  res.status(200).json({
+    success: true,
+    message: "Chats fetched successfully",
+    data: recentChats,
+    pagination: {
+      totalRecords: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      perPage: limit,
+    },
+  });
+});
 
 
 // Modified getChatMessages API endpoint to handle message reading properly
@@ -200,290 +200,292 @@ const { ApiError } = require("../../errorHandler");
 // });
 
 
-const chatList = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id;
-  let { page = 1, limit = 10 } = req.query;
 
-  page = parseInt(page);
-  limit = parseInt(limit);
-  const skip = (page - 1) * limit;
+//with chat permissions
+// const chatList = asyncHandler(async (req, res, next) => {
+//   const userId = req.user._id;
+//   let { page = 1, limit = 10 } = req.query;
 
-  const [recentChats, total] = await Promise.all([
-    Message.aggregate([
-      {
-        $match: {
-          $or: [
-            { sender: new mongoose.Types.ObjectId(userId) },
-            { recipient: new mongoose.Types.ObjectId(userId) }
-          ]
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $cond: {
-              if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-              then: '$recipient',
-              else: '$sender'
-            }
-          },
-          lastMessage: { $last: '$message' },
-          lastMessageTime: { $last: '$timestamp' },
-          totalSentByUser: {
-            $sum: {
-              $cond: [
-                { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-                1,
-                0
-              ]
-            }
-          },
-          unreadCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] },
-                    { $eq: ['$isRead', false] }
-                  ]
-                },
-                1,
-                0
-              ]
-            }
-          }
-        }
-      },
-      { $sort: { lastMessageTime: -1 } },
+//   page = parseInt(page);
+//   limit = parseInt(limit);
+//   const skip = (page - 1) * limit;
 
-      // Lookup user info
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
-      { $unwind: '$user' },
+//   const [recentChats, total] = await Promise.all([
+//     Message.aggregate([
+//       {
+//         $match: {
+//           $or: [
+//             { sender: new mongoose.Types.ObjectId(userId) },
+//             { recipient: new mongoose.Types.ObjectId(userId) }
+//           ]
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: {
+//             $cond: {
+//               if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//               then: '$recipient',
+//               else: '$sender'
+//             }
+//           },
+//           lastMessage: { $last: '$message' },
+//           lastMessageTime: { $last: '$timestamp' },
+//           totalSentByUser: {
+//             $sum: {
+//               $cond: [
+//                 { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//                 1,
+//                 0
+//               ]
+//             }
+//           },
+//           unreadCount: {
+//             $sum: {
+//               $cond: [
+//                 {
+//                   $and: [
+//                     { $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] },
+//                     { $eq: ['$isRead', false] }
+//                   ]
+//                 },
+//                 1,
+//                 0
+//               ]
+//             }
+//           }
+//         }
+//       },
+//       { $sort: { lastMessageTime: -1 } },
 
-      // Lookup block connection where THEY blocked ME
-      {
-        $lookup: {
-          from: 'connections',
-          let: { chatUserId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$sender', '$$chatUserId'] },
-                    { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
-                    { $eq: ['$status', 'Blocked'] }
-                  ]
-                }
-              }
-            }
-          ],
-          as: 'blockedByOther'
-        }
-      },
+//       // Lookup user info
+//       {
+//         $lookup: {
+//           from: 'users',
+//           localField: '_id',
+//           foreignField: '_id',
+//           as: 'user'
+//         }
+//       },
+//       { $unwind: '$user' },
 
-      // Lookup connection where YOU blocked THEM
-      {
-        $lookup: {
-          from: 'connections',
-          let: { chatUserId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-                    { $eq: ['$receiver', '$$chatUserId'] },
-                    { $eq: ['$status', 'Blocked'] }
-                  ]
-                }
-              }
-            }
-          ],
-          as: 'youBlockedOther'
-        }
-      },
+//       // Lookup block connection where THEY blocked ME
+//       {
+//         $lookup: {
+//           from: 'connections',
+//           let: { chatUserId: '$_id' },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ['$sender', '$$chatUserId'] },
+//                     { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
+//                     { $eq: ['$status', 'Blocked'] }
+//                   ]
+//                 }
+//               }
+//             }
+//           ],
+//           as: 'blockedByOther'
+//         }
+//       },
 
-      // Lookup accepted connection (mutual)
-      {
-        $lookup: {
-          from: 'connections',
-          let: { chatUserId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $or: [
-                    {
-                      $and: [
-                        { $eq: ['$sender', '$$chatUserId'] },
-                        { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
-                        { $eq: ['$status', 'Accepted'] }
-                      ]
-                    },
-                    {
-                      $and: [
-                        { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-                        { $eq: ['$receiver', '$$chatUserId'] },
-                        { $eq: ['$status', 'Accepted'] }
-                      ]
-                    }
-                  ]
-                }
-              }
-            }
-          ],
-          as: 'connectionStatus'
-        }
-      },
+//       // Lookup connection where YOU blocked THEM
+//       {
+//         $lookup: {
+//           from: 'connections',
+//           let: { chatUserId: '$_id' },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//                     { $eq: ['$receiver', '$$chatUserId'] },
+//                     { $eq: ['$status', 'Blocked'] }
+//                   ]
+//                 }
+//               }
+//             }
+//           ],
+//           as: 'youBlockedOther'
+//         }
+//       },
 
-      {
-        $project: {
-          userId: '$_id',
-          lastMessage: 1,
-          lastMessageTime: 1,
-          unreadCount: 1,
-          totalSentByUser: 1,
-          isBlockedByOther: { $gt: [{ $size: '$blockedByOther' }, 0] },
-          youBlockedOther: { $gt: [{ $size: '$youBlockedOther' }, 0] },
-          isConnected: { $gt: [{ $size: '$connectionStatus' }, 0] },
+//       // Lookup accepted connection (mutual)
+//       {
+//         $lookup: {
+//           from: 'connections',
+//           let: { chatUserId: '$_id' },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $or: [
+//                     {
+//                       $and: [
+//                         { $eq: ['$sender', '$$chatUserId'] },
+//                         { $eq: ['$receiver', new mongoose.Types.ObjectId(userId)] },
+//                         { $eq: ['$status', 'Accepted'] }
+//                       ]
+//                     },
+//                     {
+//                       $and: [
+//                         { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//                         { $eq: ['$receiver', '$$chatUserId'] },
+//                         { $eq: ['$status', 'Accepted'] }
+//                       ]
+//                     }
+//                   ]
+//                 }
+//               }
+//             }
+//           ],
+//           as: 'connectionStatus'
+//         }
+//       },
 
-          userName: {
-            $cond: {
-              if: { $gt: [{ $size: '$blockedByOther' }, 0] },
-              then: 'Blocked User',
-              else: '$user.fullName'
-            }
-          },
-          userProfilePic: {
-            $cond: {
-              if: { $gt: [{ $size: '$blockedByOther' }, 0] },
-              then: '',
-              else: {
-                $ifNull: [
-                  { $arrayElemAt: ['$user.profile_image', 0] },
-                  ''
-                ]
-              }
-            }
-          },
+//       {
+//         $project: {
+//           userId: '$_id',
+//           lastMessage: 1,
+//           lastMessageTime: 1,
+//           unreadCount: 1,
+//           totalSentByUser: 1,
+//           isBlockedByOther: { $gt: [{ $size: '$blockedByOther' }, 0] },
+//           youBlockedOther: { $gt: [{ $size: '$youBlockedOther' }, 0] },
+//           isConnected: { $gt: [{ $size: '$connectionStatus' }, 0] },
 
-          // canMessage: {
-          //   $cond: {
-          //     if: {
-          //       $or: [
-          //         { $gt: [{ $size: '$blockedByOther' }, 0] },
-          //         { $gt: [{ $size: '$youBlockedOther' }, 0] }
-          //       ]
-          //     },
-          //     then: false,
-          //     else: true
-          //   }
-          // },
+//           userName: {
+//             $cond: {
+//               if: { $gt: [{ $size: '$blockedByOther' }, 0] },
+//               then: 'Blocked User',
+//               else: '$user.fullName'
+//             }
+//           },
+//           userProfilePic: {
+//             $cond: {
+//               if: { $gt: [{ $size: '$blockedByOther' }, 0] },
+//               then: '',
+//               else: {
+//                 $ifNull: [
+//                   { $arrayElemAt: ['$user.profile_image', 0] },
+//                   ''
+//                 ]
+//               }
+//             }
+//           },
 
-          canMessage: {
-            $cond: {
-              if: {
-                $or: [
-                  { $gt: [{ $size: '$blockedByOther' }, 0] },
-                  { $gt: [{ $size: '$youBlockedOther' }, 0] },
-                  {
-                    $and: [
-                      { $eq: [{ $size: '$connectionStatus' }, 0] },
-                      { $lte: [{ $subtract: [2, '$totalSentByUser'] }, 0] }
-                    ]
-                  }
-                ]
-              },
-              then: false,
-              else: true
-            }
-          },
+//           // canMessage: {
+//           //   $cond: {
+//           //     if: {
+//           //       $or: [
+//           //         { $gt: [{ $size: '$blockedByOther' }, 0] },
+//           //         { $gt: [{ $size: '$youBlockedOther' }, 0] }
+//           //       ]
+//           //     },
+//           //     then: false,
+//           //     else: true
+//           //   }
+//           // },
+
+//           canMessage: {
+//             $cond: {
+//               if: {
+//                 $or: [
+//                   { $gt: [{ $size: '$blockedByOther' }, 0] },
+//                   { $gt: [{ $size: '$youBlockedOther' }, 0] },
+//                   {
+//                     $and: [
+//                       { $eq: [{ $size: '$connectionStatus' }, 0] },
+//                       { $lte: [{ $subtract: [2, '$totalSentByUser'] }, 0] }
+//                     ]
+//                   }
+//                 ]
+//               },
+//               then: false,
+//               else: true
+//             }
+//           },
 
 
-          // remainingMessages: {
-          //   $cond: {
-          //     if: {
-          //       $and: [
-          //         { $eq: [{ $size: '$connectionStatus' }, 0] },
-          //         {
-          //           $and: [
-          //             { $eq: [{ $size: '$blockedByOther' }, 0] },
-          //             { $eq: [{ $size: '$youBlockedOther' }, 0] }
-          //           ]
-          //         }
-          //       ]
-          //     },
-          //     then: { $subtract: [2, '$totalSentByUser'] },
-          //     else: null
-          //   }
-          // }
+//           // remainingMessages: {
+//           //   $cond: {
+//           //     if: {
+//           //       $and: [
+//           //         { $eq: [{ $size: '$connectionStatus' }, 0] },
+//           //         {
+//           //           $and: [
+//           //             { $eq: [{ $size: '$blockedByOther' }, 0] },
+//           //             { $eq: [{ $size: '$youBlockedOther' }, 0] }
+//           //           ]
+//           //         }
+//           //       ]
+//           //     },
+//           //     then: { $subtract: [2, '$totalSentByUser'] },
+//           //     else: null
+//           //   }
+//           // }
 
-          remainingMessages: {
-            $cond: {
-              if: {
-                $and: [
-                  { $eq: [{ $size: '$connectionStatus' }, 0] },
-                  { $eq: [{ $size: '$blockedByOther' }, 0] },
-                  { $eq: [{ $size: '$youBlockedOther' }, 0] }
-                ]
-              },
-              then: { $subtract: [2, '$totalSentByUser'] },
-              else: null
-            }
-          }
+//           remainingMessages: {
+//             $cond: {
+//               if: {
+//                 $and: [
+//                   { $eq: [{ $size: '$connectionStatus' }, 0] },
+//                   { $eq: [{ $size: '$blockedByOther' }, 0] },
+//                   { $eq: [{ $size: '$youBlockedOther' }, 0] }
+//                 ]
+//               },
+//               then: { $subtract: [2, '$totalSentByUser'] },
+//               else: null
+//             }
+//           }
 
-        }
-      },
+//         }
+//       },
 
-      { $skip: skip },
-      { $limit: limit }
-    ]),
+//       { $skip: skip },
+//       { $limit: limit }
+//     ]),
 
-    // Count total chat threads
-    Message.aggregate([
-      {
-        $match: {
-          $or: [
-            { sender: new mongoose.Types.ObjectId(userId) },
-            { recipient: new mongoose.Types.ObjectId(userId) }
-          ]
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $cond: {
-              if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-              then: '$recipient',
-              else: '$sender'
-            }
-          }
-        }
-      },
-      { $count: "total" }
-    ]).then(res => res[0]?.total || 0)
-  ]);
+//     // Count total chat threads
+//     Message.aggregate([
+//       {
+//         $match: {
+//           $or: [
+//             { sender: new mongoose.Types.ObjectId(userId) },
+//             { recipient: new mongoose.Types.ObjectId(userId) }
+//           ]
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: {
+//             $cond: {
+//               if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//               then: '$recipient',
+//               else: '$sender'
+//             }
+//           }
+//         }
+//       },
+//       { $count: "total" }
+//     ]).then(res => res[0]?.total || 0)
+//   ]);
 
-  res.status(200).json({
-    success: true,
-    message: "Chat list fetched successfully",
-    data: recentChats,
-    pagination: {
-      totalRecords: total,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      perPage: limit
-    }
-  });
-});
+//   res.status(200).json({
+//     success: true,
+//     message: "Chat list fetched successfully",
+//     data: recentChats,
+//     pagination: {
+//       totalRecords: total,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       perPage: limit
+//     }
+//   });
+// });
 
 const getChatThread = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
@@ -610,49 +612,127 @@ const getChatThread = asyncHandler(async (req, res, next) => {
   });
 });
 
+// const getChatMessages = asyncHandler(async (req, res, next) => {
+//   const senderId = req.user._id;
+//   const { id: receiverId } = req.params;
+//   const { page = 1, limit = 15 } = req.query;
+
+//   const pageNum = parseInt(page) || 1;
+//   const limitNum = parseInt(limit) || 30;
+
+//   try {
+//     // Find all messages between the two users (without updating anything)
+//     const messages = await Message.find({
+//       $or: [
+//         { sender: senderId, recipient: receiverId },
+//         { sender: receiverId, recipient: senderId },
+//       ],
+//     })
+//       .sort({ timestamp: -1 })
+//       .skip((pageNum - 1) * limitNum)
+//       .limit(limitNum)
+//       .exec();
+
+//     // Find unread messages from the recipient to mark as read
+//     const unreadMessageIds = messages
+//       .filter(msg => msg.sender.toString() === receiverId && !msg.isRead)
+//       .map(msg => msg._id);
+
+//     // If there are unread messages, mark them as read
+//     if (unreadMessageIds.length > 0) {
+//       console.log(`Marking ${unreadMessageIds.length} messages as read`);
+
+//       // Update the messages in the database
+//       await Message.updateMany(
+//         { _id: { $in: unreadMessageIds } },
+//         { isRead: true, status: 'read' }
+//       );
+
+//       // Also emit a socket event to notify the sender
+//       // This will be handled if you have socket.io available in this context
+//       // If not, you'll need to adjust your server architecture
+//       try {
+//         const io = req.app.get('socketio');
+
+//         // Get the sender's socket ID from your users object
+//         const users = req.app.get('users') || {};
+//         const senderSocketId = users[receiverId]?.socketId;
+
+//         if (io && senderSocketId) {
+//           io.to(senderSocketId).emit('messagesRead', {
+//             messageIds: unreadMessageIds,
+//             recipientId: senderId
+//           });
+//           console.log(`Emitted messagesRead event to socket ${senderSocketId}`);
+//         } else {
+//           console.log('Could not emit socket event: socketio or user not found');
+//         }
+//       } catch (error) {
+//         console.error('Error emitting socket event:', error);
+//       }
+//     }
+
+//     // Get the total number of messages for pagination info
+//     const totalMessages = await Message.countDocuments({
+//       $or: [
+//         { sender: senderId, recipient: receiverId },
+//         { sender: receiverId, recipient: senderId },
+//       ],
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Messages retrieved successfully",
+//       data: messages,
+//       currentPage: pageNum,
+//       totalPages: Math.ceil(totalMessages / limitNum),
+//       totalMessages
+//     });
+//   } catch (error) {
+//     console.error('Error in getChatMessages:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error retrieving messages",
+//       error: error.message
+//     });
+//   }
+// });
+
+//with chat permissions
 const getChatMessages = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
   const { id: receiverId } = req.params;
   const { page = 1, limit = 15 } = req.query;
 
   const pageNum = parseInt(page) || 1;
-  const limitNum = parseInt(limit) || 30;
+  const limitNum = parseInt(limit) || 15;
 
   try {
-    // Find all messages between the two users (without updating anything)
+    // Fetch messages between the two users (paginated)
     const messages = await Message.find({
       $or: [
         { sender: senderId, recipient: receiverId },
         { sender: receiverId, recipient: senderId },
-      ],
+      ]
     })
       .sort({ timestamp: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum)
       .exec();
 
-    // Find unread messages from the recipient to mark as read
+    // Mark unread messages as read (from receiver to sender)
     const unreadMessageIds = messages
       .filter(msg => msg.sender.toString() === receiverId && !msg.isRead)
       .map(msg => msg._id);
 
-    // If there are unread messages, mark them as read
     if (unreadMessageIds.length > 0) {
-      console.log(`Marking ${unreadMessageIds.length} messages as read`);
-
-      // Update the messages in the database
       await Message.updateMany(
         { _id: { $in: unreadMessageIds } },
         { isRead: true, status: 'read' }
       );
 
-      // Also emit a socket event to notify the sender
-      // This will be handled if you have socket.io available in this context
-      // If not, you'll need to adjust your server architecture
       try {
         const io = req.app.get('socketio');
-
-        // Get the sender's socket ID from your users object
         const users = req.app.get('users') || {};
         const senderSocketId = users[receiverId]?.socketId;
 
@@ -661,30 +741,82 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
             messageIds: unreadMessageIds,
             recipientId: senderId
           });
-          console.log(`Emitted messagesRead event to socket ${senderSocketId}`);
-        } else {
-          console.log('Could not emit socket event: socketio or user not found');
         }
       } catch (error) {
         console.error('Error emitting socket event:', error);
       }
     }
 
-    // Get the total number of messages for pagination info
+    // Total message count for pagination
     const totalMessages = await Message.countDocuments({
       $or: [
         { sender: senderId, recipient: receiverId },
         { sender: receiverId, recipient: senderId },
-      ],
+      ]
     });
+
+    // Default flags (for pages > 1)
+    let blockedByOther = false;
+    let youBlocked = false;
+    let isConnected = false;
+    let canMessage = true;
+    let remainingMessages = null;
+
+    // Only fetch connection info on page 1
+    if (pageNum === 1) {
+      const [connections, totalSentByUser] = await Promise.all([
+        Connection.find({
+          $or: [
+            { sender: senderId, receiver: receiverId },
+            { sender: receiverId, receiver: senderId }
+          ]
+        }),
+        Message.countDocuments({ sender: senderId, recipient: receiverId })
+      ]);
+
+      for (const conn of connections) {
+        if (conn.status === 'Blocked') {
+          if (conn.sender.toString() === receiverId.toString()) blockedByOther = true;
+          if (conn.sender.toString() === senderId.toString()) youBlocked = true;
+        } else if (conn.status === 'Accepted') {
+          isConnected = true;
+        }
+      }
+
+      // Apply logic for canMessage & remainingMessages
+      if (blockedByOther || youBlocked) {
+        canMessage = false;
+      } else if (!isConnected) {
+        const remaining = 2 - totalSentByUser;
+        remainingMessages = remaining > 0 ? remaining : 0;
+        if (remaining <= 0) canMessage = false;
+      }
+    }
 
     res.status(200).json({
       success: true,
       message: "Messages retrieved successfully",
       data: messages,
-      currentPage: pageNum,
-      totalPages: Math.ceil(totalMessages / limitNum),
-      totalMessages
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalMessages / limitNum),
+        totalMessages
+      },
+      chatPermissions: pageNum === 1
+        ? {
+          blockedByOther,
+          youBlocked,
+          isConnected,
+          canMessage,
+          remainingMessages
+        }
+        : {
+          blockedByOther: false,
+          youBlocked: false,
+          isConnected: false,
+          canMessage: true,
+          remainingMessages: null
+        }
     });
   } catch (error) {
     console.error('Error in getChatMessages:', error);
@@ -695,6 +827,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
     });
   }
 });
+
 
 module.exports = {
   chatList,
