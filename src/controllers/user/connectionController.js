@@ -6,6 +6,7 @@ const { Connection, User, Report } = require("../../models"); // Renamed model
 const Notification = require("../../models/notification");
 const sendFirebaseNotification = require("../../utils/sendFirebaseNotification");
 const { getFileUploader } = require("../../middlewares/fileUpload")
+const reportUpload = getFileUploader("evidence", "reports");
 
 // const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
 //   const { receiverId, status } = req.body;
@@ -181,8 +182,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     const senderId = req.user._id;
     const { fullName, deviceToken, profile_image } = req.user;
 
-    console.log('req.body', req.body);
-
     if (!receiverId) {
       return next(new ApiError("Receiver ID is required", 400));
     }
@@ -336,8 +335,6 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     });
   }
 });
-
-
 
 /**
  * Get all requests sent by the current user
@@ -506,32 +503,6 @@ const getConnections = asyncHandler(async (req, res, next) => {
   });
 });
 
-/**
- * Check if users can message each other
- */
-// const canMessage = asyncHandler(async (req, res, next) => {
-//   const userId = req.user._id;
-//   const { otherUserId } = req.params;
-
-//   // Check if connection exists and is accepted
-//   const connection = await Connection.findOne({
-//     $or: [
-//       { sender: userId, receiver: otherUserId, status: "Accepted" },
-//       { sender: otherUserId, receiver: userId, status: "Accepted" }
-//     ]
-//   });
-
-//   if (!connection) {
-//     return next(new ApiError("You are not connected with this user", 403));
-//   }
-
-//   return res.status(200).json({
-//     success: true,
-//     message: "You can message this user",
-//     canMessage: true
-//   });
-// });
-
 const canMessage = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { otherUserId } = req.params;
@@ -593,6 +564,57 @@ const canMessage = asyncHandler(async (req, res, next) => {
 });
 
 
+// const blockUser = asyncHandler(async (req, res, next) => {
+//   const senderId = req.user._id;
+//   const { receiverId } = req.body;
+
+//   if (!receiverId || senderId.toString() === receiverId) {
+//     return next(new ApiError("Invalid receiver ID", 400));
+//   }
+
+//   // Remove any existing connections
+//   await Connection.deleteMany({
+//     $or: [
+//       { sender: senderId, receiver: receiverId },
+//       { sender: receiverId, receiver: senderId }
+//     ]
+//   });
+
+//   // Add block record
+//   const block = new Connection({
+//     sender: senderId,
+//     receiver: receiverId,
+//     status: "Blocked"
+//   });
+//   await block.save();
+
+//   res.status(200).json({ success: true, message: "User blocked successfully" });
+// });
+// const unblockUser = asyncHandler(async (req, res, next) => {
+//   const senderId = req.user._id;
+//   const { receiverId } = req.body;
+
+//   if (!receiverId) {
+//     return next(new ApiError("Receiver ID is required", 400));
+//   }
+
+//   const deleted = await Connection.findOneAndDelete({
+//     sender: senderId,
+//     receiver: receiverId,
+//     status: "Blocked"
+//   });
+
+//   if (!deleted) {
+//     return next(new ApiError("No block found for this user", 404));
+//   }
+
+//   res.status(200).json({
+//     success: true,
+//     message: "User unblocked successfully"
+//   });
+// });
+
+
 const blockUser = asyncHandler(async (req, res, next) => {
   const senderId = req.user._id;
   const { receiverId } = req.body;
@@ -601,23 +623,158 @@ const blockUser = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Invalid receiver ID", 400));
   }
 
-  // Remove any existing connections
-  await Connection.deleteMany({
-    $or: [
-      { sender: senderId, receiver: receiverId },
-      { sender: receiverId, receiver: senderId }
-    ]
-  });
+  try {
+    // Remove any existing connections
+    await Connection.deleteMany({
+      $or: [
+        { sender: senderId, receiver: receiverId },
+        { sender: receiverId, receiver: senderId }
+      ]
+    });
 
-  // Add block record
-  const block = new Connection({
-    sender: senderId,
-    receiver: receiverId,
-    status: "Blocked"
-  });
-  await block.save();
+    // Add block record
+    const block = new Connection({
+      sender: senderId,
+      receiver: receiverId,
+      status: "Blocked"
+    });
+    await block.save();
 
-  res.status(200).json({ success: true, message: "User blocked successfully" });
+    // Emit socket events for real-time updates
+    const io = req.app.get('socketio');
+    const users = req.app.get('users') || {};
+
+    if (io) {
+      // Notify the blocked user that they've been blocked
+      const blockedUserSocket = users[receiverId]?.socketId;
+      if (blockedUserSocket) {
+        io.to(blockedUserSocket).emit("chatPermissionsUpdated", {
+          userId: senderId.toString(),
+          permissions: {
+            blockedByOther: true,
+            youBlocked: false,
+            isConnected: false,
+            canMessage: false,
+            remainingMessages: null
+          }
+        });
+      }
+
+      // Notify the blocker about the updated status
+      const blockerSocket = users[senderId.toString()]?.socketId;
+      if (blockerSocket) {
+        io.to(blockerSocket).emit("chatPermissionsUpdated", {
+          userId: receiverId,
+          permissions: {
+            blockedByOther: false,
+            youBlocked: true,
+            isConnected: false,
+            canMessage: false,
+            remainingMessages: null
+          }
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User blocked successfully"
+    });
+
+  } catch (error) {
+    console.error('Error in blockUser:', error);
+    return next(new ApiError("Failed to block user", 500));
+  }
+});
+
+const unblockUser = asyncHandler(async (req, res, next) => {
+  const senderId = req.user._id;
+  const { receiverId } = req.body;
+
+  if (!receiverId) {
+    return next(new ApiError("Receiver ID is required", 400));
+  }
+
+  try {
+    const deleted = await Connection.findOneAndDelete({
+      sender: senderId,
+      receiver: receiverId,
+      status: "Blocked"
+    });
+
+    if (!deleted) {
+      return next(new ApiError("No block found for this user", 404));
+    }
+
+    // Calculate new permissions after unblocking
+    const [remainingConnections, totalSentByUser] = await Promise.all([
+      Connection.find({
+        $or: [
+          { sender: senderId, receiver: receiverId },
+          { sender: receiverId, receiver: senderId }
+        ]
+      }),
+      Message.countDocuments({ sender: senderId, recipient: receiverId })
+    ]);
+
+    // Check if there's still an accepted connection
+    const isConnected = remainingConnections.some(conn => conn.status === 'Accepted');
+
+    // Calculate remaining messages if not connected
+    let remainingMessages = null;
+    let canMessage = true;
+
+    if (!isConnected) {
+      const remaining = 2 - totalSentByUser;
+      remainingMessages = remaining > 0 ? remaining : 0;
+      if (remaining <= 0) canMessage = false;
+    }
+
+    // Emit socket events for real-time updates
+    const io = req.app.get('socketio');
+    const users = req.app.get('users') || {};
+
+    if (io) {
+      // Notify the previously blocked user
+      const unblockedUserSocket = users[receiverId]?.socketId;
+      if (unblockedUserSocket) {
+        io.to(unblockedUserSocket).emit("chatPermissionsUpdated", {
+          userId: senderId.toString(),
+          permissions: {
+            blockedByOther: false,
+            youBlocked: false,
+            isConnected,
+            canMessage: true, // They can always message back
+            remainingMessages: null
+          }
+        });
+      }
+
+      // Notify the unblocker about the updated status
+      const unblockerSocket = users[senderId.toString()]?.socketId;
+      if (unblockerSocket) {
+        io.to(unblockerSocket).emit("chatPermissionsUpdated", {
+          userId: receiverId,
+          permissions: {
+            blockedByOther: false,
+            youBlocked: false,
+            isConnected,
+            canMessage,
+            remainingMessages
+          }
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User unblocked successfully"
+    });
+
+  } catch (error) {
+    console.error('Error in unblockUser:', error);
+    return next(new ApiError("Failed to unblock user", 500));
+  }
 });
 
 const getBlockedUsers = asyncHandler(async (req, res, next) => {
@@ -660,36 +817,6 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
     }
   });
 });
-
-
-
-const unblockUser = asyncHandler(async (req, res, next) => {
-  const senderId = req.user._id;
-  const { receiverId } = req.body;
-
-  if (!receiverId) {
-    return next(new ApiError("Receiver ID is required", 400));
-  }
-
-  const deleted = await Connection.findOneAndDelete({
-    sender: senderId,
-    receiver: receiverId,
-    status: "Blocked"
-  });
-
-  if (!deleted) {
-    return next(new ApiError("No block found for this user", 404));
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "User unblocked successfully"
-  });
-});
-
-
-
-const reportUpload = getFileUploader("evidence", "reports");
 
 const reportUser = (req, res, next) => {
   reportUpload(req, res, async (err) => {
