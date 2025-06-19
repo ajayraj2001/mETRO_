@@ -590,6 +590,7 @@ const canMessage = asyncHandler(async (req, res, next) => {
 
 //   res.status(200).json({ success: true, message: "User blocked successfully" });
 // });
+
 // const unblockUser = asyncHandler(async (req, res, next) => {
 //   const senderId = req.user._id;
 //   const { receiverId } = req.body;
@@ -650,13 +651,14 @@ const blockUser = asyncHandler(async (req, res, next) => {
       if (blockedUserSocket) {
         io.to(blockedUserSocket).emit("chatPermissionsUpdated", {
           userId: senderId.toString(),
-          permissions: {
-            blockedByOther: true,
-            youBlocked: false,
-            isConnected: false,
-            canMessage: false,
-            remainingMessages: null
-          }
+          status: "blocked"
+          // permissions: {
+          //   blockedByOther: true,
+          //   youBlocked: false,
+          //   isConnected: false,
+          //   canMessage: false,
+          //   remainingMessages: null
+          // }
         });
       }
 
@@ -696,6 +698,7 @@ const unblockUser = asyncHandler(async (req, res, next) => {
   }
 
   try {
+
     const deleted = await Connection.findOneAndDelete({
       sender: senderId,
       receiver: receiverId,
@@ -704,30 +707,6 @@ const unblockUser = asyncHandler(async (req, res, next) => {
 
     if (!deleted) {
       return next(new ApiError("No block found for this user", 404));
-    }
-
-    // Calculate new permissions after unblocking
-    const [remainingConnections, totalSentByUser] = await Promise.all([
-      Connection.find({
-        $or: [
-          { sender: senderId, receiver: receiverId },
-          { sender: receiverId, receiver: senderId }
-        ]
-      }),
-      Message.countDocuments({ sender: senderId, recipient: receiverId })
-    ]);
-
-    // Check if there's still an accepted connection
-    const isConnected = remainingConnections.some(conn => conn.status === 'Accepted');
-
-    // Calculate remaining messages if not connected
-    let remainingMessages = null;
-    let canMessage = true;
-
-    if (!isConnected) {
-      const remaining = 2 - totalSentByUser;
-      remainingMessages = remaining > 0 ? remaining : 0;
-      if (remaining <= 0) canMessage = false;
     }
 
     // Emit socket events for real-time updates
@@ -740,13 +719,7 @@ const unblockUser = asyncHandler(async (req, res, next) => {
       if (unblockedUserSocket) {
         io.to(unblockedUserSocket).emit("chatPermissionsUpdated", {
           userId: senderId.toString(),
-          permissions: {
-            blockedByOther: false,
-            youBlocked: false,
-            isConnected,
-            canMessage: true, // They can always message back
-            remainingMessages: null
-          }
+          status: "unblocked"
         });
       }
 

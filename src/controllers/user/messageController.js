@@ -787,7 +787,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
       if (blockedByOther || youBlocked) {
         canMessage = false;
       } else if (!isConnected) {
-        const remaining = 2 - totalSentByUser;
+        const remaining = 5 - totalSentByUser;
         remainingMessages = remaining > 0 ? remaining : 0;
         if (remaining <= 0) canMessage = false;
       }

@@ -91,7 +91,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
 
       // Handle checking read status when reconnecting
       socket.on("checkMessageReadStatus", async (data) => {
-        console.log('Message read status check requested:', data);
         const { messageIds, senderId, recipientId } = data;
 
         try {
@@ -106,8 +105,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
             .map(message => message._id.toString());
 
           if (readMessageIds.length > 0) {
-            console.log(`Found ${readMessageIds.length} messages that are read`);
-
             // Notify sender about read messages
             socket.emit("messagesRead", {
               messageIds: readMessageIds,
@@ -123,8 +120,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
         if (userId) {
           // Store user's socket ID and status
           users[userId] = { socketId: socket.id, status: "online" };
-          console.log(`User with ID ${userId} joined`);
-
           // IMPORTANT: Tell EVERYONE (including the new user) about this user's status
           // This replaces socket.broadcast.emit with io.emit to include the sender
           io.emit("userStatus", { userId, status: "online" });
@@ -139,9 +134,7 @@ function checkPendingReadReceipts(userId, socketId, io) {
 
           if (onlineUsers.length > 0) {
             socket.emit("usersStatus", onlineUsers);
-            console.log(`Sent status of ${onlineUsers.length} online users to ${userId}`);
           }
-
           // Check pending read receipts as before
           checkPendingReadReceipts(userId, socket.id, io);
         }
@@ -149,7 +142,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
 
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {
-        console.log('Send message triggered:', data);
         const { senderId, recipientId, messageText, tempId } = data;
 
         try {
@@ -164,8 +156,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
           });
 
           const savedMessage = await newMessage.save();
-          console.log('socket.id', socket.id)
-
           // Immediately send confirmation back to sender with 'sent' status
           // Include both temporary ID and server ID
           io.to(socket.id).emit("messageSent", {
@@ -191,8 +181,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
               messageId: savedMessage._id.toString(),
               status: 'delivered'
             });
-
-            console.log(`Message delivered to recipient ${recipientId}, status updated to 'delivered'`);
           }
         } catch (error) {
           console.error('Error in sendMessage:', error);
@@ -286,7 +274,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
 
       // Handle message read status
       socket.on("messageRead", async (data) => {
-        console.log('Message read event received:', data);
         const { messageIds, recipientId, senderId } = data;
 
         try {
@@ -295,19 +282,14 @@ function checkPendingReadReceipts(userId, socketId, io) {
             { _id: { $in: messageIds } },
             { $set: { isRead: true, status: 'read' } }
           );
-
-          console.log(`Messages marked as read: ${messageIds.join(', ')}`);
-
           // Notify sender that messages were read
           if (users[senderId]) {
-            console.log(`Notifying ${senderId} that messages were read`);
             io.to(users[senderId].socketId).emit("messagesRead", {
               messageIds,
               recipientId
             });
           } else {
             // If sender is offline, store the read receipt for later
-            console.log(`Sender ${senderId} is offline, storing read receipt`);
             storePendingReadReceipt(senderId, messageIds, recipientId);
           }
         } catch (error) {
@@ -389,7 +371,6 @@ function checkPendingReadReceipts(userId, socketId, io) {
             });
 
             delete users[userId];
-            console.log(`User ${userId} is now offline`);
             break;
           }
         }
