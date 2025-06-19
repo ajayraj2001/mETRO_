@@ -661,19 +661,19 @@ const blockUser = asyncHandler(async (req, res, next) => {
       }
 
       // Notify the blocker about the updated status
-      const blockerSocket = users[senderId.toString()]?.socketId;
-      if (blockerSocket) {
-        io.to(blockerSocket).emit("chatPermissionsUpdated", {
-          userId: receiverId,
-          permissions: {
-            blockedByOther: false,
-            youBlocked: true,
-            isConnected: false,
-            canMessage: false,
-            remainingMessages: null
-          }
-        });
-      }
+      // const blockerSocket = users[senderId.toString()]?.socketId;
+      // if (blockerSocket) {
+      //   io.to(blockerSocket).emit("chatPermissionsUpdated", {
+      //     userId: receiverId,
+      //     permissions: {
+      //       blockedByOther: false,
+      //       youBlocked: true,
+      //       isConnected: false,
+      //       canMessage: false,
+      //       remainingMessages: null
+      //     }
+      //   });
+      // }
     }
 
     res.status(200).json({
@@ -751,19 +751,19 @@ const unblockUser = asyncHandler(async (req, res, next) => {
       }
 
       // Notify the unblocker about the updated status
-      const unblockerSocket = users[senderId.toString()]?.socketId;
-      if (unblockerSocket) {
-        io.to(unblockerSocket).emit("chatPermissionsUpdated", {
-          userId: receiverId,
-          permissions: {
-            blockedByOther: false,
-            youBlocked: false,
-            isConnected,
-            canMessage,
-            remainingMessages
-          }
-        });
-      }
+      // const unblockerSocket = users[senderId.toString()]?.socketId;
+      // if (unblockerSocket) {
+      //   io.to(unblockerSocket).emit("chatPermissionsUpdated", {
+      //     userId: receiverId,
+      //     permissions: {
+      //       blockedByOther: false,
+      //       youBlocked: false,
+      //       isConnected,
+      //       canMessage,
+      //       remainingMessages
+      //     }
+      //   });
+      // }
     }
 
     res.status(200).json({
