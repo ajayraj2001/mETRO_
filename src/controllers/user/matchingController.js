@@ -640,8 +640,6 @@ const getMyMatches = async (req, res) => {
     const paginatedMatches = matchesWithMeta.slice(skip, skip + limit);
     const matchIds = paginatedMatches.map(m => m._id);
 
-    console.log('matchIds', matchIds)
-
     // Fetch liked info only for visible matches
     const likedDocs = await Like.find({
       user: userId,
@@ -1487,7 +1485,6 @@ const generateUserSuggestions = (user, preferences) => {
 
   return suggestions;
 };
-
 
 module.exports = {
   calculateMatchPercentage,

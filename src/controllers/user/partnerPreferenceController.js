@@ -701,6 +701,109 @@ const getProfileById = async (req, res, next) => {
   }
 };
 
+const getProfileDetails = async (req, res, next) => {
+  try {
+    const profileId = req.params.id;
+    const currentUser = req.user;
+
+    // Check for same profile to avoid DB hit
+    if (currentUser.profileId === profileId) {
+      const responseUser = currentUser.toObject ? currentUser.toObject() : currentUser;
+
+      const age = responseUser.dob ? calculateAge(responseUser.dob) : null;
+
+      return res.status(200).json({
+        success: true,
+        message: "Own profile data",
+        data: {
+          ...responseUser,
+          age,
+          distance: null,
+          connectionStatus: "own_profile"
+        }
+      });
+    }
+
+    // Find matched user by profileId
+    // const matchedUser = await User.findOne({ profileId }).lean();
+    const matchedUser = await User.findById(profileId).lean();
+    if (!matchedUser) return next(new ApiError("Profile not found", 404));
+
+    // Age and distance
+    const age = matchedUser.dob ? calculateAge(matchedUser.dob) : null;
+
+    const currentCoords = currentUser.location?.coordinates;
+    const matchedCoords = matchedUser.location?.coordinates;
+
+    const distance =
+      currentCoords && matchedCoords
+        ? haversineDistance(currentCoords, matchedCoords)?.toFixed(2)
+        : null;
+
+    // Visit log
+    const existingVisit = await ProfileVisit.findOne({
+      visitor: currentUser._id,
+      visited: matchedUser._id,
+    });
+
+    if (!existingVisit) {
+      await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
+    }
+
+    // const currentMatchedUserCount = await ProfileVisit.countDocuments({
+    //   visited: matchedUser._id,
+    // });
+
+    // Check connection status
+    const connection = await Connection.findOne({
+      $or: [
+        { sender: currentUser._id, receiver: matchedUser._id },
+        { sender: matchedUser._id, receiver: currentUser._id },
+      ],
+    }).lean();
+
+    let connectionStatus = "not_connected";
+    if (connection) {
+      if (connection.status === "Blocked") {
+        connectionStatus = connection.sender.toString() === currentUser._id.toString()
+          ? "you_blocked"
+          : "blocked_by_other";
+      } else if (connection.status === "Pending") {
+        connectionStatus = connection.sender.toString() === currentUser._id.toString()
+          ? "request_sent"
+          : "request_received";
+      } else if (connection.status === "Accepted") {
+        connectionStatus = "connected";
+      }
+    }
+
+    // Prepare final response
+    const responseUser = matchedUser;
+    responseUser.age = age;
+    responseUser.distance = distance;
+    responseUser.connectionStatus = connectionStatus;
+
+    // Always mask the phone number (never show full)
+    if (responseUser.phone) {
+      responseUser.phone = maskPhone(responseUser.phone);
+    }
+
+    // Remove sensitive fields
+    delete responseUser.location;
+    delete responseUser.otp_expiry;
+    delete responseUser.heightInCm;
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile data",
+      data: responseUser,
+    });
+  } catch (err) {
+    console.log("Error in getProfileById:", err);
+    next(err);
+  }
+};
+
 
 const checkContactEligibility = async (req, res, next) => {
   try {
@@ -789,4 +892,5 @@ module.exports = {
   checkContactEligibility,
   matchedProfiles,
   getProfileById,
+  getProfileDetails
 };
