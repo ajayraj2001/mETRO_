@@ -703,6 +703,7 @@ const blockUser = asyncHandler(async (req, res, next) => {
     const { userId, blockReason } = req.body;
     const currentUserId = req.user._id;
 
+    console.log('hey bwahdj',userId, 'adas',currentUserId )
     if (currentUserId.toString() === userId.toString()) {
       return next(new ApiError("You cannot block yourself", 400));
     }
