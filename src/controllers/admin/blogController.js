@@ -61,7 +61,7 @@ const createBlog = async (req, res, next) => {
             }
 
             if (req.file) {
-                blogImgPath = `/public/blog_images/${req.file.filename}`;
+                blogImgPath = `/blog_images/${req.file.filename}`;
             }
 
             let parsedTags = [];
@@ -121,20 +121,18 @@ const updateBlog = async (req, res, next) => {
             let finalSlug = existingBlog.slug;
 
             if (slug && slug !== existingBlog.slug) {
-                console.log('heys budyd')
                 const existingSlug = await Blog.findOne({ slug, _id: { $ne: id } });
                 if (existingSlug) {
                     throw new ApiError('Slug already exists. Please choose a different slug.', 400);
                 }
                 finalSlug = slug;
-            } else if (!slug && title !== existingBlog.title) {
-                console.log('2222222222222')
+            }  else if (!slug && title && title !== existingBlog.title) {
                 const baseSlug = generateSlug(title);
                 finalSlug = await ensureUniqueSlug(baseSlug, id);
             }
 
             if (req.file) {
-                blogImgPath = `/public/blog_images/${req.file.filename}`;
+                blogImgPath = `/blog_images/${req.file.filename}`;
             }
 
             // Parse tags if sent as string (from form-data)

@@ -700,10 +700,9 @@ const canMessage = asyncHandler(async (req, res, next) => {
 
 const blockUser = asyncHandler(async (req, res, next) => {
   try {
-    const { receiverId: userId, blockReason } = req.body;
+    const { receiverId: userId } = req.body;
     const currentUserId = req.user._id;
 
-    console.log('hey bwahdj',userId, 'adas',currentUserId )
     if (currentUserId.toString() === userId.toString()) {
       return next(new ApiError("You cannot block yourself", 400));
     }
@@ -755,7 +754,6 @@ const blockUser = asyncHandler(async (req, res, next) => {
       existingConnection.blockDetails.push({
         blockedBy: currentUserId,
         blockedAt: new Date(),
-        blockReason: blockReason || '',
         isActive: true
       });
 
