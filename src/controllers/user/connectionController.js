@@ -699,92 +699,97 @@ const canMessage = asyncHandler(async (req, res, next) => {
 // });
 
 const blockUser = asyncHandler(async (req, res, next) => {
-  const { userId } = req.body;
-  const currentUserId = req.user._id;
-  const { blockReason } = req.body;
+  try {
+    const { userId, blockReason } = req.body;
+    const currentUserId = req.user._id;
 
-  if (currentUserId.toString() === userId.toString()) {
-    return next(new ApiError("You cannot block yourself", 400));
-  }
-
-  // Check if user exists
-  const userToBlock = await User.findById(userId);
-  if (!userToBlock) {
-    return next(new ApiError("User not found", 404));
-  }
-
-  // Find existing connection
-  let existingConnection = await Connection.findOne({
-    $or: [
-      { sender: currentUserId, receiver: userId },
-      { sender: userId, receiver: currentUserId }
-    ]
-  });
-
-  if (existingConnection) {
-    // Initialize blockedBy array if it doesn't exist
-    if (!existingConnection.blockedBy) {
-      existingConnection.blockedBy = [];
-    }
-    if (!existingConnection.blockDetails) {
-      existingConnection.blockDetails = [];
+    if (currentUserId.toString() === userId.toString()) {
+      return next(new ApiError("You cannot block yourself", 400));
     }
 
-    // Check if current user already blocked the other user
-    const alreadyBlockedByCurrentUser = existingConnection.blockedBy.some(
-      id => id.toString() === currentUserId.toString()
-    );
-    
-    if (alreadyBlockedByCurrentUser) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already blocked this user"
-      });
+    // Check if user exists
+    const userToBlock = await User.findById(userId);
+    if (!userToBlock) {
+      return next(new ApiError("User not found", 404));
     }
 
-    // If this is the first block, save previous status
-    if (existingConnection.blockedBy.length === 0) {
-      existingConnection.previousStatus = existingConnection.status;
-    }
-
-    // Add current user to blockedBy array
-    existingConnection.blockedBy.push(currentUserId);
-    
-    // Add block details
-    existingConnection.blockDetails.push({
-      blockedBy: currentUserId,
-      blockedAt: new Date(),
-      blockReason: blockReason || '',
-      isActive: true
+    // Find existing connection
+    let existingConnection = await Connection.findOne({
+      $or: [
+        { sender: currentUserId, receiver: userId },
+        { sender: userId, receiver: currentUserId }
+      ]
     });
 
-    // Update status and mutual blocking flag
-    existingConnection.status = 'Blocked';
-    existingConnection.isMutuallyBlocked = existingConnection.blockedBy.length > 1;
+    if (existingConnection) {
+      // Initialize blockedBy array if it doesn't exist
+      if (!existingConnection.blockedBy) {
+        existingConnection.blockedBy = [];
+      }
+      if (!existingConnection.blockDetails) {
+        existingConnection.blockDetails = [];
+      }
 
-    await existingConnection.save();
+      // Check if current user already blocked the other user
+      const alreadyBlockedByCurrentUser = existingConnection.blockedBy.some(
+        id => id.toString() === currentUserId.toString()
+      );
 
-  } else {
-    // Create new blocked connection
-    await Connection.create({
-      sender: currentUserId,
-      receiver: userId,
-      status: 'Blocked',
-      blockedBy: [currentUserId],
-      blockDetails: [{
+      if (alreadyBlockedByCurrentUser) {
+        return res.status(400).json({
+          success: false,
+          message: "You have already blocked this user"
+        });
+      }
+
+      // If this is the first block, save previous status
+      if (existingConnection.blockedBy.length === 0) {
+        existingConnection.previousStatus = existingConnection.status;
+      }
+
+      // Add current user to blockedBy array
+      existingConnection.blockedBy.push(currentUserId);
+
+      // Add block details
+      existingConnection.blockDetails.push({
         blockedBy: currentUserId,
         blockedAt: new Date(),
         blockReason: blockReason || '',
         isActive: true
-      }],
-      isMutuallyBlocked: false
-    });
-  }
+      });
 
-  res.status(200).json({
-    success: true,
-    message: "User blocked successfully"
-  });
+      // Update status and mutual blocking flag
+      existingConnection.status = 'Blocked';
+      existingConnection.isMutuallyBlocked = existingConnection.blockedBy.length > 1;
+
+      await existingConnection.save();
+
+    } else {
+      // Create new blocked connection
+      await Connection.create({
+        sender: currentUserId,
+        receiver: userId,
+        status: 'Blocked',
+        blockedBy: [currentUserId],
+        blockDetails: [{
+          blockedBy: currentUserId,
+          blockedAt: new Date(),
+          blockReason: blockReason || '',
+          isActive: true
+        }],
+        isMutuallyBlocked: false
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User blocked successfully"
+    });
+
+  } catch (error) {
+    console.error("Error in blockUser:", error);
+    return next(new ApiError("Failed to block user", 500));
+  }
 });
 
 // const unblockUser = asyncHandler(async (req, res, next) => {

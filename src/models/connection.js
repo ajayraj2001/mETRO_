@@ -52,7 +52,6 @@ const connectionSchema = new mongoose.Schema({
   blockDetails: [{
     blockedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     blockedAt: { type: Date, default: Date.now },
-    blockReason: String,
     isActive: { type: Boolean, default: true }
   }],
   previousStatus: { type: String },
