@@ -700,7 +700,7 @@ const canMessage = asyncHandler(async (req, res, next) => {
 
 const blockUser = asyncHandler(async (req, res, next) => {
   try {
-    const { userId, blockReason } = req.body;
+    const { receiverId: userId, blockReason } = req.body;
     const currentUserId = req.user._id;
 
     console.log('hey bwahdj',userId, 'adas',currentUserId )
@@ -709,10 +709,10 @@ const blockUser = asyncHandler(async (req, res, next) => {
     }
 
     // Check if user exists
-    const userToBlock = await User.findById(userId);
-    if (!userToBlock) {
-      return next(new ApiError("User not found", 404));
-    }
+    // const userToBlock = await User.findById(userId);
+    // if (!userToBlock) {
+    //   return next(new ApiError("User not found", 404));
+    // }
 
     // Find existing connection
     let existingConnection = await Connection.findOne({
@@ -855,7 +855,7 @@ const blockUser = asyncHandler(async (req, res, next) => {
 // });
 
 const unblockUser = asyncHandler(async (req, res, next) => {
-  const { userId } = req.body;
+  const { receiverId: userId } = req.body;
   const currentUserId = req.user._id;
 
   const connection = await Connection.findOne({
