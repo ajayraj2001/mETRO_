@@ -65,3 +65,7 @@ connectionSchema.index({ sender: 1, receiver: 1 }, { unique: true });
 connectionSchema.index({ status: 1 });
 connectionSchema.index({ sender: 1, status: 1 });
 connectionSchema.index({ receiver: 1, status: 1 });
+
+const Connection = mongoose.model("Connection", connectionSchema);
+
+module.exports = Connection;

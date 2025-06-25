@@ -855,8 +855,6 @@ const getProfileDetails = async (req, res, next) => {
     if (!existingVisit) {
       await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
     }
-    console.log('currentUser',currentUser)
-    console.log('matchedUser',matchedUser)
 
     // Enhanced connection status check
     const connection = await Connection.findOne({
