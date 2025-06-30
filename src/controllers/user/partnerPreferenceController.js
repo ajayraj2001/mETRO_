@@ -659,12 +659,36 @@ const getProfileById = async (req, res, next) => {
       ],
     }).lean();
 
-    let connectionStatus = "not_connected";
+      let connectionStatus = "not_connected";
+    let connectionId = "";
+
     if (connection) {
+      connectionId = connection._id;
       if (connection.status === "Blocked") {
-        connectionStatus = connection.sender.toString() === currentUser._id.toString()
-          ? "you_blocked"
-          : "blocked_by_other";
+        // Enhanced blocking logic
+        if (connection.blockedBy && connection.blockedBy.length > 0) {
+          const blockedByCurrentUser = connection.blockedBy.some(
+            id => id.toString() === currentUser._id.toString()
+          );
+          const blockedByOtherUser = connection.blockedBy.some(
+            id => id.toString() === matchedUser._id.toString()
+          );
+
+          // Priority: Show what the current user did first
+          if (blockedByCurrentUser && blockedByOtherUser) {
+            // Both blocked each other - show current user's action first
+            connectionStatus = "you_blocked"; // You blocked them (even though it's mutual)
+          } else if (blockedByCurrentUser) {
+            connectionStatus = "you_blocked";
+          } else if (blockedByOtherUser) {
+            connectionStatus = "blocked_by_other";
+          }
+        } else {
+          // Fallback to old logic for backward compatibility
+          connectionStatus = connection.sender.toString() === currentUser._id.toString()
+            ? "you_blocked"
+            : "blocked_by_other";
+        }
       } else if (connection.status === "Pending") {
         connectionStatus = connection.sender.toString() === currentUser._id.toString()
           ? "request_sent"
@@ -679,6 +703,7 @@ const getProfileById = async (req, res, next) => {
     responseUser.age = age;
     responseUser.distance = distance;
     responseUser.connectionStatus = connectionStatus;
+    responseUser.connectionId = connectionId || "";
 
     // Always mask the phone number (never show full)
     if (responseUser.phone) {
