@@ -141,9 +141,9 @@ const getNewMatches = async (req, res) => {
       // if (userPreferences.religion) query.religion = userPreferences.religion;
 
       // Add marital status filter
-      if (userPreferences.marital_status) {
-        query.marital_status = userPreferences.marital_status;
-      }
+      // if (userPreferences.marital_status) {
+      //   query.marital_status = userPreferences.marital_status;
+      // }
 
       // // Add age filter
       // if (userPreferences.min_age && userPreferences.max_age) {
@@ -518,9 +518,9 @@ const getMyMatches = async (req, res) => {
     //   query.mother_tongue = userPreferences.mother_tongue;
     // }
 
-    if (userPreferences.marital_status) {
-      query.marital_status = userPreferences.marital_status;
-    }
+    // if (userPreferences.marital_status) {
+    //   query.marital_status = userPreferences.marital_status;
+    // }
 
     // if (!userPreferences.any_caste && currentUser.caste) {
     //   query.caste = currentUser.caste;
@@ -533,25 +533,25 @@ const getMyMatches = async (req, res) => {
     // if (userPreferences.employed_in) {
     //   query.employed_in = userPreferences.employed_in;
     // }
-
+console.log('query', query)
     let totalCount = await User.countDocuments(query);
     let relaxationLevel = 0;
     let relaxedQuery = { ...query };
-
+console.log('totalCount',totalCount)
     const minDesiredMatches = limit * 3;
 
     const relaxationSteps = [
-      { criteria: 'highest_education', action: 'remove' },
-      { criteria: 'employed_in', action: 'remove' },
-      { criteria: 'mother_tongue', action: 'remove' },
-      { criteria: 'caste', action: 'remove' },
+      // { criteria: 'highest_education', action: 'remove' },
+      // { criteria: 'employed_in', action: 'remove' },
+      // { criteria: 'mother_tongue', action: 'remove' },
+      // { criteria: 'caste', action: 'remove' },
       { criteria: 'heightInCm', action: 'expand', factor: 5 },
       { criteria: 'dob', action: 'expand', factor: 3 }
     ];
 
     while (totalCount < minDesiredMatches && relaxationLevel < relaxationSteps.length) {
       const step = relaxationSteps[relaxationLevel];
-
+// console.log('relaxationSteps[relaxationLevel]', relaxationSteps[relaxationLevel], 'step', step)
       if (step.action === 'remove' && relaxedQuery[step.criteria]) {
         delete relaxedQuery[step.criteria];
       } else if (step.action === 'expand') {
@@ -570,9 +570,10 @@ const getMyMatches = async (req, res) => {
           relaxedQuery.dob = { $gte: minDate, $lte: maxDate };
         }
       }
-
+console.log('relaxed qury', relaxedQuery)
       totalCount = await User.countDocuments(relaxedQuery);
       relaxationLevel++;
+      console.log('new cunt',totalCount)
     }
 
     let sortOption = {};
@@ -685,198 +686,6 @@ const getMyMatches = async (req, res) => {
     });
   }
 };
-
-
-/**
- * Get Near Me Matches - Location-based matching
- * Strategy:
- * - Use geospatial queries for accurate distance calculation
- * - Adaptively expand search radius if too few results
- * - Allow filtering by distance
- * - Show exact distance from user
- */
-// const getNearMeMatches = async (req, res) => {
-//   try {
-//     const userId = req.user._id;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
-//     let maxDistance = parseInt(req.query.distance) || 100; // in km
-
-//     const currentUser = await User.findById(userId);
-//     const userPreferences = await PartnerPreferences.findOne({ user_id: userId });
-
-//     if (!currentUser || !userPreferences) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'User profile or preferences not found'
-//       });
-//     }
-
-//     if (
-//       !currentUser.location ||
-//       !currentUser.location.coordinates ||
-//       currentUser.location.coordinates.length !== 2
-//     ) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Location not available. Please update your location.'
-//       });
-//     }
-
-//     const genderFilter = currentUser.gender === 'Male' ? 'Female' : 'Male';
-
-//     const query = {
-//       _id: { $ne: userId },
-//       gender: genderFilter,
-//       profileStatus: 'Complete',
-//       location: {
-//         $near: {
-//           $geometry: {
-//             type: 'Point',
-//             coordinates: currentUser.location.coordinates
-//           },
-//           $maxDistance: maxDistance * 1000 // convert to meters
-//         }
-//       }
-//     };
-
-//     // if (userPreferences.religion) query.religion = userPreferences.religion;
-//     // if (userPreferences.marital_status) query.marital_status = userPreferences.marital_status;
-
-//     // if (userPreferences.min_age && userPreferences.max_age) {
-//     //   const minDate = new Date();
-//     //   minDate.setFullYear(minDate.getFullYear() - userPreferences.max_age);
-
-//     //   const maxDate = new Date();
-//     //   maxDate.setFullYear(maxDate.getFullYear() - userPreferences.min_age);
-
-//     //   query.dob = { $gte: minDate, $lte: maxDate };
-//     // }
-
-//     // Try expanding radius if not enough results
-//     let totalCount = await User.countDocuments(query);
-//     let originalMaxDistance = maxDistance;
-//     const minDesiredResults = limit * 2;
-//     const maxRadiusExpansions = 3;
-//     let expansionCount = 0;
-
-//     while (totalCount < minDesiredResults && expansionCount < maxRadiusExpansions) {
-//       maxDistance = Math.round(maxDistance * 1.5);
-//       query.location.$near.$maxDistance = maxDistance * 1000;
-//       totalCount = await User.countDocuments(query);
-//       expansionCount++;
-//     }
-
-//     const nearMeMatches = await User.find(query)
-//       // .select('_id fullName gender dob height heightInCm religion caste mother_tongue city state profile_image description occupation highest_education employed_in annual_income manglik profileStatus verifiedBadge subscriptionStatus location')
-//       .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
-//       .skip(skip)
-//       .limit(limit)
-//       .lean();
-
-//     const matchIds = nearMeMatches.map(match => match._id);
-//     const likedDocs = await Like.find({
-//       sender: userId,
-//       receiver: { $in: matchIds }
-//     }).select('receiver');
-
-//     const likedUserIds = new Set(likedDocs.map(doc => doc.receiver.toString()));
-
-//     const matchesWithDetails = nearMeMatches.map(match => {
-//       // Age calculation
-//       if (match.dob) {
-//         const today = new Date();
-//         const birthDate = new Date(match.dob);
-//         let age = today.getFullYear() - birthDate.getFullYear();
-//         const m = today.getMonth() - birthDate.getMonth();
-//         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-//           age--;
-//         }
-//         match.age = age;
-//       }
-
-//       // Distance calculation using Haversine formula
-//       if (match.location && match.location.coordinates) {
-//         const userCoords = currentUser.location.coordinates;
-//         const matchCoords = match.location.coordinates;
-
-//         const R = 6371; // Earth radius in km
-//         const dLat = (matchCoords[1] - userCoords[1]) * Math.PI / 180;
-//         const dLon = (matchCoords[0] - userCoords[0]) * Math.PI / 180;
-//         const a =
-//           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-//           Math.cos(userCoords[1] * Math.PI / 180) *
-//           Math.cos(matchCoords[1] * Math.PI / 180) *
-//           Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-//         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//         const distance = R * c;
-
-//         match.distance = Math.round(distance);
-
-//         if (match.distance < 1) {
-//           match.distanceText = "Less than 1 km away";
-//         } else if (match.distance === 1) {
-//           match.distanceText = "1 km away";
-//         } else {
-//           match.distanceText = `${match.distance} km away`;
-//         }
-
-//         // Tags
-//         if (match.distance <= 5) {
-//           match.locationTag = "Very close to you";
-//         } else if (match.distance <= 15) {
-//           match.locationTag = "Near you";
-//         } else if (match.city === currentUser.city) {
-//           match.locationTag = `Same city: ${match.city}`;
-//         }
-//       }
-
-//       // Add like status
-//       match.liked = likedUserIds.has(match._id.toString());
-
-//       return match;
-//     });
-
-//     // Sort by distance ascending
-//     matchesWithDetails.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-
-//     return res.status(200).json({
-//       success: true,
-//       data: {
-//         matches: matchesWithDetails,
-//         pagination: {
-//           total: totalCount,
-//           page,
-//           pages: Math.ceil(totalCount / limit),
-//           limit
-//         },
-//         searchRadius: {
-//           original: originalMaxDistance,
-//           expanded: maxDistance,
-//           expansionLevel: expansionCount
-//         },
-//         userLocation: {
-//           city: currentUser.city,
-//           state: currentUser.state,
-//           coordinates: currentUser.location.coordinates
-//         },
-//         refreshBehavior: {
-//           refreshType: "location_based",
-//           refreshInfo: "Updates when your location changes or new profiles are added nearby"
-//         }
-//       }
-//     });
-//   } catch (error) {
-//     console.error('Error in getNearMeMatches:', error);
-//     return res.status(500).json({
-//       success: false,
-//       message: 'Server error',
-//       error: error.message
-//     });
-//   }
-// };
 
 const getNearMeMatches = async (req, res) => {
   try {

@@ -64,23 +64,102 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 
 
 // Get all users that a specific user has liked
+// const getLikedUsers = asyncHandler(async (req, res, next) => {
+//   const userId = req.user._id;
+//   const { page = 1, limit = 20 } = req.query;
+
+//   const pageNum = parseInt(page);
+//   const limitNum = parseInt(limit);
+//   const skip = (pageNum - 1) * limitNum;
+
+//   const [likedUsers, totalCount] = await Promise.all([
+//     Like.find({ user: userId })
+//       .sort({ createdAt: -1 }) // latest first
+//       .skip(skip)
+//       .limit(limitNum)
+//       .populate("userLikedTo", "fullName profile_image"),
+
+//     Like.countDocuments({ user: userId })
+//   ]);
+
+//   if (!likedUsers || likedUsers.length === 0) {
+//     return next(new ApiError("No liked users found for this user.", 404));
+//   }
+
+//   return res.status(200).json({
+//     success: true,
+//     message: "Liked users fetched successfully.",
+//     data: likedUsers,
+//     pagination: {
+//       total: totalCount,
+//       currentPage: pageNum,
+//       totalPages: Math.ceil(totalCount / limitNum),
+//       perPage: limitNum,
+//     },
+//   });
+// });
+
 const getLikedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
-  const { page = 1, limit = 20 } = req.query;
+  const { page = 1, limit = 20, search = "" } = req.query;
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
   const skip = (pageNum - 1) * limitNum;
 
-  const [likedUsers, totalCount] = await Promise.all([
-    Like.find({ user: userId })
-      .sort({ createdAt: -1 }) // latest first
-      .skip(skip)
-      .limit(limitNum)
-      .populate("userLikedTo", "fullName profile_image"),
+  const matchStage = {
+    user: userId
+  };
 
-    Like.countDocuments({ user: userId })
-  ]);
+  const aggregatePipeline = [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userLikedTo",
+        foreignField: "_id",
+        as: "userLikedTo"
+      }
+    },
+    { $unwind: "$userLikedTo" },
+  ];
+
+  // Apply search on fullName (case-insensitive)
+  if (search.trim()) {
+    aggregatePipeline.push({
+      $match: {
+        "userLikedTo.fullName": {
+          $regex: search.trim(),
+          $options: "i"
+        }
+      }
+    });
+  }
+
+  // Count total documents with search filter
+  const countPipeline = [...aggregatePipeline, { $count: "total" }];
+  const countResult = await Like.aggregate(countPipeline);
+  const totalCount = countResult[0]?.total || 0;
+
+  // Apply pagination and sorting
+  aggregatePipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limitNum },
+    {
+      $project: {
+        _id: 1,
+        createdAt: 1,
+        userLikedTo: {
+          _id: 1,
+          fullName: 1,
+          profile_image: 1,
+        }
+      }
+    }
+  );
+
+  const likedUsers = await Like.aggregate(aggregatePipeline);
 
   if (!likedUsers || likedUsers.length === 0) {
     return next(new ApiError("No liked users found for this user.", 404));
