@@ -74,7 +74,7 @@ const getAppConfig = asyncHandler(async (req, res) => {
 
     // Set platform-specific store link
     const storeLinks = {
-        android: "https://play.google.com/store/apps/details?id=com.jodi4ever&hl=en_IN",
+        android: "https://www.google.com",
         ios: "", // Add iOS App Store link when available
     };
 
