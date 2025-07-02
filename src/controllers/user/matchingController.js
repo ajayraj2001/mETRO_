@@ -493,22 +493,22 @@ const getMyMatches = async (req, res) => {
     };
 
     // Apply filters based on preferences
-    if (userPreferences.min_age && userPreferences.max_age) {
-      const minDate = new Date();
-      minDate.setFullYear(minDate.getFullYear() - userPreferences.max_age);
+    // if (userPreferences.min_age && userPreferences.max_age) {
+    //   const minDate = new Date();
+    //   minDate.setFullYear(minDate.getFullYear() - userPreferences.max_age);
 
-      const maxDate = new Date();
-      maxDate.setFullYear(maxDate.getFullYear() - userPreferences.min_age);
+    //   const maxDate = new Date();
+    //   maxDate.setFullYear(maxDate.getFullYear() - userPreferences.min_age);
 
-      query.dob = { $gte: minDate, $lte: maxDate };
-    }
+    //   query.dob = { $gte: minDate, $lte: maxDate };
+    // }
 
-    if (userPreferences.min_height_in_cm && userPreferences.max_height_in_cm) {
-      query.heightInCm = {
-        $gte: userPreferences.min_height_in_cm,
-        $lte: userPreferences.max_height_in_cm
-      };
-    }
+    // if (userPreferences.min_height_in_cm && userPreferences.max_height_in_cm) {
+    //   query.heightInCm = {
+    //     $gte: userPreferences.min_height_in_cm,
+    //     $lte: userPreferences.max_height_in_cm
+    //   };
+    // }
 
     // if (userPreferences.religion) {
     //   query.religion = userPreferences.religion;
