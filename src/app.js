@@ -6,7 +6,7 @@ const appRoutes = require('./routes');
 const app = express();
 
 const allowedOrigins = process.env.CORS_ORIGINS.split(',');
-console.log('allowedor', allowedOrigins)
+
 const corsOptions = {
     // origin: true,
     origin: allowedOrigins,
@@ -14,8 +14,6 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 };
-
-
 
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));

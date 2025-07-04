@@ -533,11 +533,11 @@ const getMyMatches = async (req, res) => {
     // if (userPreferences.employed_in) {
     //   query.employed_in = userPreferences.employed_in;
     // }
-console.log('query', query)
+
     let totalCount = await User.countDocuments(query);
     let relaxationLevel = 0;
     let relaxedQuery = { ...query };
-console.log('totalCount',totalCount)
+
     const minDesiredMatches = limit * 3;
 
     const relaxationSteps = [
@@ -570,10 +570,8 @@ console.log('totalCount',totalCount)
           relaxedQuery.dob = { $gte: minDate, $lte: maxDate };
         }
       }
-console.log('relaxed qury', relaxedQuery)
       totalCount = await User.countDocuments(relaxedQuery);
       relaxationLevel++;
-      console.log('new cunt',totalCount)
     }
 
     let sortOption = {};
