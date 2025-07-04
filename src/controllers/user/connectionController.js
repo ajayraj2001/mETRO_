@@ -989,7 +989,7 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
     .limit(limit)
     .lean();
 
-    console.log('jhsdjfhsjfh', )
+    console.log('jhsdjfhsjfh',blockedConnections )
   // Extract user info (get the other user, not the current user)
   const blockedUsers = blockedConnections.map(conn => {
     // Return the user that current user blocked
