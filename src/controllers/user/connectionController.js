@@ -625,79 +625,6 @@ const canMessage = asyncHandler(async (req, res, next) => {
 });
 
 
-// const blockUser = asyncHandler(async (req, res, next) => {
-//   const senderId = req.user._id;
-//   const { receiverId } = req.body;
-
-//   if (!receiverId || senderId.toString() === receiverId) {
-//     return next(new ApiError("Invalid receiver ID", 400));
-//   }
-
-//   try {
-//     // Remove any existing connections
-//     await Connection.deleteMany({
-//       $or: [
-//         { sender: senderId, receiver: receiverId },
-//         { sender: receiverId, receiver: senderId }
-//       ]
-//     });
-
-//     // Add block record
-//     const block = new Connection({
-//       sender: senderId,
-//       receiver: receiverId,
-//       status: "Blocked"
-//     });
-//     await block.save();
-
-//     // Emit socket events for real-time updates
-//     const io = req.app.get('socketio');
-//     const users = req.app.get('users') || {};
-
-//     if (io) {
-//       // Notify the blocked user that they've been blocked
-//       const blockedUserSocket = users[receiverId]?.socketId;
-//       if (blockedUserSocket) {
-//         io.to(blockedUserSocket).emit("chatPermissionsUpdated", {
-//           userId: senderId.toString(),
-//           status: "blocked"
-//           // permissions: {
-//           //   blockedByOther: true,
-//           //   youBlocked: false,
-//           //   isConnected: false,
-//           //   canMessage: false,
-//           //   remainingMessages: null
-//           // }
-//         });
-//       }
-
-//       // Notify the blocker about the updated status
-//       // const blockerSocket = users[senderId.toString()]?.socketId;
-//       // if (blockerSocket) {
-//       //   io.to(blockerSocket).emit("chatPermissionsUpdated", {
-//       //     userId: receiverId,
-//       //     permissions: {
-//       //       blockedByOther: false,
-//       //       youBlocked: true,
-//       //       isConnected: false,
-//       //       canMessage: false,
-//       //       remainingMessages: null
-//       //     }
-//       //   });
-//       // }
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "User blocked successfully"
-//     });
-
-//   } catch (error) {
-//     console.error('Error in blockUser:', error);
-//     return next(new ApiError("Failed to block user", 500));
-//   }
-// });
-
 const blockUser = asyncHandler(async (req, res, next) => {
   try {
     const { receiverId: userId } = req.body;
@@ -790,66 +717,6 @@ const blockUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-// const unblockUser = asyncHandler(async (req, res, next) => {
-//   const senderId = req.user._id;
-//   const { receiverId } = req.body;
-
-//   if (!receiverId) {
-//     return next(new ApiError("Receiver ID is required", 400));
-//   }
-
-//   try {
-
-//     const deleted = await Connection.findOneAndDelete({
-//       sender: senderId,
-//       receiver: receiverId,
-//       status: "Blocked"
-//     });
-
-//     if (!deleted) {
-//       return next(new ApiError("No block found for this user", 404));
-//     }
-
-//     // Emit socket events for real-time updates
-//     const io = req.app.get('socketio');
-//     const users = req.app.get('users') || {};
-
-//     if (io) {
-//       // Notify the previously blocked user
-//       const unblockedUserSocket = users[receiverId]?.socketId;
-//       if (unblockedUserSocket) {
-//         io.to(unblockedUserSocket).emit("chatPermissionsUpdated", {
-//           userId: senderId.toString(),
-//           status: "unblocked"
-//         });
-//       }
-
-//       // Notify the unblocker about the updated status
-//       // const unblockerSocket = users[senderId.toString()]?.socketId;
-//       // if (unblockerSocket) {
-//       //   io.to(unblockerSocket).emit("chatPermissionsUpdated", {
-//       //     userId: receiverId,
-//       //     permissions: {
-//       //       blockedByOther: false,
-//       //       youBlocked: false,
-//       //       isConnected,
-//       //       canMessage,
-//       //       remainingMessages
-//       //     }
-//       //   });
-//       // }
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "User unblocked successfully"
-//     });
-
-//   } catch (error) {
-//     console.error('Error in unblockUser:', error);
-//     return next(new ApiError("Failed to unblock user", 500));
-//   }
-// });
 
 const unblockUser = asyncHandler(async (req, res, next) => {
   const { receiverId: userId } = req.body;
@@ -921,47 +788,6 @@ const unblockUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-// const getBlockedUsers = asyncHandler(async (req, res, next) => {
-//   const userId = req.user._id;
-
-//   // Pagination parameters
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 10;
-//   const skip = (page - 1) * limit;
-
-//   // Get total count of blocked users
-//   const totalBlocked = await Connection.countDocuments({
-//     sender: userId,
-//     status: "Blocked"
-//   });
-
-//   // Get paginated blocked users sorted by most recent
-//   const blockedConnections = await Connection.find({
-//     sender: userId,
-//     status: "Blocked"
-//   })
-//     .populate("receiver", "fullName profile_image") // Add more fields if needed
-//     .sort({ createdAt: -1 }) // 🔄 Most recently blocked users first
-//     .skip(skip)
-//     .limit(limit)
-//     .lean();
-
-//   // Extract user info
-//   const blockedUsers = blockedConnections.map(conn => conn.receiver);
-
-//   return res.status(200).json({
-//     success: true,
-//     data: blockedUsers,
-//     pagination: {
-//       total: totalBlocked,
-//       page,
-//       pages: Math.ceil(totalBlocked / limit),
-//       limit,
-//       hasNextPages: page < Math.ceil(totalBlocked / limit),
-//     }
-//   });
-// });
-
 const getBlockedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
@@ -988,17 +814,45 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
     .limit(limit)
     .lean();
 
-  console.log('jhsdjfhsjfh', blockedConnections)
-
-    // Extract user info (get the other user, not the current user)
-  const blockedUsers = blockedConnections.map(conn => {
-    // Return the user that current user blocked
-    if (conn.sender._id.toString() === userId.toString()) {
-      return conn.receiver;
-    } else {
-      return conn.sender;
-    }
-  });
+  // Extract user info with proper null checks
+  const blockedUsers = blockedConnections
+    .map(conn => {
+      // Check if both sender and receiver exist
+      if (!conn.sender && !conn.receiver) {
+        return null;
+      }
+      
+      // If sender is null, but receiver exists and receiver is NOT current user
+      if (!conn.sender && conn.receiver) {
+        if (conn.receiver._id.toString() !== userId.toString()) {
+          return conn.receiver;
+        }
+        return null;
+      }
+      
+      // If receiver is null, but sender exists and sender is NOT current user
+      if (!conn.receiver && conn.sender) {
+        if (conn.sender._id.toString() !== userId.toString()) {
+          return conn.sender;
+        }
+        return null;
+      }
+      
+      // Both exist - return the other user (not current user)
+      if (conn.sender && conn.receiver) {
+        if (conn.sender._id.toString() === userId.toString()) {
+          return conn.receiver;
+        } else if (conn.receiver._id.toString() === userId.toString()) {
+          return conn.sender;
+        } else {
+          // Neither sender nor receiver is current user - this shouldn't happen
+          return null;
+        }
+      }
+      
+      return null;
+    })
+    .filter(user => user !== null); // Remove null entries
 
   return res.status(200).json({
     success: true,
@@ -1013,43 +867,102 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
   });
 });
 
+
+// Alternative cleaner approach using aggregation with better error handling
+
 // const getBlockedUsers = asyncHandler(async (req, res, next) => {
 //   const userId = req.user._id;
-
 //   const page = parseInt(req.query.page) || 1;
 //   const limit = parseInt(req.query.limit) || 10;
 //   const skip = (page - 1) * limit;
 
-//   console.log('userId', userId)
+//   const result = await Connection.aggregate([
+//     {
+//       $match: {
+//         status: "Blocked",
+//         blockedBy: userId
+//       }
+//     },
+//     {
+//       $addFields: {
+//         blockedUserId: {
+//           $cond: {
+//             if: { $eq: ["$sender", userId] },
+//             then: "$receiver",
+//             else: "$sender"
+//           }
+//         },
+//         // Find the current user's block date from blockDetails
+//         currentUserBlockDate: {
+//           $let: {
+//             vars: {
+//               currentUserBlock: {
+//                 $filter: {
+//                   input: "$blockDetails",
+//                   as: "block",
+//                   cond: { 
+//                     $and: [
+//                       { $eq: ["$$block.blockedBy", userId] },
+//                       { $eq: ["$$block.isActive", true] }
+//                     ]
+//                   }
+//                 }
+//               }
+//             },
+//             in: {
+//               $arrayElemAt: ["$$currentUserBlock.blockedAt", 0]
+//             }
+//           }
+//         }
+//       }
+//     },
+//     {
+//       $match: {
+//         blockedUserId: { $ne: null, $exists: true }
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "users",
+//         localField: "blockedUserId",
+//         foreignField: "_id",
+//         as: "blockedUserInfo"
+//       }
+//     },
+//     {
+//       $unwind: {
+//         path: "$blockedUserInfo",
+//         preserveNullAndEmptyArrays: false // This will filter out null users
+//       }
+//     },
+//     {
+//       $project: {
+//         _id: "$blockedUserInfo._id",
+//         fullName: "$blockedUserInfo.fullName",
+//         profile_image: "$blockedUserInfo.profile_image",
+//         blockedAt: "$currentUserBlockDate" // Include block date for sorting
+//       }
+//     },
+//     {
+//       // Sort by block date (most recent first)
+//       $sort: { blockedAt: -1 }
+//     },
+//     {
+//       $skip: skip
+//     },
+//     {
+//       $limit: limit
+//     }
+//   ]);
 
 //   const totalBlocked = await Connection.countDocuments({
 //     status: "Blocked",
 //     blockedBy: userId
 //   });
 
-//   const blockedConnections = await Connection.find({
-//     status: "Blocked",
-//     blockedBy: userId
-//   })
-//     .populate("receiver", "fullName profile_image")
-//     .sort({ createdAt: -1 })
-//     .skip(skip)
-//     .limit(limit)
-//     .lean();
-
-//   const blockedUsers = blockedConnections.map(conn => {
-//     return conn.receiver
-//       ? conn.receiver
-//       : {
-//           _id: null,
-//           fullName: "Deleted User",
-//           profile_image: ""
-//         };
-//   });
-
 //   return res.status(200).json({
 //     success: true,
-//     data: blockedUsers,
+//     data: result,
 //     pagination: {
 //       total: totalBlocked,
 //       page,
