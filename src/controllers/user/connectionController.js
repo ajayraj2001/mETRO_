@@ -773,7 +773,6 @@ const blockUser = asyncHandler(async (req, res, next) => {
         blockDetails: [{
           blockedBy: currentUserId,
           blockedAt: new Date(),
-          blockReason: blockReason || '',
           isActive: true
         }],
         isMutuallyBlocked: false
@@ -963,93 +962,42 @@ const unblockUser = asyncHandler(async (req, res, next) => {
 //   });
 // });
 
-// const getBlockedUsers = asyncHandler(async (req, res, next) => {
-//   const userId = req.user._id;
-
-//   // Pagination parameters
-//   const page = parseInt(req.query.page) || 1;
-//   const limit = parseInt(req.query.limit) || 10;
-//   const skip = (page - 1) * limit;
-
-//   // Get total count of blocked users (where current user is the blocker)
-//   const totalBlocked = await Connection.countDocuments({
-//     status: "Blocked",
-//     blockedBy: userId // Current user has blocked someone
-//   });
-
-//   // Get paginated blocked users sorted by most recent
-//   const blockedConnections = await Connection.find({
-//     status: "Blocked",
-//     blockedBy: userId // Current user has blocked someone
-//   })
-//     .populate("receiver", "fullName profile_image")
-//     .populate("sender", "fullName profile_image")
-//     .sort({ createdAt: -1 })
-//     .skip(skip)
-//     .limit(limit)
-//     .lean();
-
-//   console.log('jhsdjfhsjfh', blockedConnections)
-//   // Extract user info (get the other user, not the current user)
-//   // Extract user info (get the one blocked by current user)
-//   const blockedUsers = blockedConnections.map(conn => {
-//     const sender = conn.sender;
-//     const receiver = conn.receiver;
-
-//     if (sender && sender._id.toString() === userId.toString()) {
-//       return receiver
-//         ? receiver
-//         : { _id: null, fullName: "Deleted User", profile_image: "" };
-//     } else {
-//       return sender
-//         ? sender
-//         : { _id: null, fullName: "Deleted User", profile_image: "" };
-//     }
-//   });
-
-//   return res.status(200).json({
-//     success: true,
-//     data: blockedUsers,
-//     pagination: {
-//       total: totalBlocked,
-//       page,
-//       pages: Math.ceil(totalBlocked / limit),
-//       limit,
-//       hasNextPages: page < Math.ceil(totalBlocked / limit),
-//     }
-//   });
-// });
-
 const getBlockedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
 
+  // Pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  // Get total count of blocked users (where current user is the blocker)
   const totalBlocked = await Connection.countDocuments({
     status: "Blocked",
-    blockedBy: userId
+    blockedBy: userId // Current user has blocked someone
   });
 
+  // Get paginated blocked users sorted by most recent
   const blockedConnections = await Connection.find({
     status: "Blocked",
-    blockedBy: userId
+    blockedBy: userId // Current user has blocked someone
   })
     .populate("receiver", "fullName profile_image")
+    .populate("sender", "fullName profile_image")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .lean();
 
+  console.log('jhsdjfhsjfh', blockedConnections)
+
+    // Extract user info (get the other user, not the current user)
   const blockedUsers = blockedConnections.map(conn => {
-    return conn.receiver
-      ? conn.receiver
-      : {
-          _id: null,
-          fullName: "Deleted User",
-          profile_image: ""
-        };
+    // Return the user that current user blocked
+    if (conn.sender._id.toString() === userId.toString()) {
+      return conn.receiver;
+    } else {
+      return conn.sender;
+    }
   });
 
   return res.status(200).json({
@@ -1064,6 +1012,53 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
     }
   });
 });
+
+// const getBlockedUsers = asyncHandler(async (req, res, next) => {
+//   const userId = req.user._id;
+
+//   const page = parseInt(req.query.page) || 1;
+//   const limit = parseInt(req.query.limit) || 10;
+//   const skip = (page - 1) * limit;
+
+//   console.log('userId', userId)
+
+//   const totalBlocked = await Connection.countDocuments({
+//     status: "Blocked",
+//     blockedBy: userId
+//   });
+
+//   const blockedConnections = await Connection.find({
+//     status: "Blocked",
+//     blockedBy: userId
+//   })
+//     .populate("receiver", "fullName profile_image")
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(limit)
+//     .lean();
+
+//   const blockedUsers = blockedConnections.map(conn => {
+//     return conn.receiver
+//       ? conn.receiver
+//       : {
+//           _id: null,
+//           fullName: "Deleted User",
+//           profile_image: ""
+//         };
+//   });
+
+//   return res.status(200).json({
+//     success: true,
+//     data: blockedUsers,
+//     pagination: {
+//       total: totalBlocked,
+//       page,
+//       pages: Math.ceil(totalBlocked / limit),
+//       limit,
+//       hasNextPages: page < Math.ceil(totalBlocked / limit),
+//     }
+//   });
+// });
 
 const reportUser = (req, res, next) => {
   reportUpload(req, res, async (err) => {
