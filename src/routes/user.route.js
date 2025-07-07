@@ -148,14 +148,6 @@ userRoute.get("/connections/getBlockedUsers", authenticateUser, getBlockedUsers)
 // Subscription Plans
 userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 
-// Purchase Subscription
-// userRoute.post("/create_transaction", authenticateUser, createTransaction);
-// userRoute.post(
-//     "/transactionWebhook",
-//     bodyParser.raw({ type: "application/json" }),
-//     transactionWebhook
-//   );
-
 // chat message
 //userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
 userRoute.get("/chat_list", authenticateUser, chatList);

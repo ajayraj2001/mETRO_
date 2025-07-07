@@ -638,14 +638,14 @@ const getProfileById = async (req, res, next) => {
         : null;
 
     // Visit log
-    const existingVisit = await ProfileVisit.findOne({
-      visitor: currentUser._id,
-      visited: matchedUser._id,
-    });
+    // const existingVisit = await ProfileVisit.findOne({
+    //   visitor: currentUser._id,
+    //   visited: matchedUser._id,
+    // });
 
-    if (!existingVisit) {
-      await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
-    }
+    // if (!existingVisit) {
+    //   await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
+    // }
 
     // const currentMatchedUserCount = await ProfileVisit.countDocuments({
     //   visited: matchedUser._id,
@@ -872,14 +872,14 @@ const getProfileDetails = async (req, res, next) => {
         : null;
 
     // Visit log
-    const existingVisit = await ProfileVisit.findOne({
-      visitor: currentUser._id,
-      visited: matchedUser._id,
-    });
+    // const existingVisit = await ProfileVisit.findOne({
+    //   visitor: currentUser._id,
+    //   visited: matchedUser._id,
+    // });
 
-    if (!existingVisit) {
-      await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
-    }
+    // if (!existingVisit) {
+    //   await ProfileVisit.create({ visitor: currentUser._id, visited: matchedUser._id });
+    // }
 
     // Enhanced connection status check
     const connection = await Connection.findOne({

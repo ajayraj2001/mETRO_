@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema(
     // Extended profile fields
     dob: { type: Date, default: '' },
     gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+    likeCount: { type: Number, default: 0 },
     marital_status: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed'] },
     height: { type: String, default: '' },
     heightInCm: { type: Number, default: 0 },
