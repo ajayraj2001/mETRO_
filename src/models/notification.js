@@ -31,7 +31,9 @@ const notificationSchema = new Schema({
   // Action/Redirection
   type: {
     type: String,
+    default: '',
     enum: [
+      '',
       'profile_liked', 
       'profile_match', 
       'subscription_expiry', 
