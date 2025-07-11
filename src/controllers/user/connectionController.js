@@ -172,8 +172,9 @@ const reportUpload = getFileUploader("evidence", "reports");
 const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   try {
     console.log('req.bdy for conencton', req.body)
-    return
-    const { receiverId, status } = req.body;
+    const { status } = req.body;
+
+    let receiverId = req.body.receiverId || req.body.userRequestedTo;
     const senderId = req.user._id;
     const { fullName, deviceToken } = req.user;
 
