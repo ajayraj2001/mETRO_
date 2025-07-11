@@ -173,7 +173,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
   try {
     const { receiverId, status } = req.body;
     const senderId = req.user._id;
-    const { fullName, deviceToken, profile_image } = req.user;
+    const { fullName, deviceToken } = req.user;
 
     if (!receiverId) {
       return next(new ApiError("Receiver ID is required", 400));
@@ -277,7 +277,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
             user: existingConnection.sender,
             title: "Connection Request Accepted",
             message: `${fullName} has accepted your connection request`,
-            pic: profile_image,
+            pic: '',
           });
 
           const senderUser = await User.findById(existingConnection.sender);
