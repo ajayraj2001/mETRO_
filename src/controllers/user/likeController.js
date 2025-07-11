@@ -9,7 +9,6 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
   const { fullName, profile_image } = req.user;
 
   try {
-    // Check for existing like to prevent duplicates manually
     const alreadyLiked = await Like.findOne({ user, userLikedTo });
     if (alreadyLiked) {
       return res.status(200).json({
@@ -17,19 +16,27 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
         message: "You have already liked this profile.",
       });
     }
-    await Like.create({ user, userLikedTo });
 
-    // Increment like count on the liked user
+    await Like.create({ user, userLikedTo });
     await User.findByIdAndUpdate(userLikedTo, { $inc: { likeCount: 1 } });
+
+    const likedUser = await User.findById(userLikedTo).select('deviceToken');
 
     await Notification.create({
       user: userLikedTo,
       title: "Profile Liked",
       message: `${fullName} has liked your profile.`,
-      pic: profile_image
+      pic: profile_image,
     });
 
-    // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
+    // Send push notification only if token exists
+    if (likedUser?.deviceToken) {
+      await sendFirebaseNotification(
+        likedUser.deviceToken,
+        "Profile Liked",
+        `${fullName} has liked your profile.`
+      );
+    }
 
     return res.status(201).json({
       success: true,
@@ -37,15 +44,59 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
     });
   } catch (err) {
     if (err.code === 11000) {
-      // Duplicate key error (user already liked this profile)
       return res.status(200).json({
         success: true,
         message: "You have already liked this profile.",
       });
     }
-    return next(err); // Forward any other errors
+    return next(err);
   }
 });
+
+
+// const likeUserProfile = asyncHandler(async (req, res, next) => {
+//   const { id: userLikedTo } = req.params;
+//   const user = req.user._id;
+//   const { fullName, profile_image } = req.user;
+
+//   try {
+//     // Check for existing like to prevent duplicates manually
+//     const alreadyLiked = await Like.findOne({ user, userLikedTo });
+//     if (alreadyLiked) {
+//       return res.status(200).json({
+//         success: true,
+//         message: "You have already liked this profile.",
+//       });
+//     }
+//     await Like.create({ user, userLikedTo });
+
+//     // Increment like count on the liked user
+//     await User.findByIdAndUpdate(userLikedTo, { $inc: { likeCount: 1 } });
+
+//     await Notification.create({
+//       user: userLikedTo,
+//       title: "Profile Liked",
+//       message: `${fullName} has liked your profile.`,
+//       pic: profile_image
+//     });
+
+//     // await sendFirebaseNotification(likedUser.deviceToken, "Profile Liked", `${fullName} has liked your profile.`);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "User profile liked successfully.",
+//     });
+//   } catch (err) {
+//     if (err.code === 11000) {
+//       // Duplicate key error (user already liked this profile)
+//       return res.status(200).json({
+//         success: true,
+//         message: "You have already liked this profile.",
+//       });
+//     }
+//     return next(err); // Forward any other errors
+//   }
+// });
 
 const getLikedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;

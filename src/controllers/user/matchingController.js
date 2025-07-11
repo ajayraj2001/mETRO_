@@ -272,17 +272,198 @@ const getNewMatches = async (req, res) => {
  * - If too few matches, gradually relax criteria
  * - Add freshness indicators that change daily
  */
-const getTodaysMatches = async (req, res) => {
+// const getTodaysMatches = async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+//     const limit = parseInt(req.query.limit) || 9;
+//     const page = parseInt(req.query.page) || 1;
+//     const skip = (page - 1) * limit;
+
+//     const [currentUser, userPreferences] = await Promise.all([
+//       User.findById(userId),
+//       PartnerPreferences.findOne({ user_id: userId }),
+//     ]);
+
+//     if (!currentUser || !userPreferences) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'User profile or preferences not found'
+//       });
+//     }
+
+//     const genderFilter = currentUser.gender === 'Male' ? 'Female' : 'Male';
+
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const dateSeed = today.toISOString().split('T')[0] + userId.toString();
+
+//     const createHash = (str) => {
+//       let hash = 0;
+//       for (let i = 0; i < str.length; i++) {
+//         const char = str.charCodeAt(i);
+//         hash = ((hash << 5) - hash) + char;
+//         hash = hash & hash;
+//       }
+//       return Math.abs(hash);
+//     };
+
+//     // Initial Query
+//     let query = {
+//       _id: { $ne: userId },
+//       gender: genderFilter,
+//       profileStatus: 'Complete',
+//     };
+
+//     if (userPreferences.marital_status) query.marital_status = userPreferences.marital_status;
+
+//     if (userPreferences.min_age && userPreferences.max_age) {
+//       const minDOB = new Date();
+//       minDOB.setFullYear(minDOB.getFullYear() - userPreferences.max_age);
+//       const maxDOB = new Date();
+//       maxDOB.setFullYear(maxDOB.getFullYear() - userPreferences.min_age);
+//       query.dob = { $gte: minDOB, $lte: maxDOB };
+//     }
+
+//     // Relaxation logic
+//     const relaxationSteps = [
+//       { criteria: 'mother_tongue', action: 'remove' },
+//       { criteria: 'caste', action: 'remove' },
+//       { criteria: 'marital_status', action: 'remove' },
+//       { criteria: 'dob', action: 'expand', factor: 5 }
+//     ];
+
+//     let relaxationIndex = 0;
+//     let currentQuery = { ...query };
+//     let matchCount = await User.countDocuments(currentQuery);
+
+//     while (matchCount < limit * 1.5 && relaxationIndex < relaxationSteps.length) {
+//       const step = relaxationSteps[relaxationIndex];
+
+//       if (step.action === 'remove' && currentQuery[step.criteria]) {
+//         delete currentQuery[step.criteria];
+//       } else if (step.action === 'expand' && step.criteria === 'dob' && currentQuery.dob) {
+//         const newMin = new Date(currentQuery.dob.$gte);
+//         newMin.setFullYear(newMin.getFullYear() - step.factor);
+//         const newMax = new Date(currentQuery.dob.$lte);
+//         newMax.setFullYear(newMax.getFullYear() + step.factor);
+//         currentQuery.dob = { $gte: newMin, $lte: newMax };
+//       }
+
+//       matchCount = await User.countDocuments(currentQuery);
+//       relaxationIndex++;
+//     }
+
+//     // Get ALL matches first to sort and score
+//     let allMatches = await User.find(currentQuery)
+//       .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
+//       .lean();
+
+//     const specialTags = [
+//       "Perfect match for you", "High compatibility", "Recommended today",
+//       "Selected for you", "Great personality match", "Similar interests", "Compatible background"
+//     ];
+
+//     // Add age, score, tag
+//     let processedMatches = allMatches.map(match => {
+//       if (match.dob) {
+//         const birth = new Date(match.dob);
+//         let age = today.getFullYear() - birth.getFullYear();
+//         const m = today.getMonth() - birth.getMonth();
+//         if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+//         match.age = age;
+//       }
+
+//       const combinedString = dateSeed + match._id.toString();
+//       const hashValue = createHash(combinedString);
+//       const dailyScore = (hashValue % 1000) / 1000;
+
+//       match.finalScore = dailyScore * 100;
+
+//       if (match.finalScore > 70) {
+//         const tagIndex = createHash(combinedString) % specialTags.length;
+//         match.specialTag = specialTags[tagIndex];
+//       }
+
+//       return match;
+//     });
+
+//     // Sort and paginate
+//     processedMatches.sort((a, b) => b.finalScore - a.finalScore);
+//     const totalCount = processedMatches.length;
+//     const paginatedMatches = processedMatches.slice(skip, skip + limit);
+
+//     // Get only LIKEs for shown users
+//     const matchIds = paginatedMatches.map(u => u._id);
+//     const likedDocs = await Like.find({
+//       user: userId,
+//       userLikedTo: { $in: matchIds }
+//     })
+
+//     const likedUserIds = likedDocs.map(doc => doc.userLikedTo.toString());
+
+//     // Append liked status
+//     const finalMatches = paginatedMatches.map(match => ({
+//       ...match,
+//       liked: likedUserIds.includes(match._id.toString())
+//     }));
+
+//     // Refresh time
+//     const now = new Date();
+//     const midnight = new Date(now);
+//     midnight.setDate(midnight.getDate() + 1);
+//     midnight.setHours(0, 0, 0, 0);
+
+//     const millisecondsUntilMidnight = midnight - now;
+//     const hoursUntilMidnight = Math.floor(millisecondsUntilMidnight / (1000 * 60 * 60));
+//     const minutesUntilMidnight = Math.floor((millisecondsUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+
+//     return res.status(200).json({
+//       success: true,
+//       data: {
+//         matches: finalMatches,
+//         pagination: {
+//           total: totalCount,
+//           page,
+//           hasNextPages: page < Math.ceil(totalCount / limit),
+//           pages: Math.ceil(totalCount / limit),
+//           limit
+//         },
+//         refreshBehavior: {
+//           refreshType: "daily",
+//           refreshInfo: "New selection every day at midnight"
+//         },
+//         refreshesIn: {
+//           hours: hoursUntilMidnight,
+//           minutes: minutesUntilMidnight,
+//           timestamp: midnight.getTime()
+//         },
+//         relaxationLevel: relaxationIndex,
+//         criteriaAdjusted: relaxationIndex > 0
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error in getTodaysMatches:', error);
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Server error',
+//       error: error.message
+//     });
+//   }
+// };
+
+const getMyMatches = async (req, res) => {
   try {
     const userId = req.user._id;
-    const limit = parseInt(req.query.limit) || 9;
     const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
     const skip = (page - 1) * limit;
+    const sortBy = req.query.sortBy || 'newest'; // Default to newest first
 
-    const [currentUser, userPreferences] = await Promise.all([
-      User.findById(userId),
-      PartnerPreferences.findOne({ user_id: userId }),
-    ]);
+    // SessionId removed - not needed for newest first sorting
+
+    // Fetch current user and their preferences
+    const currentUser = await User.findById(userId);
+    const userPreferences = await PartnerPreferences.findOne({ user_id: userId });
 
     if (!currentUser || !userPreferences) {
       return res.status(400).json({
@@ -291,123 +472,267 @@ const getTodaysMatches = async (req, res) => {
       });
     }
 
+    // Base query - opposite gender and complete profiles
     const genderFilter = currentUser.gender === 'Male' ? 'Female' : 'Male';
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateSeed = today.toISOString().split('T')[0] + userId.toString();
-
-    const createHash = (str) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-      }
-      return Math.abs(hash);
-    };
-
-    // Initial Query
-    let query = {
+    const matchQuery = {
       _id: { $ne: userId },
       gender: genderFilter,
       profileStatus: 'Complete',
+      active: true
     };
 
-    if (userPreferences.marital_status) query.marital_status = userPreferences.marital_status;
+    // STRICT FILTERS (Always apply these)
 
+    // Religion filter - STRICT
+    if (userPreferences.religion && userPreferences.religion !== 'Any') {
+      matchQuery.religion = userPreferences.religion;
+    }
+
+    // RELAXED FILTERS
+
+    // Age filter - Relaxed by 2 years on both sides
     if (userPreferences.min_age && userPreferences.max_age) {
-      const minDOB = new Date();
-      minDOB.setFullYear(minDOB.getFullYear() - userPreferences.max_age);
-      const maxDOB = new Date();
-      maxDOB.setFullYear(maxDOB.getFullYear() - userPreferences.min_age);
-      query.dob = { $gte: minDOB, $lte: maxDOB };
+      const today = new Date();
+      const minBirthYear = today.getFullYear() - userPreferences.max_age - 2; // +2 years relaxation
+      const maxBirthYear = today.getFullYear() - userPreferences.min_age + 2; // +2 years relaxation
+
+      matchQuery.dob = {
+        $gte: new Date(minBirthYear, 0, 1),
+        $lte: new Date(maxBirthYear, 11, 31)
+      };
     }
 
-    // Relaxation logic
-    const relaxationSteps = [
-      { criteria: 'mother_tongue', action: 'remove' },
-      { criteria: 'caste', action: 'remove' },
-      { criteria: 'marital_status', action: 'remove' },
-      { criteria: 'dob', action: 'expand', factor: 5 }
-    ];
-
-    let relaxationIndex = 0;
-    let currentQuery = { ...query };
-    let matchCount = await User.countDocuments(currentQuery);
-
-    while (matchCount < limit * 1.5 && relaxationIndex < relaxationSteps.length) {
-      const step = relaxationSteps[relaxationIndex];
-
-      if (step.action === 'remove' && currentQuery[step.criteria]) {
-        delete currentQuery[step.criteria];
-      } else if (step.action === 'expand' && step.criteria === 'dob' && currentQuery.dob) {
-        const newMin = new Date(currentQuery.dob.$gte);
-        newMin.setFullYear(newMin.getFullYear() - step.factor);
-        const newMax = new Date(currentQuery.dob.$lte);
-        newMax.setFullYear(newMax.getFullYear() + step.factor);
-        currentQuery.dob = { $gte: newMin, $lte: newMax };
-      }
-
-      matchCount = await User.countDocuments(currentQuery);
-      relaxationIndex++;
+    // Height filter - Relaxed by 3cm on both sides
+    if (userPreferences.min_height_in_cm && userPreferences.max_height_in_cm) {
+      matchQuery.heightInCm = {
+        $gte: userPreferences.min_height_in_cm - 4, // -3cm relaxation
+        $lte: userPreferences.max_height_in_cm + 4  // +3cm relaxation
+      };
     }
 
-    // Get ALL matches first to sort and score
-    let allMatches = await User.find(currentQuery)
-      .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
+    // COMMENTED FILTERS (Uncomment when needed)
+
+    // Marital status filter
+    // if (userPreferences.marital_status && userPreferences.marital_status !== 'Any') {
+    //   matchQuery.marital_status = userPreferences.marital_status;
+    // }
+
+    // Mother tongue filter
+    // if (userPreferences.mother_tongue && userPreferences.mother_tongue !== 'Any') {
+    //   matchQuery.mother_tongue = userPreferences.mother_tongue;
+    // }
+
+    // Caste filter (only if any_caste is false)
+    // if (!userPreferences.any_caste && currentUser.caste) {
+    //   matchQuery.caste = currentUser.caste;
+    // }
+
+    // Education filter
+    // if (userPreferences.highest_education && userPreferences.highest_education !== 'Any') {
+    //   matchQuery.highest_education = userPreferences.highest_education;
+    // }
+
+    // Employment filter
+    // if (userPreferences.employed_in && userPreferences.employed_in !== 'Any') {
+    //   matchQuery.employed_in = userPreferences.employed_in;
+    // }
+
+    // Income filter
+    // if (userPreferences.min_salary && userPreferences.max_salary) {
+    //   matchQuery.$and = matchQuery.$and || [];
+    //   matchQuery.$and.push({
+    //     $or: [
+    //       {
+    //         min_salary: { $gte: userPreferences.min_salary },
+    //         max_salary: { $lte: userPreferences.max_salary }
+    //       },
+    //       {
+    //         min_salary: { $lte: userPreferences.max_salary },
+    //         max_salary: { $gte: userPreferences.min_salary }
+    //       }
+    //     ]
+    //   });
+    // }
+
+    // Manglik filter
+    // if (userPreferences.manglik && userPreferences.manglik !== 'Does not matter') {
+    //   matchQuery.manglik = userPreferences.manglik;
+    // }
+
+    // State filter
+    // if (userPreferences.state && userPreferences.state !== 'Any') {
+    //   matchQuery.state = userPreferences.state;
+    // }
+
+    // Get total count of matches
+    const totalCount = await User.countDocuments(matchQuery);
+
+    // Sort options - Default to newest first
+    let sortOption = { created_at: -1 }; // Show newest users at top
+
+    if (sortBy === 'photo_first') {
+      sortOption = {
+        'profile_image.0': -1,
+        created_at: -1
+      };
+    } else if (sortBy === 'premium_first') {
+      sortOption = {
+        verifiedBadge: -1,
+        subscriptionStatus: -1,
+        created_at: -1
+      };
+    }
+
+    // Fetch matches with pagination
+    const matches = await User.find(matchQuery)
+      .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge subscriptionStatus profileId')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    const specialTags = [
-      "Perfect match for you", "High compatibility", "Recommended today",
-      "Selected for you", "Great personality match", "Similar interests", "Compatible background"
-    ];
-
-    // Add age, score, tag
-    let processedMatches = allMatches.map(match => {
+    // Calculate age
+    const matchesWithAge = matches.map(match => {
       if (match.dob) {
-        const birth = new Date(match.dob);
-        let age = today.getFullYear() - birth.getFullYear();
-        const m = today.getMonth() - birth.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        const today = new Date();
+        const birthDate = new Date(match.dob);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
         match.age = age;
       }
-
-      const combinedString = dateSeed + match._id.toString();
-      const hashValue = createHash(combinedString);
-      const dailyScore = (hashValue % 1000) / 1000;
-
-      match.finalScore = dailyScore * 100;
-
-      if (match.finalScore > 70) {
-        const tagIndex = createHash(combinedString) % specialTags.length;
-        match.specialTag = specialTags[tagIndex];
-      }
-
       return match;
     });
 
-    // Sort and paginate
-    processedMatches.sort((a, b) => b.finalScore - a.finalScore);
-    const totalCount = processedMatches.length;
-    const paginatedMatches = processedMatches.slice(skip, skip + limit);
+    // Get match IDs for like status check
+    const matchIds = matchesWithAge.map(m => m._id);
 
-    // Get only LIKEs for shown users
-    const matchIds = paginatedMatches.map(u => u._id);
+    // Fetch liked status
     const likedDocs = await Like.find({
       user: userId,
       userLikedTo: { $in: matchIds }
-    })
+    }).lean();
+
+    const likedIds = new Set(likedDocs.map(like => like.userLikedTo.toString()));
+
+    // Add liked flag to each match
+    matchesWithAge.forEach(match => {
+      match.liked = likedIds.has(match._id.toString());
+    });
+
+    // Response format
+    return res.status(200).json({
+      success: true,
+      data: {
+        matches: matchesWithAge,
+        pagination: {
+          total: totalCount,
+          page,
+          pages: Math.ceil(totalCount / limit),
+          hasNextPages: page < Math.ceil(totalCount / limit),
+          limit
+        },
+        totalMatches: totalCount, // Simple match count
+        refreshBehavior: {
+          refreshType: "stable",
+          refreshInfo: "Newest profiles shown first"
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getMyMatches:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+const getTodaysMatches = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const limit = parseInt(req.query.limit) || 9;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
+    // Get today's start and end timestamps
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const genderFilter = req.user.gender === 'Male' ? 'Female' : 'Male';
+
+    // Simple query - just get today's users
+    const query = {
+      _id: { $ne: userId }, // Don't include current user
+      profileStatus: 'Complete',
+      gender: genderFilter,
+      active: true,
+      created_at: {
+        $gte: today,
+        $lt: tomorrow
+      }
+    };
+
+    // Get total count
+    const totalCount = await User.countDocuments(query);
+
+    // Get paginated users sorted by newest first
+    const todaysUsers = await User.find(query)
+      .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge gender')
+      .sort({ created_at: -1 }) // Newest first
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const specialTags = [
+      "New member today", "Just joined", "Fresh profile",
+      "New to the community", "Recently joined", "Today's new member", "Welcome them!"
+    ];
+
+    // Process users - add age and tags
+    const processedUsers = todaysUsers.map((user, index) => {
+      // Calculate age if DOB exists
+      if (user.dob) {
+        const birth = new Date(user.dob);
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        user.age = age;
+      }
+
+      // Add special tag
+      const tagIndex = index % specialTags.length;
+      user.specialTag = specialTags[tagIndex];
+
+      // Simple score for display
+      user.finalScore = 100 - (index * 5);
+
+      return user;
+    });
+
+    // Get liked status for these users
+    const userIds = processedUsers.map(u => u._id);
+    const likedDocs = await Like.find({
+      user: userId,
+      userLikedTo: { $in: userIds }
+    });
 
     const likedUserIds = likedDocs.map(doc => doc.userLikedTo.toString());
 
-    // Append liked status
-    const finalMatches = paginatedMatches.map(match => ({
-      ...match,
-      liked: likedUserIds.includes(match._id.toString())
+    // Add liked status
+    const finalMatches = processedUsers.map(user => ({
+      ...user,
+      liked: likedUserIds.includes(user._id.toString())
     }));
 
-    // Refresh time
+    // Calculate refresh time (midnight)
     const now = new Date();
     const midnight = new Date(now);
     midnight.setDate(midnight.getDate() + 1);
@@ -430,15 +755,15 @@ const getTodaysMatches = async (req, res) => {
         },
         refreshBehavior: {
           refreshType: "daily",
-          refreshInfo: "New selection every day at midnight"
+          refreshInfo: "Today's new members"
         },
         refreshesIn: {
           hours: hoursUntilMidnight,
           minutes: minutesUntilMidnight,
           timestamp: midnight.getTime()
         },
-        relaxationLevel: relaxationIndex,
-        criteriaAdjusted: relaxationIndex > 0
+        relaxationLevel: 0,
+        criteriaAdjusted: false
       }
     });
   } catch (error) {
@@ -450,8 +775,6 @@ const getTodaysMatches = async (req, res) => {
     });
   }
 };
-
-
 /**
  * Get My Matches - Most compatible profiles with rotation strategy
  * Strategy:
@@ -461,229 +784,229 @@ const getTodaysMatches = async (req, res) => {
  * - Combine deterministic and session-based rotation
  */
 
-const getMyMatches = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 9;
-    const skip = (page - 1) * limit;
-    const sortBy = req.query.sortBy || 'relevance';
+// const getMyMatches = async (req, res) => {
+//   try {
+//     const userId = req.user._id;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 9;
+//     const skip = (page - 1) * limit;
+//     const sortBy = req.query.sortBy || 'relevance';
 
-    let sessionId = req.query.sessionId;
-    if (!sessionId) {
-      sessionId = Math.random().toString(36).substring(2, 15);
-    }
+//     let sessionId = req.query.sessionId;
+//     if (!sessionId) {
+//       sessionId = Math.random().toString(36).substring(2, 15);
+//     }
 
-    const currentUser = await User.findById(userId);
-    const userPreferences = await PartnerPreferences.findOne({ user_id: userId });
+//     const currentUser = await User.findById(userId);
+//     const userPreferences = await PartnerPreferences.findOne({ user_id: userId });
 
-    if (!currentUser || !userPreferences) {
-      return res.status(400).json({
-        success: false,
-        message: 'User profile or preferences not found'
-      });
-    }
+//     if (!currentUser || !userPreferences) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'User profile or preferences not found'
+//       });
+//     }
 
-    const genderFilter = currentUser.gender === 'Male' ? 'Female' : 'Male';
+//     const genderFilter = currentUser.gender === 'Male' ? 'Female' : 'Male';
 
-    const query = {
-      _id: { $ne: userId },
-      gender: genderFilter,
-      profileStatus: 'Complete'
-    };
+//     const query = {
+//       _id: { $ne: userId },
+//       gender: genderFilter,
+//       profileStatus: 'Complete'
+//     };
 
-    // Apply filters based on preferences
-    // if (userPreferences.min_age && userPreferences.max_age) {
-    //   const minDate = new Date();
-    //   minDate.setFullYear(minDate.getFullYear() - userPreferences.max_age);
+//     // Apply filters based on preferences
+//     // if (userPreferences.min_age && userPreferences.max_age) {
+//     //   const minDate = new Date();
+//     //   minDate.setFullYear(minDate.getFullYear() - userPreferences.max_age);
 
-    //   const maxDate = new Date();
-    //   maxDate.setFullYear(maxDate.getFullYear() - userPreferences.min_age);
+//     //   const maxDate = new Date();
+//     //   maxDate.setFullYear(maxDate.getFullYear() - userPreferences.min_age);
 
-    //   query.dob = { $gte: minDate, $lte: maxDate };
-    // }
+//     //   query.dob = { $gte: minDate, $lte: maxDate };
+//     // }
 
-    // if (userPreferences.min_height_in_cm && userPreferences.max_height_in_cm) {
-    //   query.heightInCm = {
-    //     $gte: userPreferences.min_height_in_cm,
-    //     $lte: userPreferences.max_height_in_cm
-    //   };
-    // }
+//     // if (userPreferences.min_height_in_cm && userPreferences.max_height_in_cm) {
+//     //   query.heightInCm = {
+//     //     $gte: userPreferences.min_height_in_cm,
+//     //     $lte: userPreferences.max_height_in_cm
+//     //   };
+//     // }
 
-    // if (userPreferences.religion) {
-    //   query.religion = userPreferences.religion;
-    // }
+//     // if (userPreferences.religion) {
+//     //   query.religion = userPreferences.religion;
+//     // }
 
-    // if (userPreferences.mother_tongue) {
-    //   query.mother_tongue = userPreferences.mother_tongue;
-    // }
+//     // if (userPreferences.mother_tongue) {
+//     //   query.mother_tongue = userPreferences.mother_tongue;
+//     // }
 
-    // if (userPreferences.marital_status) {
-    //   query.marital_status = userPreferences.marital_status;
-    // }
+//     // if (userPreferences.marital_status) {
+//     //   query.marital_status = userPreferences.marital_status;
+//     // }
 
-    // if (!userPreferences.any_caste && currentUser.caste) {
-    //   query.caste = currentUser.caste;
-    // }
+//     // if (!userPreferences.any_caste && currentUser.caste) {
+//     //   query.caste = currentUser.caste;
+//     // }
 
-    // if (userPreferences.highest_education) {
-    //   query.highest_education = userPreferences.highest_education;
-    // }
+//     // if (userPreferences.highest_education) {
+//     //   query.highest_education = userPreferences.highest_education;
+//     // }
 
-    // if (userPreferences.employed_in) {
-    //   query.employed_in = userPreferences.employed_in;
-    // }
+//     // if (userPreferences.employed_in) {
+//     //   query.employed_in = userPreferences.employed_in;
+//     // }
 
-    let totalCount = await User.countDocuments(query);
-    let relaxationLevel = 0;
-    let relaxedQuery = { ...query };
+//     let totalCount = await User.countDocuments(query);
+//     let relaxationLevel = 0;
+//     let relaxedQuery = { ...query };
 
-    const minDesiredMatches = limit * 3;
+//     const minDesiredMatches = limit * 3;
 
-    const relaxationSteps = [
-      // { criteria: 'highest_education', action: 'remove' },
-      // { criteria: 'employed_in', action: 'remove' },
-      // { criteria: 'mother_tongue', action: 'remove' },
-      // { criteria: 'caste', action: 'remove' },
-      { criteria: 'heightInCm', action: 'expand', factor: 5 },
-      { criteria: 'dob', action: 'expand', factor: 3 }
-    ];
+//     const relaxationSteps = [
+//       // { criteria: 'highest_education', action: 'remove' },
+//       // { criteria: 'employed_in', action: 'remove' },
+//       // { criteria: 'mother_tongue', action: 'remove' },
+//       // { criteria: 'caste', action: 'remove' },
+//       { criteria: 'heightInCm', action: 'expand', factor: 5 },
+//       { criteria: 'dob', action: 'expand', factor: 3 }
+//     ];
 
-    while (totalCount < minDesiredMatches && relaxationLevel < relaxationSteps.length) {
-      const step = relaxationSteps[relaxationLevel];
-// console.log('relaxationSteps[relaxationLevel]', relaxationSteps[relaxationLevel], 'step', step)
-      if (step.action === 'remove' && relaxedQuery[step.criteria]) {
-        delete relaxedQuery[step.criteria];
-      } else if (step.action === 'expand') {
-        if (step.criteria === 'heightInCm' && relaxedQuery.heightInCm) {
-          relaxedQuery.heightInCm = {
-            $gte: relaxedQuery.heightInCm.$gte - step.factor,
-            $lte: relaxedQuery.heightInCm.$lte + step.factor
-          };
-        } else if (step.criteria === 'dob' && relaxedQuery.dob) {
-          const minDate = new Date(relaxedQuery.dob.$gte);
-          minDate.setFullYear(minDate.getFullYear() - step.factor);
+//     while (totalCount < minDesiredMatches && relaxationLevel < relaxationSteps.length) {
+//       const step = relaxationSteps[relaxationLevel];
+// // console.log('relaxationSteps[relaxationLevel]', relaxationSteps[relaxationLevel], 'step', step)
+//       if (step.action === 'remove' && relaxedQuery[step.criteria]) {
+//         delete relaxedQuery[step.criteria];
+//       } else if (step.action === 'expand') {
+//         if (step.criteria === 'heightInCm' && relaxedQuery.heightInCm) {
+//           relaxedQuery.heightInCm = {
+//             $gte: relaxedQuery.heightInCm.$gte - step.factor,
+//             $lte: relaxedQuery.heightInCm.$lte + step.factor
+//           };
+//         } else if (step.criteria === 'dob' && relaxedQuery.dob) {
+//           const minDate = new Date(relaxedQuery.dob.$gte);
+//           minDate.setFullYear(minDate.getFullYear() - step.factor);
 
-          const maxDate = new Date(relaxedQuery.dob.$lte);
-          maxDate.setFullYear(maxDate.getFullYear() + step.factor);
+//           const maxDate = new Date(relaxedQuery.dob.$lte);
+//           maxDate.setFullYear(maxDate.getFullYear() + step.factor);
 
-          relaxedQuery.dob = { $gte: minDate, $lte: maxDate };
-        }
-      }
-      totalCount = await User.countDocuments(relaxedQuery);
-      relaxationLevel++;
-    }
+//           relaxedQuery.dob = { $gte: minDate, $lte: maxDate };
+//         }
+//       }
+//       totalCount = await User.countDocuments(relaxedQuery);
+//       relaxationLevel++;
+//     }
 
-    let sortOption = {};
-    if (sortBy === 'newest') {
-      sortOption = { created_at: -1 };
-    } else if (sortBy === 'photo_first') {
-      sortOption = { 'profile_image.0': { $exists: true } };
-    } else if (sortBy === 'premium_first') {
-      sortOption = { subscriptionStatus: -1, created_at: -1 };
-    } else {
-      sortOption = { subscriptionStatus: -1, _id: 1 };
-    }
+//     let sortOption = {};
+//     if (sortBy === 'newest') {
+//       sortOption = { created_at: -1 };
+//     } else if (sortBy === 'photo_first') {
+//       sortOption = { 'profile_image.0': { $exists: true } };
+//     } else if (sortBy === 'premium_first') {
+//       sortOption = { subscriptionStatus: -1, created_at: -1 };
+//     } else {
+//       sortOption = { subscriptionStatus: -1, _id: 1 };
+//     }
 
-    const fetchLimit = Math.min(1000, totalCount);
+//     const fetchLimit = Math.min(1000, totalCount);
 
-    const allPotentialMatches = await User.find(relaxedQuery)
-      // .select('_id fullName gender dob height heightInCm religion caste mother_tongue city state profile_image description occupation highest_education employed_in annual_income manglik profileStatus verifiedBadge subscriptionStatus created_at')
-      .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
-      .sort(sortOption)
-      .limit(fetchLimit)
-      .lean();
+//     const allPotentialMatches = await User.find(relaxedQuery)
+//       // .select('_id fullName gender dob height heightInCm religion caste mother_tongue city state profile_image description occupation highest_education employed_in annual_income manglik profileStatus verifiedBadge subscriptionStatus created_at')
+//       .select('_id fullName dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge')
+//       .sort(sortOption)
+//       .limit(fetchLimit)
+//       .lean();
 
-    const matchesWithMeta = allPotentialMatches.map(match => {
-      // Age
-      if (match.dob) {
-        const today = new Date();
-        const birthDate = new Date(match.dob);
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        match.age = age;
-      }
+//     const matchesWithMeta = allPotentialMatches.map(match => {
+//       // Age
+//       if (match.dob) {
+//         const today = new Date();
+//         const birthDate = new Date(match.dob);
+//         let age = today.getFullYear() - birthDate.getFullYear();
+//         const m = today.getMonth() - birthDate.getMonth();
+//         if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+//           age--;
+//         }
+//         match.age = age;
+//       }
 
-      // Rotation Score
-      const combinedString = sessionId + match._id.toString();
-      let rotationScore = 0;
-      for (let i = 0; i < combinedString.length; i++) {
-        rotationScore += combinedString.charCodeAt(i);
-      }
-      match.rotationScore = rotationScore % 100;
+//       // Rotation Score
+//       const combinedString = sessionId + match._id.toString();
+//       let rotationScore = 0;
+//       for (let i = 0; i < combinedString.length; i++) {
+//         rotationScore += combinedString.charCodeAt(i);
+//       }
+//       match.rotationScore = rotationScore % 100;
 
-      return match;
-    });
+//       return match;
+//     });
 
-    if (sortBy === 'relevance') {
-      matchesWithMeta.sort((a, b) => {
-        if ((a.subscriptionStatus !== 'none') !== (b.subscriptionStatus !== 'none')) {
-          return a.subscriptionStatus !== 'none' ? -1 : 1;
-        }
+//     if (sortBy === 'relevance') {
+//       matchesWithMeta.sort((a, b) => {
+//         if ((a.subscriptionStatus !== 'none') !== (b.subscriptionStatus !== 'none')) {
+//           return a.subscriptionStatus !== 'none' ? -1 : 1;
+//         }
 
-        return a.rotationScore - b.rotationScore;
-      });
-    } else if (sortBy === 'rotation') {
-      matchesWithMeta.sort((a, b) => {
-        if ((a.subscriptionStatus !== 'none') !== (b.subscriptionStatus !== 'none')) {
-          return a.subscriptionStatus !== 'none' ? -1 : 1;
-        }
+//         return a.rotationScore - b.rotationScore;
+//       });
+//     } else if (sortBy === 'rotation') {
+//       matchesWithMeta.sort((a, b) => {
+//         if ((a.subscriptionStatus !== 'none') !== (b.subscriptionStatus !== 'none')) {
+//           return a.subscriptionStatus !== 'none' ? -1 : 1;
+//         }
 
-        return a.rotationScore - b.rotationScore;
-      });
-    }
+//         return a.rotationScore - b.rotationScore;
+//       });
+//     }
 
-    const paginatedMatches = matchesWithMeta.slice(skip, skip + limit);
-    const matchIds = paginatedMatches.map(m => m._id);
+//     const paginatedMatches = matchesWithMeta.slice(skip, skip + limit);
+//     const matchIds = paginatedMatches.map(m => m._id);
 
-    // Fetch liked info only for visible matches
-    const likedDocs = await Like.find({
-      user: userId,
-      userLikedTo: { $in: matchIds }
-    })
+//     // Fetch liked info only for visible matches
+//     const likedDocs = await Like.find({
+//       user: userId,
+//       userLikedTo: { $in: matchIds }
+//     })
 
-    const likedIds = likedDocs.map(like => like.userLikedTo.toString());
+//     const likedIds = likedDocs.map(like => like.userLikedTo.toString());
 
-    // Add `liked` flag
-    paginatedMatches.forEach(match => {
-      match.liked = likedIds.includes(match._id.toString());
-      delete match.rotationScore;
-    });
+//     // Add `liked` flag
+//     paginatedMatches.forEach(match => {
+//       match.liked = likedIds.includes(match._id.toString());
+//       delete match.rotationScore;
+//     });
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        matches: paginatedMatches,
-        pagination: {
-          total: totalCount,
-          page,
-          pages: Math.ceil(totalCount / limit),
-          hasNextPages: page < Math.ceil(totalCount / limit),
-          limit
-        },
-        sessionId: sessionId,
-        relaxationLevel: relaxationLevel > 0 ? relaxationLevel : null,
-        criteriaAdjusted: relaxationLevel > 0,
-        refreshBehavior: {
-          refreshType: sortBy === 'rotation' ? "session" : "stable",
-          refreshInfo: sortBy === 'rotation'
-            ? "Different profiles shown on each refresh"
-            : "Consistent ordering within sort criteria"
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error in getMyMatches:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       data: {
+//         matches: paginatedMatches,
+//         pagination: {
+//           total: totalCount,
+//           page,
+//           pages: Math.ceil(totalCount / limit),
+//           hasNextPages: page < Math.ceil(totalCount / limit),
+//           limit
+//         },
+//         sessionId: sessionId,
+//         relaxationLevel: relaxationLevel > 0 ? relaxationLevel : null,
+//         criteriaAdjusted: relaxationLevel > 0,
+//         refreshBehavior: {
+//           refreshType: sortBy === 'rotation' ? "session" : "stable",
+//           refreshInfo: sortBy === 'rotation'
+//             ? "Different profiles shown on each refresh"
+//             : "Consistent ordering within sort criteria"
+//         }
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error in getMyMatches:', error);
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Server error',
+//       error: error.message
+//     });
+//   }
+// };
 
 const getNearMeMatches = async (req, res) => {
   try {
