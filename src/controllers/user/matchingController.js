@@ -130,11 +130,22 @@ const getNewMatches = async (req, res) => {
       matchDate.setDate(matchDate.getDate() - period);
 
       // Build query based on preferences
+      // const query = {
+      //   _id: { $ne: userId },
+      //   gender: genderFilter,
+      //   profileStatus: 'Complete',
+      //   created_at: { $gte: matchDate }
+      // };
+
+      // Build query based on preferences
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
       const query = {
         _id: { $ne: userId },
         gender: genderFilter,
         profileStatus: 'Complete',
-        created_at: { $gte: matchDate }
+        created_at: { $gte: matchDate, $lte: twoDaysAgo }  // 🟢 Add upper limit
       };
 
       // Add basic preference filters
