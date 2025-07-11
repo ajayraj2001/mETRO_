@@ -107,16 +107,16 @@ const userSchema = new mongoose.Schema(
 
 
     // Add these fields to the User schema  -- suscription purpose
-    verifiedBadge: { type: Boolean, default: false },
-    subscriptionStatus: { type: String, enum: ['none', 'active', 'expired'], default: 'none' },
-    subscriptionPlan: { type: String, enum: ['', 'Silver', 'Gold', 'Diamond', 'Royal'], default: '' },
-    subscriptionExpiry: { type: Date },
-    messageCreditsRemaining: { type: Number, default: 0 },
-    contactViewsRemaining: { type: Number, default: 0 },
-    superInterestsRemaining: { type: Number, default: 0 },
-    unlimitedMessaging: { type: Boolean, default: false },
-    profileVisibilityBoost: { type: Number, default: 1 },
-    lastSubscriptionCheck: { type: Date }
+    // verifiedBadge: { type: Boolean, default: false },
+    // subscriptionStatus: { type: String, enum: ['none', 'active', 'expired'], default: 'none' },
+    // subscriptionPlan: { type: String, enum: ['', 'Silver', 'Gold', 'Diamond', 'Royal'], default: '' },
+    // subscriptionExpiry: { type: Date },
+    // messageCreditsRemaining: { type: Number, default: 0 },
+    // contactViewsRemaining: { type: Number, default: 0 },
+    // superInterestsRemaining: { type: Number, default: 0 },
+    // unlimitedMessaging: { type: Boolean, default: false },
+    // profileVisibilityBoost: { type: Number, default: 1 },
+    // lastSubscriptionCheck: { type: Date }
   },
   {
     timestamps: {
