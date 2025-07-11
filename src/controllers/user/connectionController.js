@@ -248,7 +248,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               user: existingConnection.sender,
               title: "Connection Request Accepted",
               message: `${fullName} has accepted your connection request`,
-              pic: profile_image,
+              pic: '',
             });
 
             const senderUser = await User.findById(existingConnection.sender);
@@ -309,7 +309,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
         user: receiverId,
         title: "New Connection Request",
         message: `${fullName} has sent you a connection request`,
-        pic: profile_image
+        pic: ''
       });
 
       if (receiver.deviceToken) {
