@@ -34,16 +34,16 @@ const notificationSchema = new Schema({
     default: '',
     enum: [
       '',
-      'profile_liked', 
-      'profile_match', 
-      'subscription_expiry', 
+      'profile_liked',
+      'profile_match',
+      'subscription_expiry',
       'subscription_offer',
       'profile_incomplete',
       'admin_announcement'
     ],
     required: true
   },
-  
+
   // Reference to user (for matches/likes)
   referenceId: {
     type: Schema.Types.ObjectId,
@@ -51,7 +51,7 @@ const notificationSchema = new Schema({
     default: null
   },
 
-   // For mobile deep-linking
+  // For mobile deep-linking
   // redirectScreen: { type: String, default: '' }, // e.g., "UserProfile", "SubscriptionPage", "EditProfile"
 
   // Status

@@ -123,7 +123,8 @@ userRoute.get("/get_liked_users", authenticateUser, getLikedUsers);
 
 // request user
 const { get_Follow_Data, send_Or_UpdateRequest, sent_Request_To, unsend_Request, got_Request_From, check_Status_For_Chatting } = require("../controllers/user/requestedUserController");
-userRoute.post("/send_request", authenticateUser, send_Or_UpdateRequest);
+// userRoute.post("/send_request", authenticateUser, send_Or_UpdateRequest);
+userRoute.post("/send_request", authenticateUser, sendOrUpdateRequest);
 userRoute.get("/getFollowData", authenticateUser, get_Follow_Data);
 userRoute.get("/requested_to", authenticateUser, sent_Request_To);
 userRoute.get("/unsend_request/:id", authenticateUser, unsend_Request);
