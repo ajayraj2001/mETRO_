@@ -66,7 +66,7 @@ const getNotification = asyncHandler(async (req, res, next) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  // Total count for pagination
+  // Total count
   const totalCount = await Notification.countDocuments({ user });
 
   // Fetch data
@@ -75,7 +75,6 @@ const getNotification = asyncHandler(async (req, res, next) => {
     .skip(skip)
     .limit(limit);
 
-  // If empty
   if (!data || data.length === 0) {
     return res.status(200).json({
       success: true,
@@ -90,20 +89,28 @@ const getNotification = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Overwrite `pic` field
+  // Modify `pic` field based on type
   const modifiedData = data.map((notif) => {
     const obj = notif.toObject();
-    obj.pic = []; // Or use: obj.pic = [];
+    const { pic } = obj;
+
+    if (Array.isArray(pic)) {
+      obj.pic = pic[0] || "";
+    } else if (typeof pic === "string") {
+      obj.pic = []; // return empty array if it was a string
+    } else {
+      obj.pic = "";
+    }
+
     return obj;
   });
 
-  // Mark unread as read
+  // Mark all unread notifications as read
   await Notification.updateMany(
     { user, isRead: false },
     { $set: { isRead: true } }
   );
 
-  // Return response
   return res.status(200).json({
     success: true,
     message: "Notification data fetched successfully.",
