@@ -172,7 +172,7 @@ const verifyOtpSignUp = async (req, res, next) => {
     if (Date.now() > new Date(user.otp_expiry).getTime())
       return next(new ApiError("OTP expired", 400));
 
-    const allowedStaticOtpNumbers = ["9899981720", "9999999999", "7056702795"];
+    const allowedStaticOtpNumbers = ["9899981720", "8178925920", "7056702795"];
 
     // Allow static OTP only for 9899981720
     if (allowedStaticOtpNumbers.includes(phone)) {
@@ -304,7 +304,7 @@ const verifyOtpLogin = async (req, res, next) => {
 
     }
 
-    const allowedStaticOtpNumbers = ["9899981720", "9999999999", "7056702795"];
+    const allowedStaticOtpNumbers = ["9899981720", "8178925920", "7056702795"];
     // Allow static OTP only for 9899981720
 
     if (allowedStaticOtpNumbers.includes(phone)) {

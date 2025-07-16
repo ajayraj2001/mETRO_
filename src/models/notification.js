@@ -35,7 +35,7 @@
       enum: [
         '',
         'profile_liked',
-        'profile_match',
+        'profile',
         'subscription_expiry',
         'subscription_offer',
         'profile_incomplete',

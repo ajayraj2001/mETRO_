@@ -30,6 +30,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       return next(new ApiError("Receiver not found", 404));
     }
 
+    const type = 'profile'
     // 🔒 Enhanced blocking check
     const blockedConnection = await Connection.findOne({
       $or: [
@@ -90,6 +91,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               title: "Connection Request Accepted",
               message: `${fullName} has accepted your connection request`,
               referenceId: receiverId,
+              type,
               pic: '',
             });
 
@@ -98,7 +100,10 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               await sendFirebaseNotification(
                 senderUser.deviceToken,
                 "Connection Request Accepted",
-                `${fullName} has accepted your connection request`
+                `${fullName} has accepted your connection request`,
+                receiverId,
+                type,
+                receiverId.profile_image[0]
               );
             }
 
@@ -120,6 +125,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
             title: "Connection Request Accepted",
             message: `${fullName} has accepted your connection request`,
             referenceId: receiverId,
+            type,
             pic: '',
           });
 
@@ -128,7 +134,10 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
             await sendFirebaseNotification(
               senderUser.deviceToken,
               "Connection Request Accepted",
-              `${fullName} has accepted your connection request`
+              `${fullName} has accepted your connection request`,
+              receiverId,
+              type,
+              receiverId.profile_image[0]
             );
           }
 
@@ -149,18 +158,22 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       await newConnection.save();
 
       await Notification.create({
-        user: receiverId,
+        user: existingConnection.receiverId,
         title: "New Connection Request",
-        message: `${fullName} has sent you a connection request`,
-        referenceId: receiverId,
-        pic: ''
+        message: `${fullName} has sent you request`,
+        referenceId: senderId,
+        type,
+        pic: '',
       });
 
       if (receiver.deviceToken) {
         await sendFirebaseNotification(
           receiver.deviceToken,
           "New Connection Request",
-          `${fullName} has sent you a connection request`
+          `${fullName} has sent you a connection request`,
+          senderId,
+          type,
+          senderId.profile_image[0]
         );
       }
 
