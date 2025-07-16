@@ -934,7 +934,7 @@ const getProfileDetails = async (req, res, next) => {
     responseUser.distance = distance;
     responseUser.connectionStatus = connectionStatus;
     responseUser.connectionId = connectionId || "";
-    responseUser.profile_image = [];
+    // responseUser.profile_image = [];
 
     // Always mask the phone number (never show full)
     if (responseUser.phone) {
