@@ -93,7 +93,7 @@ const getNotification = asyncHandler(async (req, res, next) => {
   // Overwrite `pic` field
   const modifiedData = data.map((notif) => {
     const obj = notif.toObject();
-    obj.pic = ""; // Or use: obj.pic = [];
+    obj.pic = []; // Or use: obj.pic = [];
     return obj;
   });
 
