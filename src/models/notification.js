@@ -34,7 +34,7 @@
       default: '',
       enum: [
         '',
-        'profile_liked',
+        'like',
         'profile',
         'subscription_expiry',
         'subscription_offer',

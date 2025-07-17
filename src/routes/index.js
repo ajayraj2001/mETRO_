@@ -5,7 +5,7 @@ const apiRoute = require('./api.route');
 const axios = require('axios')
 
 const appRoutes = (app) => {
-  
+
   app.get('/api/ping', (_, res) => res.status(200).json({ success: true, message: 'Ping Successfully.', timestamp: new Date() }));
   app.use('/public', express.static('public'));
   app.use('/api', apiRoute);

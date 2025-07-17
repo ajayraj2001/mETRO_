@@ -1,12 +1,13 @@
 const { ApiError } = require("../../errorHandler");
 const { getMultipleFilesUploader } = require("../../middlewares/multipleFileUpload");
 const { deleteOldFile } = require("../../utils");
-const User = require("../../models/user");
+const {User, Message, Notification} = require("../../models");
 const { Country, State, City } = require("country-state-city");
 const jwt = require("jsonwebtoken");
 const parseDate = require("../../utils/parseDate");
-const convertHeightToCM = require("../../utils/convertHeightToCM");
 const { ACCESS_TOKEN_SECRET } = process.env;
+const asyncHandler = require('../../utils/asyncHandler')
+const mongoose = require('mongoose')
 
 const getCountries = async (req, res, next) => {
   try {
@@ -400,6 +401,34 @@ const deleteProfile = async (req, res, next) => {
   }
 };
 
+const getUnreadCounts = asyncHandler(async (req, res, next) => {
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ success: false, message: "Invalid userId" });
+  }
+
+  const [unreadMessageCount, unreadNotificationCount] = await Promise.all([
+    Message.countDocuments({
+      recipient: new mongoose.Types.ObjectId(userId),
+      read: false
+    }),
+    Notification.countDocuments({
+      user: new mongoose.Types.ObjectId(userId),
+      isRead: false
+    })
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Unread counts fetched successfully",
+    data: {
+      unreadMessageCount,
+      unreadNotificationCount
+    }
+  });
+});
+
 module.exports = {
   getCountries,
   getStates,
@@ -407,5 +436,6 @@ module.exports = {
   getProfile,
   updateProfile,
   deleteProfileImage,
-  deleteProfile
+  deleteProfile,
+  getUnreadCounts
 };

@@ -26,7 +26,10 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
       user: userLikedTo,
       title: "Profile Liked",
       message: `${fullName} has liked your profile.`,
-      pic: profile_image,
+      // pic: profile_image[0],
+      pic: '',
+      type: 'like',
+      referenceId: id
     });
 
     // Send push notification only if token exists
@@ -34,7 +37,10 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
       await sendFirebaseNotification(
         likedUser.deviceToken,
         "Profile Liked",
-        `${fullName} has liked your profile.`
+        `${fullName} has liked your profile.`,
+        id,
+        type,
+        profile_image[0]
       );
     }
 

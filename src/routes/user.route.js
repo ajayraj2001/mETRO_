@@ -2,7 +2,7 @@ const bodyParser = require("body-parser")
 const authenticateUser = require("../middlewares/authenticateUser");
 
 const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
-const { getCountries, getStates, getCities, getProfile, updateProfile, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
+const { getCountries, getStates, getCities, getProfile, updateProfile, getUnreadCounts, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
 const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, getProfileById, getProfileDetails, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
 
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
@@ -73,6 +73,7 @@ userRoute.post("/cities", getCities);
 
 userRoute.get("/profile", authenticateUser, getProfile);
 userRoute.put("/profile", authenticateUser, updateProfile);
+userRoute.get("/unreadCounts", authenticateUser, getUnreadCounts);
 
 userRoute.post("/deleteProfileImage", authenticateUser, deleteProfileImage);
 userRoute.delete("/delete_profile", authenticateUser, deleteProfile);
@@ -131,7 +132,6 @@ userRoute.get("/unsend_request/:id", authenticateUser, unsend_Request);
 userRoute.get("/requested_by", authenticateUser, got_Request_From);
 userRoute.get("/chat_eligibility/:id", authenticateUser, check_Status_For_Chatting);
 
-
 // Routes for connection management
 userRoute.post("/connection", authenticateUser, sendOrUpdateRequest);
 // userRoute.get("/connections", authenticateUser, getConnectionsUnified);
@@ -145,12 +145,10 @@ userRoute.post("/connections/report", authenticateUser, reportUser);
 userRoute.post("/connections/unblock", authenticateUser, unblockUser);
 userRoute.get("/connections/getBlockedUsers", authenticateUser, getBlockedUsers);
 
-
 // Subscription Plans
 userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 
 // chat message
-//userRoute.get("/message_eligibility", authenticateUser, checkChatEligibility);
 userRoute.get("/chat_list", authenticateUser, chatList);
 userRoute.get("/get_messages/:id", authenticateUser, getChatMessages);
 
@@ -179,5 +177,34 @@ userRoute.get("/language", getLanguages)
 userRoute.get("/blogs", getAllBlogs)
 userRoute.get("/blogs/:id", getBlogById)
 userRoute.get("/getBlogBySlug/:slug", getActiveBlogBySlug)
+
+const sendFirebaseNotification = require('../utils/sendFirebaseNotification.js');
+
+  userRoute.post('/yesh', async (req, res) => {
+    let { type = 'profile', token , title} = req.body;
+
+    if (!token) {
+      return res.status(400).json({ status: 'error', message: 'token is required' });
+    }
+
+    // Hardcoded test values
+    const deviceToken = token;
+    const fullName = "RADHA RANI Raj";
+    title = title || "Connection Request Accepted";
+    const body = `${fullName} has accepted your connection request`; 
+    const _id = "685a90c7119b6058b0940a6e";
+    const pic = "public/user/1752051992891-638931146.jpg";
+
+    try {
+      const response = await sendFirebaseNotification(deviceToken, title, body, _id, type, pic);
+      if (response) {
+        return res.status(200).json({ status: 'success', response });
+      } else {
+        return res.status(500).json({ status: 'error', message: 'Notification failed' });
+      }
+    } catch (error) {
+      return res.status(500).json({ status: 'error', message: error.message || 'Unknown error' });
+    }
+  });
 
 module.exports = userRoute;
