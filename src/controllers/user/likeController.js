@@ -160,6 +160,7 @@ const getLikedUsers = asyncHandler(async (req, res, next) => {
           _id: 1,
           fullName: 1,
           profile_image: 1,
+          profileId: 1
         }
       }
     }

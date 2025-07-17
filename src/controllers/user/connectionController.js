@@ -209,7 +209,7 @@ const getSentRequests = asyncHandler(async (req, res, next) => {
       .sort({ createdAt: -1 })
       .populate({
         path: "receiver",
-        select: "fullName height city profile_image"
+        select: "fullName height city profile_image profileId"
       })
       .skip(skip)
       .limit(limit),
@@ -246,7 +246,7 @@ const getReceivedRequests = asyncHandler(async (req, res, next) => {
       .sort({ createdAt: -1 })
       .populate({
         path: "sender",
-        select: "fullName height city profile_image"
+        select: "fullName height city profile_image profileId"
       })
       .skip(skip)
       .limit(limit),
@@ -350,11 +350,11 @@ const getConnections = asyncHandler(async (req, res, next) => {
       .sort({ updatedAt: -1 })
       .populate({
         path: "sender",
-        select: "fullName height city profile_image"
+        select: "fullName height city profile_image profileId"
       })
       .populate({
         path: "receiver",
-        select: "fullName height city profile_image"
+        select: "fullName height city profile_image profileId"
       })
       .skip(skip)
       .limit(limit),
@@ -634,8 +634,8 @@ const getBlockedUsers = asyncHandler(async (req, res, next) => {
     status: "Blocked",
     blockedBy: userId // Current user has blocked someone
   })
-    .populate("receiver", "fullName profile_image")
-    .populate("sender", "fullName profile_image")
+    .populate("receiver", "fullName profile_image profileId")
+    .populate("sender", "fullName profile_image profileId")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
