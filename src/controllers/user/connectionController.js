@@ -158,7 +158,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
       await newConnection.save();
 
       await Notification.create({
-        user: existingConnection.receiver,
+        user: receiverId,
         title: "New Connection Request",
         message: `${fullName} has sent you request`,
         referenceId: senderId,
