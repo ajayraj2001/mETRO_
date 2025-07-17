@@ -101,8 +101,8 @@ userRoute.get("/yourPreference", authenticateUser, getPreference);
 userRoute.post("/all_match", authenticateUser, matchedUsers);
 userRoute.get("/matchedProfiles", authenticateUser, matchedProfiles);
 userRoute.get("/single_match/:id", authenticateUser, singleMatchedUser);
-userRoute.get("/getProfile/:profileId", authenticateUser, getProfileById);
-userRoute.get("/getProfileDetails/:id", authenticateUser, getProfileDetails);
+userRoute.get("/getProfile/:profileId",  getProfileById);
+userRoute.get("/getProfileDetails/:id", getProfileDetails);
 userRoute.get("/contact_eligibility", authenticateUser, checkContactEligibility);
 
 const matchesController = require('../controllers/user/matchingController.js')

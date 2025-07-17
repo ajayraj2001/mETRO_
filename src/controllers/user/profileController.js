@@ -136,8 +136,6 @@ const updateProfile = async (req, res, next) => {
     try {
       if (error) throw new ApiError(error.message, 400);
 
-      console.log('Update Profile Request Body:', req.body);
-
       const userId = req.user._id;
       let { fullName, type, email, phone, height, annual_income, dob, country, state, stateCode, city, longitude, latitude, heightInCm,
         religion, sect, jammat, caste, occupation, highest_education, course, mother_tongue, living_with_family, diet, ...otherFields } = req.body;
