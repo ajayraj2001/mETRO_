@@ -400,7 +400,7 @@ const deleteProfile = async (req, res, next) => {
 };
 
 const getUnreadCounts = asyncHandler(async (req, res, next) => {
-  const { userId } = req.params;
+  const  userId  = req.user._id;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ success: false, message: "Invalid userId" });

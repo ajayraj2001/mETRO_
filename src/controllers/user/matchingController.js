@@ -145,6 +145,7 @@ const getNewMatches = async (req, res) => {
         _id: { $ne: userId },
         gender: genderFilter,
         profileStatus: 'Complete',
+        active: true,
         created_at: { $gte: matchDate, $lte: twoDaysAgo }  // 🟢 Add upper limit
       };
 
@@ -1071,6 +1072,7 @@ const getNearMeMatches = async (req, res) => {
             query: {
               _id: { $ne: userId },
               gender: genderFilter,
+              active: true,
               profileStatus: 'Complete'
             }
           }
