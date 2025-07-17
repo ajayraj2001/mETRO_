@@ -173,7 +173,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
           `${fullName} has sent you a connection request`,
           senderId,
           type,
-          senderId.profile_image[0]
+          req.user.profile_image[0]
         );
       }
 
