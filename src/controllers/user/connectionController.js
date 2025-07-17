@@ -166,6 +166,12 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
         pic: '',
       });
 
+      const profileImage =
+  Array.isArray(req.user.profile_image) && req.user.profile_image.length > 0
+    ? req.user.profile_image[0]
+    : ''; // fallback to empty string or some default image URL
+
+      console.log(' req.user.profile_image[0]',  req.user.profile_image[0])
       if (receiver.deviceToken) {
         await sendFirebaseNotification(
           receiver.deviceToken,
@@ -173,7 +179,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
           `${fullName} has sent you a connection request`,
           senderId,
           type,
-          req.user.profile_image[0]
+          profileImage
         );
       }
 
