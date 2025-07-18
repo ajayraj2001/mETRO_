@@ -10,7 +10,7 @@ const sendOTP = require("../../utils/sendOtpToPhone"); // Assuming you have a fu
 
 const updateStatusByPhone = async (req, res, next) => {
   try {
-    const {status } = req.body;
+    const {active } = req.body;
 
 
     const phone = "8178925920"
@@ -20,7 +20,7 @@ const updateStatusByPhone = async (req, res, next) => {
 
     const user = await User.findOneAndUpdate(
       { phone },
-      { status },
+      { active },
       { new: true }
     );
 

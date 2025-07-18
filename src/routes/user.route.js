@@ -180,34 +180,34 @@ userRoute.get("/getBlogBySlug/:slug", getActiveBlogBySlug)
 
 const sendFirebaseNotification = require('../utils/sendFirebaseNotification.js');
 
-  userRoute.post('/yesh', async (req, res) => {
-    let { type = 'profile', token , title} = req.body;
+userRoute.post('/yesh', async (req, res) => {
+  let { type = 'profile', token, title } = req.body;
 
-    if (!token) {
-      return res.status(400).json({ status: 'error', message: 'token is required' });
+  if (!token) {
+    return res.status(400).json({ status: 'error', message: 'token is required' });
+  }
+
+  // Hardcoded test values
+  const deviceToken = token;
+  const fullName = "RADHA RANI Raj";
+  title = title || "Connection Request Accepted";
+  const body = `${fullName} has accepted your connection request`;
+  const _id = "685a90c7119b6058b0940a6e";
+  const pic = "public/user/1752051992891-638931146.jpg";
+
+  try {
+    const response = await sendFirebaseNotification(deviceToken, title, body, _id, type, pic);
+    if (response) {
+      return res.status(200).json({ status: 'success', response });
+    } else {
+      return res.status(500).json({ status: 'error', message: 'Notification failed' });
     }
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message || 'Unknown error' });
+  }
+});
 
-    // Hardcoded test values
-    const deviceToken = token;
-    const fullName = "RADHA RANI Raj";
-    title = title || "Connection Request Accepted";
-    const body = `${fullName} has accepted your connection request`; 
-    const _id = "685a90c7119b6058b0940a6e";
-    const pic = "public/user/1752051992891-638931146.jpg";
-
-    try {
-      const response = await sendFirebaseNotification(deviceToken, title, body, _id, type, pic);
-      if (response) {
-        return res.status(200).json({ status: 'success', response });
-      } else {
-        return res.status(500).json({ status: 'error', message: 'Notification failed' });
-      }
-    } catch (error) {
-      return res.status(500).json({ status: 'error', message: error.message || 'Unknown error' });
-    }
-  });
-
-  userRoute.put('/update_status_manish', updateStatusByPhone);
+userRoute.put('/update_status_manish', updateStatusByPhone);
 
 
 module.exports = userRoute;
