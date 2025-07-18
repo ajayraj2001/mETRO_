@@ -49,6 +49,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
       message: "User profile liked successfully.",
     });
   } catch (err) {
+    console.log('erre', err)
     if (err.code === 11000) {
       return res.status(200).json({
         success: true,
