@@ -37,6 +37,26 @@ const updateStatusByPhone = async (req, res, next) => {
   }
 };
 
+const deleteUserByPhone = async (req, res, next) => {
+  try {
+    const phone = "8178925920";
+
+    const user = await User.findOneAndDelete({ phone });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      message: 'User deleted successfully',
+      deletedUser: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 // Helper function to generate unique profileId
 const generateProfileId = async () => {
   const prefix = 'JD'; // JODI4EVER prefix
@@ -447,5 +467,6 @@ module.exports = {
   verifyOtpLogin,
   forgotPassword,
   resetPassword,
-  updateStatusByPhone
+  updateStatusByPhone,
+  deleteUserByPhone
 };

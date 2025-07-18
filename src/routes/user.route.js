@@ -1,7 +1,7 @@
 const bodyParser = require("body-parser")
 const authenticateUser = require("../middlewares/authenticateUser");
 
-const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword, updateStatusByPhone } = require("../controllers/user/authController");
+const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword, updateStatusByPhone, deleteUserByPhone } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, getUnreadCounts, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
 const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, getProfileById, getProfileDetails, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
 
@@ -208,6 +208,7 @@ userRoute.post('/yesh', async (req, res) => {
 });
 
 userRoute.put('/update_status_manish', updateStatusByPhone);
+userRoute.put('/delete_user_manish', deleteUserByPhone);
 
 
 module.exports = userRoute;
