@@ -30,7 +30,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
       // pic: profile_image[0],
       pic: '',
       type: 'like',
-      referenceId: id
+      referenceId: user
     });
 
     // Send push notification only if token exists
@@ -39,7 +39,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
         likedUser.deviceToken,
         "Profile Liked",
         `${fullName} has liked your profile.`,
-        id,
+        user,
         type,
         profile_image[0]
       );
