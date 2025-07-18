@@ -8,7 +8,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 
   const user = req.user._id;
   const { fullName, profile_image } = req.user;
-
+const type = 'like'
   try {
     const alreadyLiked = await Like.findOne({ user, userLikedTo });
     if (alreadyLiked) {
@@ -29,7 +29,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
       message: `${fullName} has liked your profile.`,
       // pic: profile_image[0],
       pic: '',
-      type: 'like',
+      type,
       referenceId: user
     });
 
