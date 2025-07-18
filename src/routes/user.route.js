@@ -1,7 +1,7 @@
 const bodyParser = require("body-parser")
 const authenticateUser = require("../middlewares/authenticateUser");
 
-const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword } = require("../controllers/user/authController");
+const { signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword, updateStatusByPhone } = require("../controllers/user/authController");
 const { getCountries, getStates, getCities, getProfile, updateProfile, getUnreadCounts, deleteProfileImage, deleteProfile } = require("../controllers/user/profileController");
 const { partnerPreferences, getPreference, matchedUsers, matchedProfiles, singleMatchedUser, getProfileById, getProfileDetails, checkContactEligibility } = require("../controllers/user/partnerPreferenceController");
 
@@ -206,5 +206,8 @@ const sendFirebaseNotification = require('../utils/sendFirebaseNotification.js')
       return res.status(500).json({ status: 'error', message: error.message || 'Unknown error' });
     }
   });
+
+  userRoute.put('/update_status_manish', updateStatusByPhone);
+
 
 module.exports = userRoute;

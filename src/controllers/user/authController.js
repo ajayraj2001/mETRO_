@@ -8,6 +8,35 @@ const sendOtpEmail = require("../../utils/sendOtpToEmail"); // Assuming you have
 const sendOTP = require("../../utils/sendOtpToPhone"); // Assuming you have a function to send SMS as well
 
 
+const updateStatusByPhone = async (req, res, next) => {
+  try {
+    const {status } = req.body;
+
+
+    const phone = "8178925920"
+    if (!phone || !['Active', 'Inactive'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid phone or status' });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { phone },
+      { status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      message: 'Status updated successfully',
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Helper function to generate unique profileId
 const generateProfileId = async () => {
   const prefix = 'JD'; // JODI4EVER prefix
@@ -417,4 +446,5 @@ module.exports = {
   verifyOtpLogin,
   forgotPassword,
   resetPassword,
+  updateStatusByPhone
 };
