@@ -409,7 +409,7 @@ const getUnreadCounts = asyncHandler(async (req, res, next) => {
   const [unreadMessageCount, unreadNotificationCount] = await Promise.all([
     Message.countDocuments({
       recipient: new mongoose.Types.ObjectId(userId),
-      read: false
+      isRead: false
     }),
     Notification.countDocuments({
       user: new mongoose.Types.ObjectId(userId),
