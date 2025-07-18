@@ -208,7 +208,7 @@ userRoute.post('/yesh', async (req, res) => {
 });
 
 userRoute.put('/update_status_manish', updateStatusByPhone);
-userRoute.put('/delete_user_manish', deleteUserByPhone);
+userRoute.delete('/delete_user_manish', deleteUserByPhone);
 
 
 module.exports = userRoute;
