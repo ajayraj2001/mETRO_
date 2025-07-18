@@ -14,9 +14,9 @@ const updateStatusByPhone = async (req, res, next) => {
 
 
     const phone = "8178925920"
-    if (!phone || !['Active', 'Inactive'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid phone or status' });
-    }
+    // if (!phone || !['Active', 'Inactive'].includes(status)) {
+    //   return res.status(400).json({ message: 'Invalid phone or status' });
+    // }
 
     const user = await User.findOneAndUpdate(
       { phone },
