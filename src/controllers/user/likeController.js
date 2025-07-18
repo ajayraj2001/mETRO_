@@ -5,6 +5,7 @@ const sendFirebaseNotification = require("../../utils/sendFirebaseNotification")
 
 const likeUserProfile = asyncHandler(async (req, res, next) => {
   const { id: userLikedTo } = req.params;
+  console.log('req.params', req.params, 'id ', id)
   const user = req.user._id;
   const { fullName, profile_image } = req.user;
 
