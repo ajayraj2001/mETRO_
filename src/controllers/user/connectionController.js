@@ -95,7 +95,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               pic: '',
             });
 
-            const senderUser = await User.findById(existingConnection.sender);
+            const senderUser = await User.findById(existingConnection.sender); //extra
             if (senderUser?.deviceToken) {
               await sendFirebaseNotification(
                 senderUser.deviceToken,
@@ -103,7 +103,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
                 `${fullName} has accepted your connection request`,
                 receiverId,
                 type,
-                receiverId.profile_image[0]
+                receiver.profile_image[0]
               );
             }
 
@@ -137,7 +137,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               `${fullName} has accepted your connection request`,
               receiverId,
               type,
-              receiverId.profile_image[0]
+              receiver.profile_image[0]
             );
           }
 
