@@ -32,7 +32,6 @@ const type = 'like'
       type,
       referenceId: user
     });
-    console.log('proifle+_ig', typeof( profile_image[0]))
 
     // Send push notification only if token exists
     if (likedUser?.deviceToken) {
