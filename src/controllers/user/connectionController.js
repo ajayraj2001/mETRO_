@@ -103,7 +103,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
                 `${fullName} has accepted your connection request`,
                 receiverId,
                 type,
-                receiverId.profile_image[0]
+                receiver.profile_image[0]
               );
             }
 
@@ -137,7 +137,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
               `${fullName} has accepted your connection request`,
               receiverId,
               type,
-              receiverId.profile_image[0]
+              receiver.profile_image[0]
             );
           }
 
