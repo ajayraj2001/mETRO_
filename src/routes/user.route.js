@@ -12,7 +12,7 @@ const getDetailsById = require("../controllers/user/getTermsPrivacyAboutControll
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
 const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 const { likeUserProfile, getLikedUsers, unlikeUserProfile } = require("../controllers/user/likeController.js");
-const { getNotification, deleteNotification } = require("../controllers/user/notificationController.js");
+const { getNotification, deleteNotification, getNotifications } = require("../controllers/user/notificationController.js");
 const { getCourseStructure } = require("../controllers/user/courseController.js");
 const { getOccupationStructure } = require("../controllers/user/occupationController.js");
 const { getAllBlogs, getBlogById, getActiveBlogBySlug } = require('../controllers/user/blogController.js')
@@ -164,6 +164,7 @@ userRoute.get("/get_terms_privacy_about", getDetailsById); // authenticateUser
 
 // Notification
 userRoute.get("/get_notification", authenticateUser, getNotification);
+userRoute.get("/get_notifications", authenticateUser, getNotifications);
 userRoute.delete("/delete_notification", authenticateUser, deleteNotification);
 
 //Courses
