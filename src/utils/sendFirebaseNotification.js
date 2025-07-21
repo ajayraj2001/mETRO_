@@ -3,7 +3,11 @@ const admin = require('../firebase/firebase');
 const sendFirebaseNotification = async (token, title, body, _id, type, pic) => {
   const message = {
     notification: { title, body },
-    data: { _id, type, pic },
+     data: {
+      _id: String(_id),
+      type: String(type),
+      pic: String(pic),
+    },
     token,
   };
 
