@@ -9,7 +9,7 @@ const sendFirebaseNotification = async (token, title, body, _id, type, pic) => {
 
   try {
     const response = await admin.messaging().send(message);
-    console.log('✅ Notification sent:', response);
+    console.log('✅ Notification sent:', response, type, 'type');
     return response;
   } catch (error) {
     console.error('❌ FCM Error:', error?.message || error);
