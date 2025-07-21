@@ -18,10 +18,7 @@ const getNotifications = asyncHandler(async (req, res, next) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate({
-      path: 'referenceId',
-      select: 'profile_img', // only get this field from User
-    });
+    .populate("referenceId", "profile_img fullName")
 
     console.log('datanotificnat ',data)
 
