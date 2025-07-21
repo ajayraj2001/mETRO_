@@ -18,7 +18,7 @@ const getNotifications = asyncHandler(async (req, res, next) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate("referenceId", "profile_img fullName")
+    .populate("referenceId", "profile_image fullName")
 
     console.log('datanotificnat ',data)
 
