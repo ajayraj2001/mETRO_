@@ -23,6 +23,8 @@ const getNotifications = asyncHandler(async (req, res, next) => {
       select: 'profile_img', // only get this field from User
     });
 
+    console.log('datanotificnat ',data)
+
   // if (!data || data.length === 0) {
   //   return next(new ApiError("No Notification found.", 404));
   // }
