@@ -7,7 +7,7 @@ const { getAllSupportQueries, updateSupportQuery, deleteSupportQuery } = require
 const { createDetails, updateDetails, getPrivacyPolicy, getTermsAndCOndition } = require("../controllers/admin/termsPrivacyAboutController");
 const { getAllTransactions } = require("../controllers/admin/transactionController");
 const { updateAdmin } = require("../controllers/admin/updateAdminProfile.controller");
-const { getAllUsers, deleteUser, exportUsers } = require("../controllers/admin/userListController");
+const { getAllUsers, deleteUser, exportUsers,updateUserStatus } = require("../controllers/admin/userListController");
 const { authenticateAdmin, authorizeRoles } = require("../middlewares/authenticateAdmin");
 const { getFileUploader } = require("../middlewares/fileUpload");
 
@@ -108,6 +108,7 @@ adminRoute.get('/getAppConfig', authenticateAdmin, getAppConfig);
 
 // -------------- Users --------------------
 adminRoute.get('/users', authenticateAdmin, getAllUsers);
+adminRoute.patch('/user/:id/status', authenticateAdmin, updateUserStatus);
 adminRoute.get('/users_excel', exportUsers);
 adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 
