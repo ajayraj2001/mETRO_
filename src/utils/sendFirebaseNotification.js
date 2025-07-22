@@ -3,13 +3,17 @@ const admin = require('../firebase/firebase');
 const sendFirebaseNotification = async (token, title, body, _id, type, pic) => {
   const message = {
     notification: { title, body },
-    data: { _id, type, pic },
+     data: {
+      _id: String(_id),
+      type: String(type),
+      pic: String(pic),
+    },
     token,
   };
 
   try {
     const response = await admin.messaging().send(message);
-    console.log('✅ Notification sent:', response);
+    console.log('✅ Notification sent:', response, type, 'type');
     return response;
   } catch (error) {
     console.error('❌ FCM Error:', error?.message || error);
