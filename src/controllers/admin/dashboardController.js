@@ -1,5 +1,6 @@
 const { User } = require('../../models')
 const { getCurrentIST } = require('../../utils/timeUtils')
+const { ApiError } = require("../../errorHandler");
 
 const getAdminUserDashboard = async (req, res, next) => {
     try {
