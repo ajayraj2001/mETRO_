@@ -44,6 +44,19 @@ const getAdminUserDashboard = async (req, res, next) => {
         const appUsers = sourceBreakdown.find(item => item._id === 'app')?.count || 0;
         const webUsers = sourceBreakdown.find(item => item._id === 'web')?.count || 0;
 
+            // ADDED: Get today's user count
+        const now = getCurrentIST();
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
+
+          // Count total users registered today
+        const todayUsers = await User.countDocuments({
+            created_at: { $gte: todayStart, $lte: todayEnd }
+        });
+
+
         // Build response
         const response = {
             success: true,
@@ -54,7 +67,8 @@ const getAdminUserDashboard = async (req, res, next) => {
                     total_users: totalUsers,
                     new_users_in_period: usersInPeriod,
                     app_users_in_period: appUsers,
-                    web_users_in_period: webUsers
+                    web_users_in_period: webUsers,
+                    today_users: todayUsers
                 },
                 chart: chartData
             }
