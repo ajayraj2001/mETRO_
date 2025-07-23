@@ -355,7 +355,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
       success: true,
       message: "Messages retrieved successfully",
       data: messages,
-      deviceToken: "",
+      deviceToken: "eiZmQ30FTiGj3XrGSEeuSR:APA91bEBKoZZzOG7isXEj4KEINhmDshMkSTZSoSrFlfKg46AE71JBZo6cWdeEyQVBvO8x-OnYch6HzhGQuBvYsjxQQfk5Y58ObSHt6JACKKWSNMC7X_KXOo",
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(totalMessages / limitNum),
