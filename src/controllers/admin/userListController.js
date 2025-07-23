@@ -16,21 +16,19 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
       profileId
     } = req.query;
 
-    // If profileId is provided, find and return single user
+   // If profileId is provided, return user as array
     if (profileId) {
       const user = await User.findOne({ profileId }).select('-location -otp -otp_expiry -updated_at');
 
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found with the provided profileId"
-        });
-      }
-
       return res.status(200).json({
         success: true,
-        message: "User fetched successfully",
-        data: user
+        message: user ? "User fetched successfully" : "User not found with provided profileId",
+        data: user ? [user] : [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalUsers: user ? 1 : 0,
+        }
       });
     }
 
