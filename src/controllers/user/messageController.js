@@ -304,9 +304,11 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
     let isConnected = false;
     let canMessage = true;
     let remainingMessages = null;
+    let deviceToken = null
 
     // Only fetch connection info on page 1
     if (pageNum === 1) {
+      deviceToken  = req.user.deviceToken
       const [connections, totalSentByUser] = await Promise.all([
         Connection.find({
           $or: [
@@ -354,6 +356,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
       success: true,
       message: "Messages retrieved successfully",
       data: messages,
+      deviceToken,
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(totalMessages / limitNum),

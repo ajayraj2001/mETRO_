@@ -107,8 +107,8 @@ adminRoute.get('/getAppConfig', authenticateAdmin, getAppConfig);
 
 
 // -------------- Users --------------------
-adminRoute.get('/users', authenticateAdmin, getAllUsers);
-adminRoute.patch('/user/:id/status', authenticateAdmin, updateUserStatus);
+adminRoute.get('/users', getAllUsers);
+adminRoute.patch('/user/:id/status', updateUserStatus);
 adminRoute.get('/users_excel', exportUsers);
 adminRoute.delete('/users/:id', authenticateAdmin, deleteUser);
 

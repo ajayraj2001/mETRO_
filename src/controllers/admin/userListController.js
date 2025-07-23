@@ -5,44 +5,65 @@ const ExcelJS = require('exceljs');
 
 const getAllUsers = asyncHandler(async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || '';
-    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
-    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
-    const sortBy = req.query.sortBy || 'created_at';
-    const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      startDate,
+      endDate,
+      sortBy = 'created_at',
+      sortOrder = 'asc',
+      profileId
+    } = req.query;
 
-    // Build the search query
-    const searchQuery = {
-      $or: [
-        { fullName: { $regex: search, $options: 'i' } }, // Case-insensitive search by name
-        { phone: { $regex: search, $options: 'i' } }, // Case-insensitive search by number
-      ],
-    };
+    // If profileId is provided, find and return single user
+    if (profileId) {
+      const user = await User.findOne({ profileId }).select('-location -otp -otp_expiry -updated_at');
 
-    // Add date filter if provided
-    if (startDate && endDate) {
-      searchQuery.$and = searchQuery.$and || []; // Ensure $and array exists before using push
-      searchQuery.$and.push({
-        created_at: {
-          $gte: startDate || new Date(0),
-          $lte: endDate ? new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)) : new Date(),
-        },
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found with the provided profileId"
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "User fetched successfully",
+        data: user
       });
     }
 
-    const totalUsers = await User.countDocuments(searchQuery);
+    // Normal search flow
+    const sortDir = sortOrder === 'desc' ? -1 : 1;
 
-    const users = await User.find(searchQuery)
-      .sort({ [sortBy]: sortOrder })
+    const query = {
+      $or: [
+        { fullName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+      ]
+    };
+
+    if (startDate && endDate) {
+      query.$and = query.$and || [];
+      query.$and.push({
+        created_at: {
+          $gte: new Date(startDate),
+          $lte: new Date(new Date(endDate).setUTCHours(23, 59, 59, 999)),
+        }
+      });
+    }
+
+    const totalUsers = await User.countDocuments(query);
+
+    const users = await User.find(query)
+      .sort({ [sortBy]: sortDir })
       .skip((page - 1) * limit)
-      .limit(limit)
+      .limit(parseInt(limit))
       .select('-location -otp -otp_expiry -updated_at');
 
-    // Pagination metadata
     const pagination = {
-      currentPage: page,
+      currentPage: parseInt(page),
       totalPages: Math.ceil(totalUsers / limit),
       totalUsers,
     };
@@ -53,6 +74,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
       data: users,
       pagination,
     });
+
   } catch (error) {
     console.log('error', error);
     next(error);
