@@ -69,6 +69,7 @@ const chatList = asyncHandler(async (req, res, next) => {
           userId: '$_id',
           userName: '$user.fullName',
           deviceToken: '$user.deviceToken',
+          profileId: '$user.profileId',
           // userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
           userProfilePic: {
             $ifNull: [
