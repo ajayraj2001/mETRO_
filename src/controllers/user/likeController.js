@@ -65,7 +65,7 @@ const likeUserProfile = asyncHandler(async (req, res, next) => {
 
 const getLikedUsers = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
-  const { page = 1, limit = 10, search = "" } = req.query;
+  let { page = 1, limit = 10, search = "" } = req.query;
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
