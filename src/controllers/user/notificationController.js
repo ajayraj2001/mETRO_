@@ -86,7 +86,7 @@ const getNotifications = asyncHandler(async (req, res, next) => {
     }
 
     // Remove referenceId completely to reduce payload
-    delete notif.referenceId;
+    // delete notif.referenceId;
 
     return notif;
   });
