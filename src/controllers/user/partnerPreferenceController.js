@@ -606,20 +606,22 @@ const getProfileById = async (req, res, next) => {
 
     // Check for same profile to avoid DB hit
     if (currentUser.profileId === profileId) {
-      const responseUser = currentUser.toObject ? currentUser.toObject() : currentUser;
+      
+      return next(new ApiError("Cannot view your own profile from this endpoint", 400))
+      
+      // const responseUser = currentUser.toObject ? currentUser.toObject() : currentUser;
+      // const age = responseUser.dob ? calculateAge(responseUser.dob) : null;
 
-      const age = responseUser.dob ? calculateAge(responseUser.dob) : null;
-
-      return res.status(200).json({
-        success: true,
-        message: "Own profile data",
-        data: {
-          ...responseUser,
-          age,
-          distance: null,
-          connectionStatus: "own_profile"
-        }
-      });
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Own profile data",
+      //   data: {
+      //     ...responseUser,
+      //     age,
+      //     distance: null,
+      //     connectionStatus: "own_profile"
+      //   }
+      // });
     }
 
     // Find matched user by profileId
