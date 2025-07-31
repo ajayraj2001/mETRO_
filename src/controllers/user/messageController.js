@@ -68,6 +68,8 @@ const chatList = asyncHandler(async (req, res, next) => {
           _id: 0,
           userId: '$_id',
           userName: '$user.fullName',
+          deviceToken: '$user.deviceToken',
+          profileId: '$user.profileId',
           // userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
           userProfilePic: {
             $ifNull: [
@@ -110,7 +112,6 @@ const chatList = asyncHandler(async (req, res, next) => {
     },
   });
 });
-
 
 //with chat permissions
 // const getChatMessages = asyncHandler(async (req, res, next) => {
@@ -327,7 +328,7 @@ const getChatMessages = asyncHandler(async (req, res, next) => {
             const blockedByOtherUser = conn.blockedBy.some(
               id => id.toString() === receiverId.toString()
             );
-            
+
             if (blockedByOtherUser) blockedByOther = true;
             if (blockedByCurrentUser) youBlocked = true;
           } else {

@@ -13,6 +13,7 @@ const sendOrUpdateRequest = asyncHandler(async (req, res, next) => {
     const { status } = req.body;
 
     let receiverId = req.body.receiverId || req.body.userRequestedTo;
+    console.log('receiverId',req.body)
     const senderId = req.user._id;
     const { fullName } = req.user;
 

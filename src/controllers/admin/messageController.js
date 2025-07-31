@@ -3,26 +3,122 @@ const { User, Message } = require("../../models");
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 
+// const chatList = asyncHandler(async (req, res, next) => {
+//   const { userId } = req.params;
+//   let { page = 1, limit = 15 } = req.query;
+
+//   page = parseInt(page);
+//   limit = parseInt(limit);
+//   const skip = (page - 1) * limit;
+
+//   const recentChats = await Message.aggregate([
+//     {
+//       $match: {
+//         $or: [
+//           { sender: new mongoose.Types.ObjectId(userId) },
+//           { recipient: new mongoose.Types.ObjectId(userId) }
+//         ]
+//       }
+//     },
+//     {
+//       $sort: { timestamp: -1 } // Sort messages by latest timestamp first
+//     },
+//     {
+//       $group: {
+//         _id: {
+//           $cond: {
+//             if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//             then: '$recipient',
+//             else: '$sender'
+//           }
+//         },
+//         lastMessage: { $first: '$message' }, // Get latest message
+//         lastMessageTime: { $first: '$timestamp' }
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: 'users',
+//         localField: '_id',
+//         foreignField: '_id',
+//         as: 'user'
+//       }
+//     },
+//     { $unwind: '$user' },
+//     {
+//       $project: {
+//         _id: 0,
+//         userId: '$_id',
+//         userName: '$user.fullName',
+//         userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
+//         lastMessage: 1,
+//         lastMessageTime: 1
+//       }
+//     },
+//     { $sort: { lastMessageTime: -1 } }, // Sort by latest chat interaction
+//     { $skip: skip },
+//     { $limit: limit }
+//   ]);
+
+//   const totalUsers = await Message.aggregate([
+//     {
+//       $match: {
+//         $or: [
+//           { sender: new mongoose.Types.ObjectId(userId) },
+//           { recipient: new mongoose.Types.ObjectId(userId) }
+//         ]
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: {
+//           $cond: {
+//             if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+//             then: '$recipient',
+//             else: '$sender'
+//           }
+//         }
+//       }
+//     },
+//     { $count: "total" }
+//   ]);
+
+//   const total = totalUsers.length > 0 ? totalUsers[0].total : 0;
+
+//   res.status(200).json({
+//     success: true,
+//     message: "Chats fetched successfully",
+//     data: recentChats,
+//     pagination: {
+//       total: total,
+//       page: page,
+//       totalPages: Math.ceil(total / limit),
+//       limit: limit,
+//     },
+//   });
+// });
+
+
 const chatList = asyncHandler(async (req, res, next) => {
   const { userId } = req.params;
-  let { page = 1, limit = 15 } = req.query;
+  let { page = 1, limit = 15, search = '' } = req.query;
 
   page = parseInt(page);
   limit = parseInt(limit);
   const skip = (page - 1) * limit;
 
-  const recentChats = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { sender: new mongoose.Types.ObjectId(userId) },
-          { recipient: new mongoose.Types.ObjectId(userId) }
-        ]
-      }
-    },
-    {
-      $sort: { timestamp: -1 } // Sort messages by latest timestamp first
-    },
+  const matchStage = {
+    $match: {
+      $or: [
+        { sender: new mongoose.Types.ObjectId(userId) },
+        { recipient: new mongoose.Types.ObjectId(userId) }
+      ]
+    }
+  };
+
+  const chatPipeline = [
+    matchStage,
+    { $sort: { timestamp: -1 } },
     {
       $group: {
         _id: {
@@ -32,7 +128,7 @@ const chatList = asyncHandler(async (req, res, next) => {
             else: '$sender'
           }
         },
-        lastMessage: { $first: '$message' }, // Get latest message
+        lastMessage: { $first: '$message' },
         lastMessageTime: { $first: '$timestamp' }
       }
     },
@@ -45,6 +141,18 @@ const chatList = asyncHandler(async (req, res, next) => {
       }
     },
     { $unwind: '$user' },
+  ];
+
+  // Apply regex filter on user.fullName if search is present
+  if (search.trim() !== '') {
+    chatPipeline.push({
+      $match: {
+        'user.fullName': { $regex: search, $options: 'i' }
+      }
+    });
+  }
+
+  chatPipeline.push(
     {
       $project: {
         _id: 0,
@@ -55,35 +163,19 @@ const chatList = asyncHandler(async (req, res, next) => {
         lastMessageTime: 1
       }
     },
-    { $sort: { lastMessageTime: -1 } }, // Sort by latest chat interaction
+    { $sort: { lastMessageTime: -1 } },
     { $skip: skip },
     { $limit: limit }
-  ]);
+  );
 
-  const totalUsers = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { sender: new mongoose.Types.ObjectId(userId) },
-          { recipient: new mongoose.Types.ObjectId(userId) }
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: {
-          $cond: {
-            if: { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
-            then: '$recipient',
-            else: '$sender'
-          }
-        }
-      }
-    },
-    { $count: "total" }
-  ]);
+  const recentChats = await Message.aggregate(chatPipeline);
 
-  const total = totalUsers.length > 0 ? totalUsers[0].total : 0;
+  // For total count with optional search
+  const countPipeline = [...chatPipeline];
+  countPipeline.push({ $count: "total" });
+
+  const totalResult = await Message.aggregate(countPipeline);
+  const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
   res.status(200).json({
     success: true,

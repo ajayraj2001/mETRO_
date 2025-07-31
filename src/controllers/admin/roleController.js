@@ -152,6 +152,7 @@ const getSubAdmins = async (req, res, next) => {
             data: subadmins,
         });
     } catch (error) {
+        console.log('ereror', error)
         next(error);
     }
 };

@@ -11,13 +11,14 @@ const authenticateAdmin = async (req, res, next) => {
     const legit = verifyAccessToken(token);
     const admin = await Admin.findById(legit._id);
 
-    if (admin) {
+    if (admin && admin.status == "Active") {
       req.admin = admin;
       req.token = token;
       return next();
     }
     throw new ApiError('Access forbidden', 403);
   } catch (err) {
+    console.log('err', err)
     next(err);
   }
 };

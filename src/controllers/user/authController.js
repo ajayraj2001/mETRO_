@@ -206,8 +206,6 @@ const verifyOtpSignUp = async (req, res, next) => {
   try {
     const { phone, otp, deviceId, deviceToken } = req.body;
 
-    console.log('req.nody_singup', req.body)
-
     // Validate input
     if (!phone) return next(new ApiError("Phone is required.", 400));
     if (!otp) return next(new ApiError("OTP is required.", 400));

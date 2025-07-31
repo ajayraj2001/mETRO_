@@ -73,7 +73,7 @@ const getNotifications = asyncHandler(async (req, res, next) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate("referenceId", "profile_image") // Only get profile_image for optimization
+    .populate("referenceId", "profile_image profileId") // Only get profile_image for optimization
     .lean();
 
   // Format result
@@ -86,7 +86,7 @@ const getNotifications = asyncHandler(async (req, res, next) => {
     }
 
     // Remove referenceId completely to reduce payload
-    delete notif.referenceId;
+    // delete notif.referenceId;
 
     return notif;
   });
