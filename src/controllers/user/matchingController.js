@@ -803,21 +803,22 @@ const getGovtEmployees = async (req, res) => {
       gender: genderFilter,
       profileStatus: 'Complete',
       active: true,
-      employed_in: 'Government/Public Sector'
+      employed_in: 'Goverment/Public Sector'
+      // employed_in: 'Government/Public Sector'
     };
 
     // Optional: filter for only today's users (if ?today=true is passed)
-    if (req.query.today === 'true') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+    // if (req.query.today === 'true') {
+    //   const today = new Date();
+    //   today.setHours(0, 0, 0, 0);
+    //   const tomorrow = new Date(today);
+    //   tomorrow.setDate(tomorrow.getDate() + 1);
 
-      query.created_at = {
-        $gte: today,
-        $lt: tomorrow
-      };
-    }
+    //   query.created_at = {
+    //     $gte: today,
+    //     $lt: tomorrow
+    //   };
+    // }
 
     // Get total count
     const totalCount = await User.countDocuments(query);
