@@ -787,6 +787,103 @@ const getTodaysMatches = async (req, res) => {
     });
   }
 };
+
+
+const getGovtEmployees = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const limit = parseInt(req.query.limit) || 9;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
+    const genderFilter = req.user.gender === 'Male' ? 'Female' : 'Male';
+
+    const query = {
+      _id: { $ne: userId },
+      gender: genderFilter,
+      profileStatus: 'Complete',
+      active: true,
+      employed_in: 'Government/Public Sector'
+    };
+
+    // Optional: filter for only today's users (if ?today=true is passed)
+    if (req.query.today === 'true') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      query.created_at = {
+        $gte: today,
+        $lt: tomorrow
+      };
+    }
+
+    // Get total count
+    const totalCount = await User.countDocuments(query);
+
+    // Get paginated users
+    const users = await User.find(query)
+      .select('_id fullName profileId dob profile_image height heightInCm city state religion caste marital_status highest_education occupation annual_income manglik created_at verifiedBadge gender')
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Add age and any other derived fields
+    const now = new Date();
+    const processedUsers = users.map(user => {
+      if (user.dob) {
+        const birth = new Date(user.dob);
+        let age = now.getFullYear() - birth.getFullYear();
+        const m = now.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+        user.age = age;
+      }
+
+      return user;
+    });
+
+    // Check if current user has liked any of these
+    const userIds = processedUsers.map(u => u._id);
+    const likedDocs = await Like.find({
+      user: userId,
+      userLikedTo: { $in: userIds }
+    });
+
+    const likedUserIds = likedDocs.map(doc => doc.userLikedTo.toString());
+
+    const finalUsers = processedUsers.map(user => ({
+      ...user,
+      liked: likedUserIds.includes(user._id.toString())
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        matches: finalUsers,
+        pagination: {
+          total: totalCount,
+          page,
+          hasNextPages: page < Math.ceil(totalCount / limit),
+          pages: Math.ceil(totalCount / limit),
+          limit
+        },
+        filter: 'Government/Public Sector'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getGovtEmployees:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+
 /**
  * Get My Matches - Most compatible profiles with rotation strategy
  * Strategy:
@@ -1637,5 +1734,6 @@ module.exports = {
   getMyMatches,
   getNearMeMatches,
   getDiscoveryMatches,
-  getHomePageData
+  getHomePageData,
+  getGovtEmployees
 };

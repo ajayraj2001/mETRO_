@@ -116,6 +116,7 @@ userRoute.get('/today_matches', authenticateUser, matchesController.getTodaysMat
 userRoute.get('/my_matches', authenticateUser, matchesController.getMyMatches);
 userRoute.get('/near_me', authenticateUser, matchesController.getNearMeMatches);
 userRoute.get('/discovery', authenticateUser, matchesController.getDiscoveryMatches);
+userRoute.get('/getGovtEmployees', authenticateUser, matchesController.getGovtEmployees);
 
 // Liked User Profile
 userRoute.get("/like_user/:id", authenticateUser, likeUserProfile);
